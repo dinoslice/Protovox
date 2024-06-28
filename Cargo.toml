@@ -1,0 +1,10 @@
+[package]
+name = "voxel_game"
+version = "0.1.0"
+edition = "2021"
+authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
+
+[dependencies]
+
+[workspace]
+resolver = "2"
