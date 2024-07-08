@@ -5,11 +5,7 @@ edition = "2021"
 authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 
 [dependencies]
-chrono = "0.4.38"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "std", "chrono"] }
-wgpu = "0.20.1"
-winit = "0.30.3"
 
 [workspace]
 resolver = "2"
+members = ["client"]
