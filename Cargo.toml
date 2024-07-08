@@ -9,3 +9,6 @@ authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 [workspace]
 resolver = "2"
 members = ["client"]
+
+[workspace.lints.clippy]
+unwrap_used = "warn"

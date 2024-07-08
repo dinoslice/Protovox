@@ -3,6 +3,7 @@ extern crate nalgebra_glm as glm;
 
 mod render;
 pub mod input;
+mod application;
 
 use std::{io, fs, fs::OpenOptions};
 use std::str::FromStr;
@@ -54,5 +55,5 @@ fn init_tracing() -> io::Result<()> {
 fn main() {
     init_tracing().expect("tracing initialized");
 
-    render::run();
+    application::run();
 }
