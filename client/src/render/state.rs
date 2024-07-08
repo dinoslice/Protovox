@@ -1,5 +1,5 @@
 use std::time::Duration;
-use winit::event::{ElementState, KeyEvent, MouseButton, WindowEvent};
+use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
 use crate::render::camera::Camera;
@@ -60,14 +60,6 @@ impl<'a> State<'a> {
             } => self.input_manager.action_map.process_input(key, *state == ElementState::Pressed),
             WindowEvent::MouseWheel { delta, .. } => {
                 self.input_manager.mouse_manager.process_scroll(delta);
-                true
-            }
-            WindowEvent::MouseInput {
-                button: MouseButton::Left,
-                state,
-                ..
-            } => {
-                self.input_manager.mouse_manager.pressed = *state == ElementState::Pressed;
                 true
             }
             _ => false, // returns false if the event hasn't been processed, so it can be further processed later

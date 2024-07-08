@@ -4,7 +4,6 @@ use winit::event::MouseScrollDelta;
 
 #[derive(Debug)]
 pub struct MouseManager {
-    pub pressed: bool,
     pub rotate: Vec2,
     pub scroll: f32,
     pub sensitivity: f32,
@@ -13,7 +12,6 @@ pub struct MouseManager {
 impl MouseManager {
     pub fn with_sensitivity(sensitivity: f32) -> Self {
         Self {
-            pressed: false,
             rotate: Vec2::zeros(),
             scroll: 0.0,
             sensitivity,
