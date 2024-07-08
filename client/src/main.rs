@@ -6,24 +6,18 @@ pub mod input;
 
 use std::str::FromStr;
 use pollster::FutureExt;
-use tracing::debug;
-use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
-use winit::event::{ElementState, Event, KeyEvent, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoopBuilder};
-use winit::keyboard::{KeyCode, PhysicalKey};
-use winit::window::{Window, WindowBuilder};
+use tracing_subscriber::util::{SubscriberInitExt, TryInitError};
 
-fn init_tracing() {
+fn init_tracing() -> Result<(), TryInitError>{
     let subscriber = FmtSubscriber::builder()
-        .with_env_filter(EnvFilter::from_str("DEBUG").expect("setting filter failed"))
+        .with_env_filter(EnvFilter::from_str("debug,wgpu=warn,wgpu_core=warn,wgpu_hal=warn,naga=warn").expect("setting filter failed"))
         .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("setting default subscriber failed");
+    subscriber.try_init()
 }
 
 fn main() {
-    init_tracing();
+    init_tracing().expect("tracing initialized");
 
     render::run();
 }
