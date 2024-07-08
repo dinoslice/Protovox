@@ -13,6 +13,7 @@ pub mod texture;
 pub mod camera;
 mod instance;
 mod graphics_context;
+mod camera_uniform_buffer;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build().unwrap();

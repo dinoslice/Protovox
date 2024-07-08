@@ -7,6 +7,7 @@ use winit::keyboard::PhysicalKey;
 use winit::window::Window;
 use crate::render::camera::Camera;
 use crate::input::InputManager;
+use crate::render::camera_uniform_buffer::CameraUniformBuffer;
 use crate::render::instance::Instance;
 use crate::render::graphics_context::GraphicsContext;
 use crate::render::texture::Texture;
@@ -24,8 +25,7 @@ pub struct State<'a> {
 
     pub camera: Camera,
 
-    pub camera_buffer: wgpu::Buffer,
-    pub camera_bind_group: wgpu::BindGroup,
+    pub camera_uniform_buffer: CameraUniformBuffer,
 
     pub input_manager: InputManager,
 
@@ -167,48 +167,9 @@ impl<'a> State<'a> {
             )
         };
 
+        let camera_uniform_buffer = CameraUniformBuffer::new(&graphics_context);
+
         let input_manager = InputManager::with_mouse_sensitivity(0.4);
-
-        // buffer to hold the camera matrix
-        let camera_buffer = renderer.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Camera Buffer"),
-                contents: bytemuck::cast_slice(&camera.as_uniform()),
-                // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            }
-        );
-
-        // bind group for the camera, resource is the whole contents of the buffer
-        let camera_bind_group_layout = renderer.device.create_bind_group_layout(
-            &wgpu::BindGroupLayoutDescriptor {
-                label: Some("camera_bind_group_layout"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX, // only need the camera in the vertex shader
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform, // var<uniform> in wgsl
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }
-                ],
-            }
-        );
-
-        let camera_bind_group = renderer.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &camera_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: camera_buffer.as_entire_binding(),
-                }
-            ],
-            label: Some("camera_bind_group"),
-        });
-
 
         // 6. pipeline / instructions for GPU
 
@@ -278,8 +239,7 @@ impl<'a> State<'a> {
             diffuse_bind_group,
             diffuse_texture,
             camera,
-            camera_buffer,
-            camera_bind_group,
+            camera_uniform_buffer,
             instances,
             instance_buffer,
             depth_texture,
@@ -330,8 +290,6 @@ impl<'a> State<'a> {
 
     pub fn update(&mut self, delta_time: &Duration) {
         self.camera.update_with_input(&mut self.input_manager, delta_time);
-        // update the camera buffer
-        self.graphics_context.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -379,9 +337,12 @@ impl<'a> State<'a> {
 
         render_pass.set_pipeline(&self.pipeline);
 
+        // update the camera buffer
+        self.camera_uniform_buffer.update_buffer(&self.graphics_context, &self.camera.as_uniform());
+
         // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-        render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
+        render_pass.set_bind_group(1, &self.camera_uniform_buffer.bind_group, &[]);
 
         // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
