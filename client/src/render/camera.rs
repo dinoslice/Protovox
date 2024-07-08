@@ -9,6 +9,7 @@ pub struct Camera {
     pub yaw: f32,
     pub pitch: f32,
     pub speed: f32,
+    pub perspective: Perspective3<f32>,
 }
 
 impl Camera {
@@ -56,7 +57,7 @@ impl Camera {
         input.mouse_manager.reset_scroll_rotate();
     }
 
-    pub fn as_uniform_with_perspective(&self, perspective: &Perspective3<f32>) -> [[f32; 4]; 4] {
+    pub fn as_uniform(&self) -> [[f32; 4]; 4] {
         const OPENGL_TO_WGPU_MATRIX: Mat4 = Mat4::new(
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
@@ -64,6 +65,6 @@ impl Camera {
             0.0, 0.0, 0.0, 1.0,
         );
 
-        (OPENGL_TO_WGPU_MATRIX * perspective.as_matrix() * self.view_matrix()).into()
+        (OPENGL_TO_WGPU_MATRIX * self.perspective.as_matrix() * self.view_matrix()).into()
     }
 }

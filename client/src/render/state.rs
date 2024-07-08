@@ -29,7 +29,6 @@ pub struct State<'a> {
     pub diffuse_texture: Texture,
 
     pub camera: Camera,
-    pub perspective: Perspective3<f32>,
 
     pub camera_buffer: wgpu::Buffer,
     pub camera_bind_group: wgpu::BindGroup,
@@ -221,14 +220,13 @@ impl<'a> State<'a> {
             yaw: -90.0f32.to_radians(),
             pitch: -20.0f32.to_radians(),
             speed: 4.0,
+            perspective: Perspective3::new(
+                config.width as f32 / config.height as f32,
+                45.0f32.to_radians(),
+                0.1,
+                100.0
+            )
         };
-
-        let perspective = Perspective3::new(
-            config.width as f32 / config.height as f32,
-            45.0f32.to_radians(),
-            0.1,
-            100.0
-        );
 
         let input_manager = InputManager::with_mouse_sensitivity(0.4);
 
@@ -236,7 +234,7 @@ impl<'a> State<'a> {
         let camera_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Camera Buffer"),
-                contents: bytemuck::cast_slice(&camera.as_uniform_with_perspective(&perspective)),
+                contents: bytemuck::cast_slice(&camera.as_uniform()),
                 // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             }
@@ -351,7 +349,6 @@ impl<'a> State<'a> {
             instances,
             instance_buffer,
             depth_texture,
-            perspective,
             input_manager,
         }
     }
@@ -367,7 +364,7 @@ impl<'a> State<'a> {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
             self.depth_texture = Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
-            self.perspective.set_aspect(self.config.width as f32 / self.config.height as f32);
+            self.camera.perspective.set_aspect(self.config.width as f32 / self.config.height as f32);
         }
     }
 
@@ -401,7 +398,7 @@ impl<'a> State<'a> {
     pub fn update(&mut self, delta_time: &Duration) {
         self.camera.update_with_input(&mut self.input_manager, delta_time);
         // update the camera buffer
-        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform_with_perspective(&self.perspective)));
+        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
