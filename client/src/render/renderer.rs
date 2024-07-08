@@ -2,7 +2,7 @@ use glm::Vec3;
 use na::{Unit, UnitQuaternion};
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use crate::render::camera::Camera;
+use crate::camera::Camera;
 use crate::render::camera_uniform_buffer::CameraUniformBuffer;
 use crate::render::graphics_context::GraphicsContext;
 use crate::render::instance::Instance;

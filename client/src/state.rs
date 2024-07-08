@@ -2,7 +2,7 @@ use std::time::Duration;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
-use crate::render::camera::Camera;
+use crate::camera::Camera;
 use crate::input::InputManager;
 use crate::render::renderer::Renderer;
 

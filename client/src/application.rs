@@ -5,7 +5,7 @@ use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{CursorGrabMode, Window, WindowBuilder};
-use crate::render::state::State;
+use crate::state::State;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build()

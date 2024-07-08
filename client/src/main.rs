@@ -1,16 +1,10 @@
-extern crate nalgebra as na;
-extern crate nalgebra_glm as glm;
-
-mod render;
-pub mod input;
-mod application;
-
 use std::{io, fs, fs::OpenOptions};
 use std::str::FromStr;
 use chrono::Utc;
 use tracing_subscriber::{fmt, fmt::time::ChronoUtc, EnvFilter, Registry};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use client::application;
 
 fn init_tracing() -> io::Result<()> {
     let file_name = format!("logs/{}.log", Utc::now().format("%Y-%m-%d_%H-%M-%S"));
