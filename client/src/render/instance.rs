@@ -1,5 +1,5 @@
 use glm::{Mat4, Quat, Vec3};
-use na::{Unit, UnitQuaternion};
+use na::Unit;
 
 pub struct Instance {
     pub position: Vec3,

@@ -13,7 +13,7 @@ impl Texture {
         bytes: &[u8],
         label: &str
     ) -> Result<Self, ImageError> {
-        let img = image::load_from_memory(bytes)?;;
+        let img = image::load_from_memory(bytes)?;
         Ok( Self::from_image(device, queue, &img, Some(label)) )
     }
 

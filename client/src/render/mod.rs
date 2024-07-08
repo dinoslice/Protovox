@@ -4,7 +4,6 @@ use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use wgpu::util::DeviceExt;
 use crate::render::state::State;
 
 pub mod state;

@@ -1,5 +1,5 @@
 use std::time::Duration;
-use glm::{Mat4, Vec2, Vec3};
+use glm::{Mat4, Vec3};
 use na::{Perspective3, UnitQuaternion};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
