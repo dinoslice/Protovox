@@ -8,12 +8,12 @@ use winit::window::Window;
 use crate::render::camera::Camera;
 use crate::input::InputManager;
 use crate::render::instance::Instance;
-use crate::render::renderer::Renderer;
+use crate::render::graphics_context::GraphicsContext;
 use crate::render::texture::Texture;
 use crate::render::vertex::Vertex;
 
 pub struct State<'a> {
-    pub renderer: Renderer<'a>,
+    pub graphics_context: GraphicsContext<'a>,
 
     pub pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
@@ -37,7 +37,7 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub fn new(window: &'a Window) -> State<'a> {
-        let renderer = Renderer::init(window);
+        let graphics_context = GraphicsContext::new(window);
 
         // 2. load vertices & indices
         const VERTICES: &[Vertex] = &[
@@ -56,7 +56,7 @@ impl<'a> State<'a> {
         ];
 
         // holds vertices, available in shader
-        let vertex_buffer = renderer.device.create_buffer_init(
+        let vertex_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(VERTICES),
@@ -64,7 +64,7 @@ impl<'a> State<'a> {
             }
         );
 
-        let index_buffer = renderer.device.create_buffer_init(
+        let index_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: bytemuck::cast_slice(INDICES),
@@ -98,7 +98,7 @@ impl<'a> State<'a> {
         let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         // buffer with matrices representing each instance's position & rotation
-        let instance_buffer = renderer.device.create_buffer_init(
+        let instance_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(&instance_data),
@@ -108,11 +108,11 @@ impl<'a> State<'a> {
 
 
         // 4. load textures into bind group
-        let diffuse_texture = Texture::from_bytes(&renderer.device, &renderer.queue, include_bytes!("../../assets/tree.png"), "tree.png").unwrap();
+        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/tree.png"), "tree.png").unwrap();
 
         // bind group -> data constant through one draw call
         let diffuse_bind_group_layout =
-            renderer.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            graphics_context.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0, // corresponds to @binding(n) in the shader
@@ -135,7 +135,7 @@ impl<'a> State<'a> {
                 label: Some("texture_bind_group_layout"),
             });
 
-        let diffuse_bind_group = renderer.device.create_bind_group(
+        let diffuse_bind_group = graphics_context.device.create_bind_group(
             &wgpu::BindGroupDescriptor {
                 layout: &diffuse_bind_group_layout, // layout defined above
                 entries: &[ // matches the entries defined above
@@ -160,7 +160,7 @@ impl<'a> State<'a> {
             pitch: -20.0f32.to_radians(),
             speed: 4.0,
             perspective: Perspective3::new(
-                renderer.config.width as f32 / renderer.config.height as f32,
+                graphics_context.config.width as f32 / graphics_context.config.height as f32,
                 45.0f32.to_radians(),
                 0.1,
                 100.0
@@ -213,18 +213,18 @@ impl<'a> State<'a> {
         // 6. pipeline / instructions for GPU
 
         // loads a shader and returns a handle to the compiled shader
-        let shader = renderer.device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
+        let shader = graphics_context.device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        let depth_texture = Texture::create_depth_texture(&renderer.device, &renderer.config, "depth texture");
+        let depth_texture = Texture::create_depth_texture(&graphics_context.device, &graphics_context.config, "depth texture");
 
         // pipeline describes the GPU's actions on a set of data, like a shader program
-        let render_pipeline_layout = renderer.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let render_pipeline_layout = graphics_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&diffuse_bind_group_layout, &camera_bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+            bind_group_layouts: &[&diffuse_bind_group_layout, &camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
             push_constant_ranges: &[],
         });
 
-        let pipeline = renderer.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = graphics_context.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -240,7 +240,7 @@ impl<'a> State<'a> {
                 entry_point: "fs_main",
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: renderer.config.format,
+                    format: graphics_context.config.format,
                     blend: Some(wgpu::BlendState::REPLACE), // blending, if set to replace this overwrites the contents
                     write_mask: wgpu::ColorWrites::ALL, // write to all channels (rgba)
                 })],
@@ -270,7 +270,7 @@ impl<'a> State<'a> {
         });
 
         Self {
-            renderer,
+            graphics_context,
             pipeline,
             vertex_buffer,
             index_buffer,
@@ -289,16 +289,16 @@ impl<'a> State<'a> {
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.renderer.resize(new_size);
-            self.depth_texture = Texture::create_depth_texture(&self.renderer.device, &self.renderer.config, "depth_texture");
-            self.camera.perspective.set_aspect(self.renderer.config.width as f32 / self.renderer.config.height as f32);
+            self.graphics_context.resize(new_size);
+            self.depth_texture = Texture::create_depth_texture(&self.graphics_context.device, &self.graphics_context.config, "depth_texture");
+            self.camera.perspective.set_aspect(self.graphics_context.config.width as f32 / self.graphics_context.config.height as f32);
         } else {
             tracing::warn!("Ignoring resize with non-positive width or height");
         }
     }
 
     pub fn reconfigure(&mut self) {
-        self.resize(self.renderer.size)
+        self.resize(self.graphics_context.size)
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
@@ -331,18 +331,18 @@ impl<'a> State<'a> {
     pub fn update(&mut self, delta_time: &Duration) {
         self.camera.update_with_input(&mut self.input_manager, delta_time);
         // update the camera buffer
-        self.renderer.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
+        self.graphics_context.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         // get a surface texture to render to
-        let output = self.renderer.surface.get_current_texture()?;
+        let output = self.graphics_context.surface.get_current_texture()?;
 
         // view of the texture, so we can control how the render code interacts with the texture
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // command encoder creates the commands to send to the GPU, commands stored in command buffer
-        let mut encoder = self.renderer.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        let mut encoder = self.graphics_context.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render encoder"),
         });
 
@@ -395,7 +395,7 @@ impl<'a> State<'a> {
 
         // finish the command buffer & submit to GPU
         drop(render_pass);
-        self.renderer.queue.submit(std::iter::once(encoder.finish()));
+        self.graphics_context.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
         Ok(())

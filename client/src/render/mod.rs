@@ -12,7 +12,7 @@ pub mod vertex;
 pub mod texture;
 pub mod camera;
 mod instance;
-mod renderer;
+mod graphics_context;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build().unwrap();
@@ -33,7 +33,7 @@ pub fn run() {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.renderer.window.id() => if !state.input(event) {
+            } if window_id == state.graphics_context.window.id() => if !state.input(event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         state.update(&last_render_time.elapsed());
@@ -66,7 +66,7 @@ pub fn run() {
             }
             Event::AboutToWait => {
                 // RedrawRequested only triggers once manually requested
-                state.renderer.window.request_redraw();
+                state.graphics_context.window.request_redraw();
             }
             _ => {}
         }

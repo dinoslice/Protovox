@@ -2,7 +2,7 @@ use pollster::FutureExt;
 use winit::window::Window;
 
 // TODO: fix visibility
-pub struct Renderer<'a> {
+pub struct GraphicsContext<'a> {
     pub surface: wgpu::Surface<'a>,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
@@ -12,8 +12,8 @@ pub struct Renderer<'a> {
     pub window: &'a Window,
 }
 
-impl<'a> Renderer<'a> {
-    pub fn init(window: &'a Window) -> Renderer {
+impl<'a> GraphicsContext<'a> {
+    pub fn new(window: &'a Window) -> GraphicsContext {
         let size = window.inner_size();
 
         // 1. establishing a connection to the GPU
