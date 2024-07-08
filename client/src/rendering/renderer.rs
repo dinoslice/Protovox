@@ -3,11 +3,11 @@ use na::{Unit, UnitQuaternion};
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 use crate::camera::Camera;
-use crate::render::camera_uniform_buffer::CameraUniformBuffer;
-use crate::render::graphics_context::GraphicsContext;
-use crate::render::instance::Instance;
-use crate::render::texture::Texture;
-use crate::render::vertex::Vertex;
+use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::instance::Instance;
+use crate::rendering::texture::Texture;
+use crate::rendering::vertex::Vertex;
 
 pub struct Renderer<'a> {
     pub graphics_context: GraphicsContext<'a>,

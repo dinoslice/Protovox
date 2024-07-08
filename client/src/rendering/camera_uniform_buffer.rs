@@ -1,5 +1,5 @@
 use wgpu::util::DeviceExt;
-use crate::render::graphics_context::GraphicsContext;
+use crate::rendering::graphics_context::GraphicsContext;
 
 pub struct CameraUniformBuffer {
     pub buffer: wgpu::Buffer,

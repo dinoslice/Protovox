@@ -4,7 +4,7 @@ use winit::keyboard::PhysicalKey;
 use winit::window::Window;
 use crate::camera::Camera;
 use crate::input::InputManager;
-use crate::render::renderer::Renderer;
+use crate::rendering::renderer::Renderer;
 
 pub struct State<'a> {
     pub renderer: Renderer<'a>,
