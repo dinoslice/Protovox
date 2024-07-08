@@ -16,8 +16,6 @@ impl<'a> GraphicsContext<'a> {
     pub fn new(window: &'a Window) -> GraphicsContext {
         let size = window.inner_size();
 
-        // 1. establishing a connection to the GPU
-
         // handle to the GPU, interfaces with Vulkan, DX12, etc.; main purpose to create adapters and surfaces
         let instance = wgpu::Instance::new(
             wgpu::InstanceDescriptor {
@@ -85,8 +83,6 @@ impl<'a> GraphicsContext<'a> {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
-        } else {
-            tracing::warn!("Ignoring resize with non-positive width or height");
         }
     }
 }

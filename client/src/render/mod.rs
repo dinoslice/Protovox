@@ -14,6 +14,7 @@ pub mod camera;
 mod instance;
 mod graphics_context;
 mod camera_uniform_buffer;
+mod renderer;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build().unwrap();
@@ -34,15 +35,15 @@ pub fn run() {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.graphics_context.window.id() => if !state.input(event) {
+            } if window_id == state.renderer.graphics_context.window.id() => if !state.input(event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         state.update(&last_render_time.elapsed());
                         last_render_time = Instant::now();
-                        match state.render() {
+                        match state.renderer.render(&state.camera) {
                             Ok(_) => {}
                             // Reconfigure the surface if lost
-                            Err(wgpu::SurfaceError::Lost) => state.reconfigure(),
+                            Err(wgpu::SurfaceError::Lost) => state.renderer.reconfigure(),
                             // Quit if the system is out of memory
                             Err(wgpu::SurfaceError::OutOfMemory) => panic!("OOM, TODO: properly exit"),
                             // All other errors (Outdated, Timeout) should be resolved by the next frame
@@ -67,7 +68,7 @@ pub fn run() {
             }
             Event::AboutToWait => {
                 // RedrawRequested only triggers once manually requested
-                state.graphics_context.window.request_redraw();
+                state.renderer.graphics_context.window.request_redraw();
             }
             _ => {}
         }
