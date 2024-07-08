@@ -1,5 +1,6 @@
 use std::time::Instant;
 use glm::Vec2;
+use tracing::error;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -11,6 +12,7 @@ pub mod vertex;
 pub mod texture;
 pub mod camera;
 mod instance;
+mod renderer;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build().unwrap();
@@ -31,7 +33,7 @@ pub fn run() {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.window().id() => if !state.input(event) {
+            } if window_id == state.renderer.window.id() => if !state.input(event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         state.update(&last_render_time.elapsed());
@@ -39,11 +41,11 @@ pub fn run() {
                         match state.render() {
                             Ok(_) => {}
                             // Reconfigure the surface if lost
-                            Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                            Err(wgpu::SurfaceError::Lost) => state.reconfigure(),
                             // Quit if the system is out of memory
                             Err(wgpu::SurfaceError::OutOfMemory) => panic!("OOM, TODO: properly exit"),
                             // All other errors (Outdated, Timeout) should be resolved by the next frame
-                            Err(e) => eprintln!("{:?}", e),
+                            Err(e) => error!("{:?}", e),
                         }
                     }
                     WindowEvent::CloseRequested
@@ -64,7 +66,7 @@ pub fn run() {
             }
             Event::AboutToWait => {
                 // RedrawRequested only triggers once manually requested
-                state.window().request_redraw();
+                state.renderer.window.request_redraw();
             }
             _ => {}
         }

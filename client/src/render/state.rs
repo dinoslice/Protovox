@@ -1,7 +1,6 @@
 use std::time::Duration;
 use glm::Vec3;
 use na::{Perspective3, Unit, UnitQuaternion};
-use pollster::FutureExt;
 use wgpu::util::DeviceExt;
 use winit::event::{ElementState, KeyEvent, MouseButton, WindowEvent};
 use winit::keyboard::PhysicalKey;
@@ -9,17 +8,12 @@ use winit::window::Window;
 use crate::render::camera::Camera;
 use crate::input::InputManager;
 use crate::render::instance::Instance;
+use crate::render::renderer::Renderer;
 use crate::render::texture::Texture;
 use crate::render::vertex::Vertex;
 
 pub struct State<'a> {
-    pub surface: wgpu::Surface<'a>,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
-    // must be dropped after the device since it has unsafe references to the window
-    pub window: &'a Window,
+    pub renderer: Renderer<'a>,
 
     pub pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
@@ -43,62 +37,7 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub fn new(window: &'a Window) -> State<'a> {
-        let size = window.inner_size();
-
-
-        // 1. establishing a connection to the GPU
-
-        // handle to the GPU, interfaces with Vulkan, DX12, etc.; main purpose to create adapters and surfaces
-        let instance = wgpu::Instance::new(
-            wgpu::InstanceDescriptor {
-                backends: wgpu::Backends::PRIMARY,
-                .. Default::default()
-            }
-        );
-
-        // surface where rendered frames can be presented, i.e. a window
-        let surface = instance.create_surface(window).expect("failed to create surface");
-
-        // handle to the actual GPU, can get info about GPU & create device & queue
-        let adapter = instance.request_adapter(
-            &wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                force_fallback_adapter: false, // switch to software system instead of hardware
-                compatible_surface: Some(&surface), // find an adapter that supports the surface
-            }
-        ).block_on().expect("failed to request adapter");
-
-        // device is an open connection to gpu, queue executes command buffers
-        let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                required_features: wgpu::Features::empty(), // what additional features of the GPU are needed
-                required_limits: wgpu::Limits::default(), // limit properties of the gpu to support different architectures
-                label: None,
-            },
-            None // trace path for api call tracing
-        ).block_on().expect("failed to request device");
-
-        // get list of formats, texture usages, presentation modes, etc.
-        // presentation mode -> vsync, fifo, etc.
-        let surface_capabilities = surface.get_capabilities(&adapter);
-
-        let surface_format = surface_capabilities.formats.iter()
-            .find(|f| f.is_srgb())
-            .copied()
-            .unwrap_or(surface_capabilities.formats[0]);
-
-        // defines how the surface creates its underlying surface textures
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT, // texture used as output of a render pass
-            format: surface_format,
-            width: size.width,
-            height: size.height,
-            present_mode: surface_capabilities.present_modes[0],
-            desired_maximum_frame_latency: 2, // max frames that should be queued in advance
-            alpha_mode: surface_capabilities.alpha_modes[0],
-            view_formats: Vec::new(),
-        };
-
+        let renderer = Renderer::init(window);
 
         // 2. load vertices & indices
         const VERTICES: &[Vertex] = &[
@@ -117,7 +56,7 @@ impl<'a> State<'a> {
         ];
 
         // holds vertices, available in shader
-        let vertex_buffer = device.create_buffer_init(
+        let vertex_buffer = renderer.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(VERTICES),
@@ -125,7 +64,7 @@ impl<'a> State<'a> {
             }
         );
 
-        let index_buffer = device.create_buffer_init(
+        let index_buffer = renderer.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: bytemuck::cast_slice(INDICES),
@@ -159,7 +98,7 @@ impl<'a> State<'a> {
         let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         // buffer with matrices representing each instance's position & rotation
-        let instance_buffer = device.create_buffer_init(
+        let instance_buffer = renderer.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(&instance_data),
@@ -169,11 +108,11 @@ impl<'a> State<'a> {
 
 
         // 4. load textures into bind group
-        let diffuse_texture = Texture::from_bytes(&device, &queue, include_bytes!("../../assets/tree.png"), "tree.png").unwrap();
+        let diffuse_texture = Texture::from_bytes(&renderer.device, &renderer.queue, include_bytes!("../../assets/tree.png"), "tree.png").unwrap();
 
         // bind group -> data constant through one draw call
         let diffuse_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            renderer.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0, // corresponds to @binding(n) in the shader
@@ -196,7 +135,7 @@ impl<'a> State<'a> {
                 label: Some("texture_bind_group_layout"),
             });
 
-        let diffuse_bind_group = device.create_bind_group(
+        let diffuse_bind_group = renderer.device.create_bind_group(
             &wgpu::BindGroupDescriptor {
                 layout: &diffuse_bind_group_layout, // layout defined above
                 entries: &[ // matches the entries defined above
@@ -221,7 +160,7 @@ impl<'a> State<'a> {
             pitch: -20.0f32.to_radians(),
             speed: 4.0,
             perspective: Perspective3::new(
-                config.width as f32 / config.height as f32,
+                renderer.config.width as f32 / renderer.config.height as f32,
                 45.0f32.to_radians(),
                 0.1,
                 100.0
@@ -231,7 +170,7 @@ impl<'a> State<'a> {
         let input_manager = InputManager::with_mouse_sensitivity(0.4);
 
         // buffer to hold the camera matrix
-        let camera_buffer = device.create_buffer_init(
+        let camera_buffer = renderer.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Camera Buffer"),
                 contents: bytemuck::cast_slice(&camera.as_uniform()),
@@ -241,7 +180,7 @@ impl<'a> State<'a> {
         );
 
         // bind group for the camera, resource is the whole contents of the buffer
-        let camera_bind_group_layout = device.create_bind_group_layout(
+        let camera_bind_group_layout = renderer.device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 label: Some("camera_bind_group_layout"),
                 entries: &[
@@ -259,7 +198,7 @@ impl<'a> State<'a> {
             }
         );
 
-        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let camera_bind_group = renderer.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &camera_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -274,18 +213,18 @@ impl<'a> State<'a> {
         // 6. pipeline / instructions for GPU
 
         // loads a shader and returns a handle to the compiled shader
-        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
+        let shader = renderer.device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        let depth_texture = Texture::create_depth_texture(&device, &config, "depth texture");
+        let depth_texture = Texture::create_depth_texture(&renderer.device, &renderer.config, "depth texture");
 
         // pipeline describes the GPU's actions on a set of data, like a shader program
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let render_pipeline_layout = renderer.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&diffuse_bind_group_layout, &camera_bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
             push_constant_ranges: &[],
         });
 
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = renderer.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -301,7 +240,7 @@ impl<'a> State<'a> {
                 entry_point: "fs_main",
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
+                    format: renderer.config.format,
                     blend: Some(wgpu::BlendState::REPLACE), // blending, if set to replace this overwrites the contents
                     write_mask: wgpu::ColorWrites::ALL, // write to all channels (rgba)
                 })],
@@ -331,12 +270,7 @@ impl<'a> State<'a> {
         });
 
         Self {
-            surface,
-            device,
-            queue,
-            config,
-            size,
-            window,
+            renderer,
             pipeline,
             vertex_buffer,
             index_buffer,
@@ -353,19 +287,18 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn window(&self) -> &Window {
-        self.window
-    }
-
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
-            self.depth_texture = Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
-            self.camera.perspective.set_aspect(self.config.width as f32 / self.config.height as f32);
+            self.renderer.resize(new_size);
+            self.depth_texture = Texture::create_depth_texture(&self.renderer.device, &self.renderer.config, "depth_texture");
+            self.camera.perspective.set_aspect(self.renderer.config.width as f32 / self.renderer.config.height as f32);
+        } else {
+            tracing::warn!("Ignoring resize with non-positive width or height");
         }
+    }
+
+    pub fn reconfigure(&mut self) {
+        self.resize(self.renderer.size)
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
@@ -398,18 +331,18 @@ impl<'a> State<'a> {
     pub fn update(&mut self, delta_time: &Duration) {
         self.camera.update_with_input(&mut self.input_manager, delta_time);
         // update the camera buffer
-        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
+        self.renderer.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&self.camera.as_uniform()));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         // get a surface texture to render to
-        let output = self.surface.get_current_texture()?;
+        let output = self.renderer.surface.get_current_texture()?;
 
         // view of the texture, so we can control how the render code interacts with the texture
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // command encoder creates the commands to send to the GPU, commands stored in command buffer
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        let mut encoder = self.renderer.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render encoder"),
         });
 
@@ -462,7 +395,7 @@ impl<'a> State<'a> {
 
         // finish the command buffer & submit to GPU
         drop(render_pass);
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.renderer.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
         Ok(())
