@@ -24,7 +24,7 @@ impl<'a> State<'a> {
             position: Vec3::new(0.0, 1.0, 2.0),
             yaw: -90.0f32.to_radians(),
             pitch: -20.0f32.to_radians(),
-            speed: 4.0,
+            speed: 8.0,
             perspective: Perspective3::new(
                 renderer.aspect(),
                 45.0f32.to_radians(),
@@ -33,7 +33,7 @@ impl<'a> State<'a> {
             )
         };
 
-        let input_manager = InputManager::with_mouse_sensitivity(0.4);
+        let input_manager = InputManager::with_mouse_sensitivity(0.75);
 
         Self { renderer, camera, input_manager }
     }

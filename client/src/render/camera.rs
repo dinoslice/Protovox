@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::time::Duration;
 use glm::{Mat4, Vec3};
 use na::{Perspective3, UnitQuaternion};
@@ -39,10 +40,21 @@ impl Camera {
         self.position += forward * movement_scaled.z;
         self.position += right * movement_scaled.x;
 
-        // move along view vector, "zooms" into object
-        let (pitch_sin, pitch_cos) = self.pitch.sin_cos();
-        let scrollward = Vec3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
-        self.position += scrollward * input.mouse_manager.scroll * self.speed * input.mouse_manager.sensitivity * dt_secs;
+
+        const SCROLL_SCALE: f32 = 0.32;
+        const SCROLL_THRESHOLD: f32 = 0.2;
+
+        self.speed = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
+            Ordering::Less => match self.speed >= SCROLL_THRESHOLD {
+                true => self.speed * (1.0 + SCROLL_SCALE),
+                false => SCROLL_THRESHOLD,
+            },
+            Ordering::Greater => match self.speed >= SCROLL_THRESHOLD {
+                true => self.speed * (1.0 - SCROLL_SCALE),
+                false => 0.0,
+            }
+            _ => self.speed
+        }.clamp(0.0, 125.0);
 
         self.position.y += movement_scaled.y;
 
