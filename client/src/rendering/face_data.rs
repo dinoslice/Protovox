@@ -27,3 +27,14 @@ impl FaceData {
         }
     }
 }
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum FaceType {
+    Bottom, // Y-
+    Top, // Y+
+    Front, // Z+
+    Back, // Z-
+    Left, // X-
+    Right, // X+
+}
