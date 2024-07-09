@@ -55,83 +55,56 @@ impl<'a> Renderer<'a> {
             [1.0, 1.0, -1.0],          // 7: Top right back
         ];
 
-        const VERTICES: &[Vertex] = &[
-            // Front face (CCW)
-            Vertex { position: POS[0], tex_coords: [0.0, 0.0] },    // Bottom left
-            Vertex { position: POS[1], tex_coords: [1.0, 0.0] },    // Bottom right
-            Vertex { position: POS[2], tex_coords: [1.0, 1.0] },    // Top right
-            Vertex { position: POS[3], tex_coords: [0.0, 1.0] },    // Top left
-
-            // Back face (CCW)
-            Vertex { position: POS[4], tex_coords: [0.0, 0.0] },    // Bottom right
-            Vertex { position: POS[5], tex_coords: [1.0, 0.0] },    // Bottom left
-            Vertex { position: POS[6], tex_coords: [1.0, 1.0] },    // Top left
-            Vertex { position: POS[7], tex_coords: [0.0, 1.0] },    // Top right
-
-            // Top face (CCW)
-            Vertex { position: POS[3], tex_coords: [0.0, 0.0] },    // Front left
-            Vertex { position: POS[2], tex_coords: [1.0, 0.0] },    // Front right
-            Vertex { position: POS[7], tex_coords: [1.0, 1.0] },    // Back right
-            Vertex { position: POS[6], tex_coords: [0.0, 1.0] },    // Back left
-
-            // Bottom face (CCW)
-            Vertex { position: POS[5], tex_coords: [0.0, 0.0] },    // Back left
-            Vertex { position: POS[4], tex_coords: [1.0, 0.0] },    // Back right
-            Vertex { position: POS[1], tex_coords: [1.0, 1.0] },    // Front right
-            Vertex { position: POS[0], tex_coords: [0.0, 1.0] },    // Front left
-
-            // Right face (CCW)
-            Vertex { position: POS[1], tex_coords: [0.0, 0.0] },    // Front bottom
-            Vertex { position: POS[4], tex_coords: [1.0, 0.0] },    // Back bottom
-            Vertex { position: POS[7], tex_coords: [1.0, 1.0] },    // Back top
-            Vertex { position: POS[2], tex_coords: [0.0, 1.0] },    // Front top
-
-            // Left face (CCW)
-            Vertex { position: POS[5], tex_coords: [0.0, 0.0] },    // Back bottom
-            Vertex { position: POS[0], tex_coords: [1.0, 0.0] },    // Front bottom
-            Vertex { position: POS[3], tex_coords: [1.0, 1.0] },    // Front top
-            Vertex { position: POS[6], tex_coords: [0.0, 1.0] },    // Back top
-        ];
-
-        // Define indices for the cube (using triangles)
-        const INDICES: &[u16] = &[
+        let vertices: &[Vertex] = &[
             // Front face
-            0, 1, 2, 2, 3, 0,
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
+            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
 
             // Back face
-            4, 5, 6, 6, 7, 4,
+            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
 
             // Left face
-            8, 9, 10, 10, 11, 8,
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
+            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
 
             // Right face
-            12, 13, 14, 14, 15, 12,
+            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
 
             // Top face
-            16, 17, 18, 18, 19, 16,
+            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 0.0], },
 
             // Bottom face
-            20, 21, 22, 22, 23, 20,
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
+            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
+            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 1.0], },
         ];
 
-        // holds vertices, available in shader
-        let vertex_buffer = graphics_context.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-
-        let index_buffer = graphics_context.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
-
-        let num_indices = INDICES.len() as u32;
 
         const DEF: Block = Block::Air;
 
@@ -143,16 +116,71 @@ impl<'a> Renderer<'a> {
             }
         }
 
-        let instances: Vec<_> = data.blocks.iter()
-            .enumerate()
-            .filter(|(_, b)| **b != Block::Air)
-            .map(|(pos, _)| {
-                let pos = ChunkPos(pos as u16);
-                Instance { position: Vec3::new(pos.x() as f32, pos.y() as f32, pos.z() as f32), rotation: Default::default() }
-            }).collect();
+        let mut vert = Vec::new();
+
+        for (i, block) in data.blocks.iter().enumerate() {
+            if *block == Block::Air {
+                continue;
+            }
+            let pos = ChunkPos(i as u16);
+
+            for i in 0..6 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+
+            for i in 6..12 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+
+            for i in 12..18 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+
+            for i in 18..24 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+
+            for i in 24..30 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+
+            for i in 30..36 {
+                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+            }
+            // break;
+        }
+
+        let vert = vert.as_slice();
+
+        // holds vertices, available in shader
+        let vertex_buffer = graphics_context.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vert),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+
+        let index_buffer = graphics_context.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::INDEX,
+            }
+        );
+
+        let num_indices = vert.len() as u32;
+
+        // let instances: Vec<_> = data.blocks.iter()
+        //     .enumerate()
+        //     .filter(|(_, b)| **b != Block::Air)
+        //     .map(|(pos, _)| {
+        //         let pos = ChunkPos(pos as u16);
+        //         Instance { position: Vec3::new(pos.x() as f32, pos.y() as f32, pos.z() as f32), rotation: Default::default() }
+        //     }).collect();
 
         // 3. instancing to avoid duplicate meshes
-        // let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
+        let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
         let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         // buffer with matrices representing each instance's position & rotation
@@ -358,10 +386,11 @@ impl<'a> Renderer<'a> {
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
 
         // indices are u16, use the whole model defined by the indices with slice(..), only one index buffer at a time
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        // render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         // draw the whole range of indices, and all instances
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
+        render_pass.draw(0..self.num_indices, 0..1);
+        // render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
 
         // finish the command buffer & submit to GPU
         drop(render_pass);
