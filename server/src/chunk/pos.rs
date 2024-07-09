@@ -23,7 +23,7 @@ macro_rules! impl_getters_setters {
 
 pub struct ChunkCoordOutOfRange;
 
-#[derive(Eq, PartialEq, Default)]
+#[derive(Eq, PartialEq, Default, Copy, Clone)]
 pub struct ChunkPos(pub u16);
 
 impl fmt::Debug for ChunkPos {
