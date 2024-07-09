@@ -1,7 +1,11 @@
 use glm::Vec3;
 use na::{Unit, UnitQuaternion};
+use rand::Rng;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
+use server::block::Block;
+use server::chunk::data::ChunkData;
+use server::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -129,9 +133,26 @@ impl<'a> Renderer<'a> {
 
         let num_indices = INDICES.len() as u32;
 
+        const DEF: Block = Block::Air;
+
+        let mut data = ChunkData { blocks: [DEF; 65536] };
+
+        for pos in 0..=65535 {
+            if rand::thread_rng().gen_bool(0.1) {
+                data.set_block(ChunkPos(pos), Block::Dirt);
+            }
+        }
+
+        let instances: Vec<_> = data.blocks.iter()
+            .enumerate()
+            .filter(|(_, b)| **b != Block::Air)
+            .map(|(pos, _)| {
+                let pos = ChunkPos(pos as u16);
+                Instance { position: Vec3::new(pos.x() as f32, pos.y() as f32, pos.z() as f32), rotation: Default::default() }
+            }).collect();
 
         // 3. instancing to avoid duplicate meshes
-        let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
+        // let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
         let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         // buffer with matrices representing each instance's position & rotation
@@ -340,8 +361,7 @@ impl<'a> Renderer<'a> {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         // draw the whole range of indices, and all instances
-        // render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1 as _);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
 
         // finish the command buffer & submit to GPU
         drop(render_pass);
