@@ -16,7 +16,7 @@ macro_rules! impl_getters_setters {
         }
 
         pub fn $axis(&self) -> u8 {
-            ((self.0 >> $offset) & $max) as u8
+            (self.0 >> $offset & $max) as u8
         }
     };
 }
@@ -42,11 +42,9 @@ impl ChunkPos {
     }
 
     pub fn new_unchecked(x: u8, y: u8, z: u8) -> Self {
-        let mut pos = 0;
-
-        pos = (pos & !(0x1f << 0)) | ((x as u16) << 0);
-        pos = (pos & !(0x3f << 5)) | ((y as u16) << 5);
-        pos = (pos & !(0x1f << 11)) | ((z as u16) << 11);
+        let mut pos = x as u16;
+        pos |= (y as u16) << 5;
+        pos |= (z as u16) << 11;
 
         Self(pos)
     }
