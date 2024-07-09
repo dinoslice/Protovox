@@ -10,12 +10,17 @@ struct VertexInput {
     @location(1) tex_coords: vec2<f32>,
 }
 
-struct InstanceInput {
-    @location(2) model_matrix_0: vec4<f32>,
-    @location(3) model_matrix_1: vec4<f32>,
-    @location(4) model_matrix_2: vec4<f32>,
-    @location(5) model_matrix_3: vec4<f32>,
-};
+struct FaceData {
+    @location(2) face: vec2<u32>,
+    @location(3) position: vec3<f32>,
+}
+
+//struct InstanceInput {
+//    @location(2) model_matrix_0: vec4<f32>,
+//    @location(3) model_matrix_1: vec4<f32>,
+//    @location(4) model_matrix_2: vec4<f32>,
+//    @location(5) model_matrix_3: vec4<f32>,
+//};
 
 // stores the output of the vertex shader
 struct VertexOutput {
@@ -25,21 +30,54 @@ struct VertexOutput {
     @location(0) tex_coords: vec2<f32>,
 }
 
+const FACE_BOTTOM: u32 = 0;
+const FACE_TOP: u32 = 1;
+const FACE_FRONT: u32 = 2;
+const FACE_BACK: u32 = 3;
+const FACE_LEFT: u32 = 4;
+const FACE_RIGHT: u32 = 5;
+
 @vertex
 fn vs_main(
     model: VertexInput,
-    instance: InstanceInput,
+//    instance: InstanceInput,
+    face: FaceData,
 ) -> VertexOutput {
-    let model_matrix = mat4x4<f32>(
-        instance.model_matrix_0,
-        instance.model_matrix_1,
-        instance.model_matrix_2,
-        instance.model_matrix_3,
-    );
+//    let model_matrix = mat4x4<f32>(
+//        instance.model_matrix_0,
+//        instance.model_matrix_1,
+//        instance.model_matrix_2,
+//        instance.model_matrix_3,
+//    );
+
+    var pos: vec3<f32> = model.position;
+
+    let f = face.face.x;
+
+    if (face.face.x == FACE_BOTTOM) {
+        pos = pos.zyx;
+    } else if (face.face.x == FACE_TOP) {
+        pos.y += 1.0;
+    } else if (face.face.x == FACE_FRONT) {
+        pos = pos.zxy;
+        pos.z += 1.0;
+    } else if (face.face.x == FACE_BACK) {
+        pos = pos.xzy;
+    } else if (face.face.x == FACE_LEFT) {
+        pos = pos.yxz;
+    } else if (face.face.x == FACE_RIGHT) {
+        pos = pos.yzx;
+        pos.x += 1.0;
+    }
 
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position, 1.0);
+
+    if (face.position.z != 0.0) {
+        out.tex_coords = vec2<f32>(0.0, 0.0);
+    }
+
+    out.clip_position = camera.view_proj * vec4<f32>(pos + face.position, 1.0);
     return out;
 }
 

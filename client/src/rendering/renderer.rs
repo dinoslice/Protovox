@@ -8,6 +8,7 @@ use server::chunk::data::ChunkData;
 use server::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::instance::Instance;
 use crate::rendering::texture::Texture;
@@ -27,7 +28,7 @@ pub struct Renderer<'a> {
 
     pub camera_uniform_buffer: CameraUniformBuffer,
 
-    pub instances: Vec<Instance>,
+    pub instances: Vec<FaceData>,
     pub instance_buffer: wgpu::Buffer,
 
     pub depth_texture: Texture,
@@ -55,56 +56,62 @@ impl<'a> Renderer<'a> {
             [1.0, 1.0, -1.0],          // 7: Top right back
         ];
 
-        let vertices: &[Vertex] = &[
-            // Front face
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
-            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
+        // let vertices: &[Vertex] = &[
+        //     // Front face
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
+        //     Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 1.0], },
+        //
+        //     // Back face
+        //     Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
+        //
+        //     // Left face
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [0.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
+        //     Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
+        //
+        //     // Right face
+        //     Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
+        //
+        //     // Top face
+        //     Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 0.0], },
+        //
+        //     // Bottom face
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
+        //     Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
+        //     Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
+        //     Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 1.0], },
+        // ];
 
-            // Back face
-            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
-
-            // Left face
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
-            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
-
-            // Right face
-            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [0.0, 1.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 0.0], },
-
-            // Top face
-            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [0.0, 1.0, 1.0], tex_coords: [0.0, 1.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 1.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [1.0, 1.0, 0.0], tex_coords: [1.0, 0.0], },
-
-            // Bottom face
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0], },
-            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0], },
-            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0], },
-            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 1.0], },
+        let base_face = &[
+            Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0] },
+            Vertex { position: [0.0, 0.0, 1.0], tex_coords: [0.0, 1.0] },
+            Vertex { position: [1.0, 0.0, 0.0], tex_coords: [1.0, 0.0] },
+            Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0] },
         ];
-
 
         const DEF: Block = Block::Air;
 
@@ -116,47 +123,47 @@ impl<'a> Renderer<'a> {
             }
         }
 
-        let mut vert = Vec::new();
+        // let mut vert = Vec::new();
 
-        for (i, block) in data.blocks.iter().enumerate() {
-            if *block == Block::Air {
-                continue;
-            }
-            let pos = ChunkPos(i as u16);
+        // for (i, block) in data.blocks.iter().enumerate() {
+        //     if *block == Block::Air {
+        //         continue;
+        //     }
+        //     let pos = ChunkPos(i as u16);
+        //
+        //     for i in 0..6 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //
+        //     for i in 6..12 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //
+        //     for i in 12..18 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //
+        //     for i in 18..24 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //
+        //     for i in 24..30 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //
+        //     for i in 30..36 {
+        //         vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
+        //     }
+        //     // break;
+        // }
 
-            for i in 0..6 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-
-            for i in 6..12 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-
-            for i in 12..18 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-
-            for i in 18..24 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-
-            for i in 24..30 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-
-            for i in 30..36 {
-                vert.push(vertices[i].add_pos(pos.x() as f32, pos.y() as f32, pos.z() as f32));
-            }
-            // break;
-        }
-
-        let vert = vert.as_slice();
+        let vert = base_face.as_slice();
 
         // holds vertices, available in shader
         let vertex_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vert),
+                contents: bytemuck::cast_slice(base_face),
                 usage: wgpu::BufferUsages::VERTEX,
             }
         );
@@ -164,12 +171,12 @@ impl<'a> Renderer<'a> {
         let index_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(vertices),
+                contents: bytemuck::cast_slice(base_face),
                 usage: wgpu::BufferUsages::INDEX,
             }
         );
 
-        let num_indices = vert.len() as u32;
+        let num_indices = base_face.len() as u32;
 
         // let instances: Vec<_> = data.blocks.iter()
         //     .enumerate()
@@ -180,14 +187,32 @@ impl<'a> Renderer<'a> {
         //     }).collect();
 
         // 3. instancing to avoid duplicate meshes
-        let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
-        let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
+        // let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
+        // let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
+
+        let instances = vec![
+            FaceData::new(0.0, 0.0, 0.0, 0),
+            FaceData::new(0.0, 0.0, 0.0, 1),
+            FaceData::new(0.0, 0.0, 0.0, 2),
+            FaceData::new(0.0, 0.0, 0.0, 3),
+            FaceData::new(0.0, 0.0, 0.0, 4),
+            FaceData::new(0.0, 0.0, 0.0, 5),
+
+            FaceData::new(0.0, 0.0, 1.0, 0),
+            FaceData::new(0.0, 0.0, 1.0, 1),
+            FaceData::new(0.0, 0.0, 1.0, 2),
+            FaceData::new(0.0, 0.0, 1.0, 3),
+            FaceData::new(0.0, 0.0, 1.0, 4),
+            FaceData::new(0.0, 0.0, 1.0, 5),
+            // FaceData::new(0.0, 0.0, 0.0, 2),
+            // FaceData::new(0.0, 0.0, 0.0, 3)
+        ];
 
         // buffer with matrices representing each instance's position & rotation
         let instance_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
-                contents: bytemuck::cast_slice(&instance_data),
+                contents: bytemuck::cast_slice(&instances),
                 usage: wgpu::BufferUsages::VERTEX, // only needed in vertex buffer
             }
         );
@@ -262,7 +287,7 @@ impl<'a> Renderer<'a> {
                 entry_point: "vs_main",
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
-                    Vertex::buffer_desc(), Instance::buffer_desc()
+                    Vertex::buffer_desc(), FaceData::buffer_desc()
                 ],
             },
             fragment: Some(wgpu::FragmentState {
@@ -276,7 +301,7 @@ impl<'a> Renderer<'a> {
                 })],
             }),
             primitive: wgpu::PrimitiveState { // how to interpret vertices when converting to triangles
-                topology: wgpu::PrimitiveTopology::TriangleList, // 3 vert per triangle
+                topology: wgpu::PrimitiveTopology::TriangleStrip, // 3 vert per triangle
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // counter-clockwise ordered faces are front
                 cull_mode: Some(wgpu::Face::Back), // backface culling
@@ -389,7 +414,7 @@ impl<'a> Renderer<'a> {
         // render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         // draw the whole range of indices, and all instances
-        render_pass.draw(0..self.num_indices, 0..1);
+        render_pass.draw(0..self.num_indices, 0..self.instances.len() as _);
         // render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
 
         // finish the command buffer & submit to GPU
