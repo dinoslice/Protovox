@@ -1,0 +1,66 @@
+use wgpu::util::DeviceExt;
+use crate::rendering::graphics_context::GraphicsContext;
+
+pub struct CameraUniformBuffer {
+    pub buffer: wgpu::Buffer,
+    pub bind_group_layout: wgpu::BindGroupLayout,
+    pub bind_group: wgpu::BindGroup,
+}
+
+impl CameraUniformBuffer {
+    pub fn new(g_ctx: &GraphicsContext) -> Self {
+        Self::new_with_initial_buffer(g_ctx, &[[0.0; 4]; 4])
+    }
+
+    pub fn new_with_initial_buffer(g_ctx: &GraphicsContext, initial_uniform: &[[f32; 4]; 4]) -> Self {
+        // buffer to hold the camera matrix
+        let buffer = g_ctx.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("camera_uniform_buffer"),
+                contents: bytemuck::cast_slice(initial_uniform),
+                // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let bind_group_layout = g_ctx.device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("camera_bind_group_layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX, // only need the camera in the vertex shader
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform, // var<uniform> in wgsl
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }
+                ],
+            }
+        );
+
+        // bind group for the camera uniform, resource is the whole contents of the buffer
+        let bind_group = g_ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buffer.as_entire_binding(),
+                }
+            ],
+            label: Some("camera_bind_group"),
+        });
+
+        Self {
+            buffer,
+            bind_group_layout,
+            bind_group,
+        }
+    }
+
+    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[[f32; 4]; 4]) {
+        g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(uniform));
+    }
+}
