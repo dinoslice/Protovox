@@ -1,4 +1,3 @@
-// Vertex shader
 struct Camera {
     view_proj: mat4x4<f32>,
 }
@@ -11,16 +10,8 @@ struct VertexInput {
 }
 
 struct FaceData {
-    @location(2) face: vec2<u32>,
-    @location(3) position: vec3<f32>,
+    @location(2) data: u32,
 }
-
-//struct InstanceInput {
-//    @location(2) model_matrix_0: vec4<f32>,
-//    @location(3) model_matrix_1: vec4<f32>,
-//    @location(4) model_matrix_2: vec4<f32>,
-//    @location(5) model_matrix_3: vec4<f32>,
-//};
 
 // stores the output of the vertex shader
 struct VertexOutput {
@@ -43,41 +34,39 @@ fn vs_main(
 //    instance: InstanceInput,
     face: FaceData,
 ) -> VertexOutput {
-//    let model_matrix = mat4x4<f32>(
-//        instance.model_matrix_0,
-//        instance.model_matrix_1,
-//        instance.model_matrix_2,
-//        instance.model_matrix_3,
-//    );
 
+    // unpack data
+    let chunk_pos = vec3(
+        f32(face.data >> 0 & 31),
+        f32(face.data >> 5 & 63),
+        f32(face.data >> 11 & 31),
+    );
+    let face_type = face.data >> 16 & 0x7;
+
+
+    // correct face orientation
     var pos: vec3<f32> = model.position;
 
-    let f = face.face.x;
-
-    if (face.face.x == FACE_BOTTOM) {
+    if (face_type == FACE_BOTTOM) {
         pos = pos.zyx;
-    } else if (face.face.x == FACE_TOP) {
+    } else if (face_type == FACE_TOP) {
         pos.y += 1.0;
-    } else if (face.face.x == FACE_FRONT) {
+    } else if (face_type == FACE_FRONT) {
         pos = pos.zxy;
         pos.z += 1.0;
-    } else if (face.face.x == FACE_BACK) {
+    } else if (face_type == FACE_BACK) {
         pos = pos.xzy;
-    } else if (face.face.x == FACE_LEFT) {
+    } else if (face_type == FACE_LEFT) {
         pos = pos.yxz;
-    } else if (face.face.x == FACE_RIGHT) {
+    } else if (face_type == FACE_RIGHT) {
         pos = pos.yzx;
         pos.x += 1.0;
     }
 
+    // return result
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-
-    if (face.position.z != 0.0) {
-        out.tex_coords = vec2<f32>(0.0, 0.0);
-    }
-
-    out.clip_position = camera.view_proj * vec4<f32>(pos + face.position, 1.0);
+    out.clip_position = camera.view_proj * vec4<f32>(pos + chunk_pos, 1.0);
     return out;
 }
 

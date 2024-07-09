@@ -1,24 +1,21 @@
+use server::chunk::pos::ChunkPos;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct FaceData {
-    pub face: u32,
-    pub _pad: u32,
-    pub pos: [f32; 3],
-}
+pub struct FaceData(u32);
 
 impl FaceData {
-    pub fn new(x: f32, y: f32, z: f32, face: u8) -> Self {
-        Self {
-            face: face as u32,
-            _pad: 0,
-            pos: [x, y, z],
-        }
+    pub fn new(pos: ChunkPos, face: FaceType) -> Self {
+        let mut data = pos.0 as _;
+        data |= (face as u8 as u32 & 0x7) << 16;
+
+        Self(data)
     }
 
     pub fn buffer_desc() -> wgpu::VertexBufferLayout<'static> {
         // corresponds to using @location(x) in shader, how to read the buffer, what types and offsets
-        const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-            wgpu::vertex_attr_array![2 => Uint32x2, 3 => Float32x3];
+        const ATTRIBUTES: [wgpu::VertexAttribute; 1] =
+            wgpu::vertex_attr_array![2 => Uint32];
 
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress, // how wide (bytes) each vertex is

@@ -8,7 +8,7 @@ use server::chunk::data::ChunkData;
 use server::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::face_data::FaceData;
+use crate::rendering::face_data::{FaceData, FaceType};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::instance::Instance;
 use crate::rendering::texture::Texture;
@@ -176,36 +176,24 @@ impl<'a> Renderer<'a> {
             }
         );
 
-        let num_indices = base_face.len() as u32;
-
-        // let instances: Vec<_> = data.blocks.iter()
-        //     .enumerate()
-        //     .filter(|(_, b)| **b != Block::Air)
-        //     .map(|(pos, _)| {
-        //         let pos = ChunkPos(pos as u16);
-        //         Instance { position: Vec3::new(pos.x() as f32, pos.y() as f32, pos.z() as f32), rotation: Default::default() }
-        //     }).collect();
-
         // 3. instancing to avoid duplicate meshes
         // let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
         // let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         let instances = vec![
-            FaceData::new(0.0, 0.0, 0.0, 0),
-            FaceData::new(0.0, 0.0, 0.0, 1),
-            FaceData::new(0.0, 0.0, 0.0, 2),
-            FaceData::new(0.0, 0.0, 0.0, 3),
-            FaceData::new(0.0, 0.0, 0.0, 4),
-            FaceData::new(0.0, 0.0, 0.0, 5),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Top),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Bottom),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Left),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Right),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Front),
+            // FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Back),
 
-            FaceData::new(0.0, 0.0, 1.0, 0),
-            FaceData::new(0.0, 0.0, 1.0, 1),
-            FaceData::new(0.0, 0.0, 1.0, 2),
-            FaceData::new(0.0, 0.0, 1.0, 3),
-            FaceData::new(0.0, 0.0, 1.0, 4),
-            FaceData::new(0.0, 0.0, 1.0, 5),
-            // FaceData::new(0.0, 0.0, 0.0, 2),
-            // FaceData::new(0.0, 0.0, 0.0, 3)
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Top),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Bottom),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Left),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Right),
+            // FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Front),
+            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Back),
         ];
 
         // buffer with matrices representing each instance's position & rotation
@@ -216,6 +204,8 @@ impl<'a> Renderer<'a> {
                 usage: wgpu::BufferUsages::VERTEX, // only needed in vertex buffer
             }
         );
+
+        let num_indices = base_face.len() as _;
 
 
         // 4. load textures into bind group
