@@ -1,2 +1,2 @@
-mod pos;
-mod data;
+pub mod pos;
+pub mod data;
