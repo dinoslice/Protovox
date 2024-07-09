@@ -71,7 +71,7 @@ impl Texture {
                 address_mode_u: wgpu::AddressMode::ClampToEdge, // repeats the last pixel, to the end
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
-                mag_filter: wgpu::FilterMode::Linear, // when close to the texture, use lin interpolation when displaying
+                mag_filter: wgpu::FilterMode::Nearest, // when close to the texture, use nearest when displaying
                 min_filter: wgpu::FilterMode::Nearest, // when far, use nearest when displaying
                 mipmap_filter: wgpu::FilterMode::Nearest,
                 ..Default::default()

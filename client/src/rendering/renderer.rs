@@ -34,20 +34,80 @@ impl<'a> Renderer<'a> {
         // 1. establishing a connection to the GPU
         let graphics_context = GraphicsContext::new(window);
 
-        // 2. load vertices & indices
-        const VERTICES: &[Vertex] = &[
-            Vertex { position: [-0.0868241, 0.49240386, 0.0], tex_coords: [0.4131759, 0.00759614], },
-            Vertex { position: [-0.49513406, 0.06958647, 0.0], tex_coords: [0.0048659444, 0.43041354], },
-            Vertex { position: [-0.21918549, -0.44939706, 0.0], tex_coords: [0.28081453, 0.949397], },
-            Vertex { position: [0.35966998, -0.3473291, 0.0], tex_coords: [0.85967, 0.84732914], },
-            Vertex { position: [0.44147372, 0.2347359, 0.0], tex_coords: [0.9414737, 0.2652641], },
+        // Define vertices for a cube with one corner at (0, 0, 0) and each side length 1
+        // const POS: &[[f32; 8]] = {
+        //
+        // }
+
+        const POS: &[[f32; 3]] = &[
+            // Positions adjusted so that one corner is at the origin (0, 0, 0)
+            [0.0, 0.0, 0.0],           // 0: Origin
+            [1.0, 0.0, 0.0],           // 1: Bottom right front
+            [1.0, 1.0, 0.0],           // 2: Top right front
+            [0.0, 1.0, 0.0],           // 3: Top left front
+            [1.0, 0.0, -1.0],          // 4: Bottom right back
+            [0.0, 0.0, -1.0],          // 5: Bottom left back
+            [0.0, 1.0, -1.0],          // 6: Top left back
+            [1.0, 1.0, -1.0],          // 7: Top right back
         ];
 
-        // using indices eliminates duplicate vertices
+        const VERTICES: &[Vertex] = &[
+            // Front face (CCW)
+            Vertex { position: POS[0], tex_coords: [0.0, 0.0] },    // Bottom left
+            Vertex { position: POS[1], tex_coords: [1.0, 0.0] },    // Bottom right
+            Vertex { position: POS[2], tex_coords: [1.0, 1.0] },    // Top right
+            Vertex { position: POS[3], tex_coords: [0.0, 1.0] },    // Top left
+
+            // Back face (CCW)
+            Vertex { position: POS[4], tex_coords: [0.0, 0.0] },    // Bottom right
+            Vertex { position: POS[5], tex_coords: [1.0, 0.0] },    // Bottom left
+            Vertex { position: POS[6], tex_coords: [1.0, 1.0] },    // Top left
+            Vertex { position: POS[7], tex_coords: [0.0, 1.0] },    // Top right
+
+            // Top face (CCW)
+            Vertex { position: POS[3], tex_coords: [0.0, 0.0] },    // Front left
+            Vertex { position: POS[2], tex_coords: [1.0, 0.0] },    // Front right
+            Vertex { position: POS[7], tex_coords: [1.0, 1.0] },    // Back right
+            Vertex { position: POS[6], tex_coords: [0.0, 1.0] },    // Back left
+
+            // Bottom face (CCW)
+            Vertex { position: POS[5], tex_coords: [0.0, 0.0] },    // Back left
+            Vertex { position: POS[4], tex_coords: [1.0, 0.0] },    // Back right
+            Vertex { position: POS[1], tex_coords: [1.0, 1.0] },    // Front right
+            Vertex { position: POS[0], tex_coords: [0.0, 1.0] },    // Front left
+
+            // Right face (CCW)
+            Vertex { position: POS[1], tex_coords: [0.0, 0.0] },    // Front bottom
+            Vertex { position: POS[4], tex_coords: [1.0, 0.0] },    // Back bottom
+            Vertex { position: POS[7], tex_coords: [1.0, 1.0] },    // Back top
+            Vertex { position: POS[2], tex_coords: [0.0, 1.0] },    // Front top
+
+            // Left face (CCW)
+            Vertex { position: POS[5], tex_coords: [0.0, 0.0] },    // Back bottom
+            Vertex { position: POS[0], tex_coords: [1.0, 0.0] },    // Front bottom
+            Vertex { position: POS[3], tex_coords: [1.0, 1.0] },    // Front top
+            Vertex { position: POS[6], tex_coords: [0.0, 1.0] },    // Back top
+        ];
+
+        // Define indices for the cube (using triangles)
         const INDICES: &[u16] = &[
-            0, 1, 4,
-            1, 2, 4,
-            2, 3, 4,
+            // Front face
+            0, 1, 2, 2, 3, 0,
+
+            // Back face
+            4, 5, 6, 6, 7, 4,
+
+            // Left face
+            8, 9, 10, 10, 11, 8,
+
+            // Right face
+            12, 13, 14, 14, 15, 12,
+
+            // Top face
+            16, 17, 18, 18, 19, 16,
+
+            // Bottom face
+            20, 21, 22, 22, 23, 20,
         ];
 
         // holds vertices, available in shader
@@ -71,25 +131,7 @@ impl<'a> Renderer<'a> {
 
 
         // 3. instancing to avoid duplicate meshes
-        const NUM_INSTANCES_PER_ROW: u32 = 10;
-        const INSTANCE_DISPLACEMENT: Vec3 = Vec3::new(NUM_INSTANCES_PER_ROW as f32 * 0.5, 0.0, NUM_INSTANCES_PER_ROW as f32 * 0.5);
-
-        let instances: Vec<_> = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
-            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                let position = Vec3::new(x as f32, 0.0, z as f32) - INSTANCE_DISPLACEMENT;
-
-                let rotation = if position == Vec3::zeros() {
-                    UnitQuaternion::from_axis_angle(&Vec3::z_axis(), 0.0)
-                } else {
-                    UnitQuaternion::from_axis_angle(&Unit::new_normalize(position), std::f32::consts::FRAC_PI_4)
-                };
-
-                Instance {
-                    position, rotation,
-                }
-            })
-        }).collect();
-
+        let instances = vec![Instance { position: Default::default(), rotation: Default::default() }];
         let instance_data: Vec<_> = instances.iter().map(Instance::as_raw).collect();
 
         // buffer with matrices representing each instance's position & rotation
@@ -103,7 +145,7 @@ impl<'a> Renderer<'a> {
 
 
         // 4. load textures into bind group
-        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/tree.png"), "tree.png").unwrap();
+        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/cobblestone.png"), "cobblestone.png").unwrap();
 
         // bind group -> data constant through one draw call
         let diffuse_bind_group_layout =
@@ -298,7 +340,8 @@ impl<'a> Renderer<'a> {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         // draw the whole range of indices, and all instances
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
+        // render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..1 as _);
 
         // finish the command buffer & submit to GPU
         drop(render_pass);
