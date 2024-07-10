@@ -22,6 +22,8 @@ macro_rules! impl_getters_setters {
     };
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("The chunk coordinate was out of range. x: [0,31], y: [0,63], z: [0, 31]")]
 pub struct ChunkCoordOutOfRange;
 
 #[derive(Eq, PartialEq, Default, Copy, Clone)]
