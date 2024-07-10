@@ -5,4 +5,4 @@ pub mod rendering;
 pub mod input;
 pub mod application;
 pub mod camera;
-pub mod state;
+pub mod app_state;

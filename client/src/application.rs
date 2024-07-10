@@ -5,9 +5,7 @@ use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{CursorGrabMode, Window, WindowBuilder};
-use server::chunk::pos::ChunkPos;
-use crate::rendering::face_data::{FaceData, FaceType};
-use crate::state::State;
+use crate::app_state::AppState;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build()
@@ -18,26 +16,9 @@ pub fn run() {
         .build(&event_loop)
         .expect("window built successfully");
 
-    let mut state = State::new(&window);
+    let mut state = AppState::new(&window);
     let mut last_render_time = Instant::now();
     let mut capture_state = CaptureState(false);
-
-    // TODO: move this elsewhere
-    let instances = vec![
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Top),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Bottom),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Left),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Right),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Front),
-        // FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Back),
-
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Top),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Bottom),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Left),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Right),
-        // FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Front),
-        FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Back),
-    ];
 
     let res = event_loop.run(move |event, control_flow| {
         match event {
@@ -54,7 +35,7 @@ pub fn run() {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         state.update(&last_render_time.elapsed());
                         last_render_time = Instant::now();
-                        match state.renderer.render_faces(&state.camera, &instances) {
+                        match state.render() {
                             Ok(_) => {}
                             // Reconfigure the surface if lost
                             Err(wgpu::SurfaceError::Lost) => state.renderer.reconfigure(),
