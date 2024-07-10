@@ -45,16 +45,6 @@ impl<'a> Renderer<'a> {
             Vertex { position: [1.0, 0.0, 1.0], tex_coords: [1.0, 1.0] },
         ];
 
-        // const DEF: Block = Block::Air;
-        //
-        // let mut data = ChunkData { blocks: [DEF; 65536] };
-        //
-        // for pos in 0..=65535 {
-        //     if rand::thread_rng().gen_bool(0.1) {
-        //         data.set_block(ChunkPos(pos), Block::Dirt);
-        //     }
-        // }
-
         // holds vertices, available in shader
         let vertex_buffer = graphics_context.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -64,36 +54,22 @@ impl<'a> Renderer<'a> {
             }
         );
 
-        // 3. instancing to avoid duplicate meshes
+        let num_vertices = base_face.len() as _;
 
-        let instances = vec![
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Top),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Bottom),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Left),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Right),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Front),
-            // FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Back),
 
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Top),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Bottom),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Left),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Right),
-            // FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Front),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Back),
-        ];
+        // TODO: this can be reduced once culling is implemented
+        const FACE_BUFFER_MAX_SIZE: u64 = std::mem::size_of::<FaceData>() as u64 * 6 * 32 * 64 * 32;
 
-        // buffer with matrices representing each instance's position & rotation
-        let face_buffer = graphics_context.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Instance Buffer"),
-                contents: bytemuck::cast_slice(&instances),
-                usage: wgpu::BufferUsages::VERTEX, // only needed in vertex buffer
+        let face_buffer = graphics_context.device.create_buffer(
+            &wgpu::BufferDescriptor {
+                label: Some("Face Buffer"),
+                size: FACE_BUFFER_MAX_SIZE,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, // only needed in vertex buffer,
+                mapped_at_creation: false,
             }
         );
 
-        let num_vertices = base_face.len() as _;
-
-        let num_faces = instances.len() as _;
+        let num_faces = 0;
 
 
         // 4. load textures into bind group
@@ -231,7 +207,7 @@ impl<'a> Renderer<'a> {
         self.graphics_context.config.width as f32 / self.graphics_context.config.height as f32
     }
 
-    pub fn render(&mut self, camera: &Camera) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&mut self, camera: &Camera, faces: &[FaceData]) -> Result<(), wgpu::SurfaceError> {
         // get a surface texture to render to
         let output = self.graphics_context.surface.get_current_texture()?;
 
@@ -243,6 +219,9 @@ impl<'a> Renderer<'a> {
             label: Some("Render encoder"),
         });
 
+        // TODO: make faces take an option, which doesn't update if None
+        self.graphics_context.queue.write_buffer(&self.face_buffer, 0, bytemuck::cast_slice(faces));
+        self.num_faces = faces.len() as _;
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),

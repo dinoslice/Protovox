@@ -4,4 +4,4 @@ mod instance;
 mod graphics_context;
 mod camera_uniform_buffer;
 pub mod renderer;
-mod face_data;
+pub mod face_data;
