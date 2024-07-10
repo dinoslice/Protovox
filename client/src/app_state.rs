@@ -1,7 +1,9 @@
 use std::time::Duration;
+use glm::TVec3;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
+use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::input::InputManager;
@@ -93,6 +95,6 @@ impl<'a> AppState<'a> {
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         // TODO: add egui to display debug info
-        self.renderer.render_faces(&self.camera, &self.faces)
+        self.renderer.render_faces(&self.camera, &[(ChunkLocation(TVec3::new(0, -1, 0)), self.faces.as_slice())])
     }
 }

@@ -1,32 +1,25 @@
-use wgpu::util::DeviceExt;
 use crate::rendering::graphics_context::GraphicsContext;
 
-pub struct CameraUniformBuffer {
+pub struct ChunkPosUniformBuffer {
     pub buffer: wgpu::Buffer,
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
 }
 
-impl CameraUniformBuffer {
+impl ChunkPosUniformBuffer {
     pub fn new(g_ctx: &GraphicsContext) -> Self {
-        Self::new_with_initial_buffer(g_ctx, &[[0.0; 4]; 4])
-    }
-
-    // TODO: don't initialize?
-    pub fn new_with_initial_buffer(g_ctx: &GraphicsContext, initial_uniform: &[[f32; 4]; 4]) -> Self {
-        // buffer to hold the camera matrix
-        let buffer = g_ctx.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("camera_uniform_buffer"),
-                contents: bytemuck::cast_slice(initial_uniform),
-                // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
+        let buffer = g_ctx.device.create_buffer(
+            &wgpu::BufferDescriptor {
+                label: Some("chunk_pos_uniform_buffer"),
+                size: std::mem::size_of::<[i32; 3]>() as _,
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
             }
         );
 
         let bind_group_layout = g_ctx.device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
-                label: Some("camera_bind_group_layout"),
+                label: Some("chunk_pos_uniform_bind_group_layout"),
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
@@ -51,7 +44,7 @@ impl CameraUniformBuffer {
                     resource: buffer.as_entire_binding(),
                 }
             ],
-            label: Some("camera_bind_group"),
+            label: Some("chunk_pos_uniform_bind_group"),
         });
 
         Self {
@@ -61,7 +54,7 @@ impl CameraUniformBuffer {
         }
     }
 
-    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[[f32; 4]; 4]) {
-        g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(uniform));
+    pub fn update_buffer(&self, g_ctx: &GraphicsContext, chunk_pos: &[f32; 3]) {
+        g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(chunk_pos));
     }
 }
