@@ -122,7 +122,7 @@ impl<'a> Renderer<'a> {
         // 5. pipeline / instructions for GPU
 
         // loads a shader and returns a handle to the compiled shader
-        let shader = graphics_context.device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
+        let shader = graphics_context.device.create_shader_module(wgpu::include_wgsl!("shaders/shader.wgsl"));
 
         let depth_texture = Texture::create_depth_texture(&graphics_context.device, &graphics_context.config, "depth texture");
 
