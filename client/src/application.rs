@@ -54,7 +54,7 @@ pub fn run() {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         state.update(&last_render_time.elapsed());
                         last_render_time = Instant::now();
-                        match state.renderer.render(&state.camera, &instances) {
+                        match state.renderer.render_faces(&state.camera, &instances) {
                             Ok(_) => {}
                             // Reconfigure the surface if lost
                             Err(wgpu::SurfaceError::Lost) => state.renderer.reconfigure(),

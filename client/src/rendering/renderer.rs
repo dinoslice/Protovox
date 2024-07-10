@@ -207,7 +207,7 @@ impl<'a> Renderer<'a> {
         self.graphics_context.config.width as f32 / self.graphics_context.config.height as f32
     }
 
-    pub fn render(&mut self, camera: &Camera, faces: &[FaceData]) -> Result<(), wgpu::SurfaceError> {
+    pub fn render_faces(&mut self, camera: &Camera, faces: &[FaceData]) -> Result<(), wgpu::SurfaceError> {
         // get a surface texture to render to
         let output = self.graphics_context.surface.get_current_texture()?;
 
