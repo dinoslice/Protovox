@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::chunk::CHUNK_SIZE;
 
 macro_rules! impl_getters_setters {
     ($axis:ident, $set_axis:ident, $set_axis_unchecked:ident, $offset:expr, $max:expr) => {
@@ -34,7 +35,7 @@ impl fmt::Debug for ChunkPos {
 
 impl ChunkPos {
     pub fn new(x: u8, y: u8, z: u8) -> Result<Self, ChunkCoordOutOfRange> {
-        if x > 31 || y > 63 || z > 31 {
+        if x >= CHUNK_SIZE.x || y >= CHUNK_SIZE.y || z > CHUNK_SIZE.z {
             return Err(ChunkCoordOutOfRange);
         }
 
@@ -49,9 +50,9 @@ impl ChunkPos {
         Self(pos)
     }
 
-    impl_getters_setters!(x, set_x, set_x_unchecked, 0, 31);
-    impl_getters_setters!(y, set_y, set_y_unchecked, 5, 63);
-    impl_getters_setters!(z, set_z, set_z_unchecked, 11, 31);
+    impl_getters_setters!(x, set_x, set_x_unchecked, 0, CHUNK_SIZE.x - 1);
+    impl_getters_setters!(y, set_y, set_y_unchecked, 5, CHUNK_SIZE.y - 1);
+    impl_getters_setters!(z, set_z, set_z_unchecked, 11, CHUNK_SIZE.z - 1);
 }
 
 #[cfg(test)]
@@ -60,9 +61,9 @@ mod tests {
 
     #[test]
     pub fn test_unchecked() {
-        for x in 0..32 {
-            for y in 0..64 {
-                for z in 0..32 {
+        for x in 0..CHUNK_SIZE.x {
+            for y in 0..CHUNK_SIZE.y {
+                for z in 0..CHUNK_SIZE.z {
                     let pos = ChunkPos::new_unchecked(x, y, z);
 
                     let mut pos2 = ChunkPos(0xffff);
