@@ -1,4 +1,5 @@
 use std::fmt;
+use glm::TVec3;
 use crate::chunk::CHUNK_SIZE;
 
 macro_rules! impl_getters_setters {
@@ -55,6 +56,20 @@ impl ChunkPos {
     impl_getters_setters!(x, set_x, set_x_unchecked, 0, CHUNK_SIZE.x - 1);
     impl_getters_setters!(y, set_y, set_y_unchecked, 5, CHUNK_SIZE.y - 1);
     impl_getters_setters!(z, set_z, set_z_unchecked, 11, CHUNK_SIZE.z - 1);
+}
+
+impl TryFrom<&TVec3<u8>> for ChunkPos {
+    type Error = ChunkCoordOutOfRange;
+
+    fn try_from(pos: &TVec3<u8>) -> Result<Self, Self::Error> {
+        Self::new(pos.x, pos.y, pos.z)
+    }
+}
+
+impl From<ChunkPos> for TVec3<u8> {
+    fn from(chunk_pos: ChunkPos) -> Self {
+        Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+    }
 }
 
 #[cfg(test)]
