@@ -1,16 +1,9 @@
-use glm::Vec3;
-use na::{Unit, UnitQuaternion};
-use rand::Rng;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use server::block::Block;
-use server::chunk::data::ChunkData;
-use server::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::face_data::{FaceData, FaceType};
+use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::instance::Instance;
 use crate::rendering::texture::Texture;
 use crate::rendering::vertex::Vertex;
 
@@ -73,7 +66,8 @@ impl<'a> Renderer<'a> {
 
 
         // 4. load textures into bind group
-        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/cobblestone.png"), "cobblestone.png").unwrap();
+        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/cobblestone.png"), "cobblestone.png")
+            .expect("cobblestone texture didn't exist");
 
         // bind group -> data constant through one draw call
         let diffuse_bind_group_layout =
