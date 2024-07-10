@@ -13,11 +13,11 @@ macro_rules! impl_getters_setters {
         }
 
         pub fn $set_axis_unchecked(&mut self, $axis: u8) {
-            self.0 = (self.0 & !($max << $offset)) | (($axis as u16) << $offset);
+            self.0 = (self.0 & !(($max as u16) << $offset)) | (($axis as u16) << $offset);
         }
 
         pub fn $axis(&self) -> u8 {
-            (self.0 >> $offset & $max) as u8
+            (self.0 >> $offset & $max as u16) as u8
         }
     };
 }
