@@ -37,8 +37,18 @@ impl Camera {
         let (yaw_sin, yaw_cos) = self.yaw.sin_cos();
         let forward = Vec3::new(yaw_cos, 0.0, yaw_sin).normalize();
         let right = Vec3::new(-yaw_sin, 0.0, yaw_cos).normalize();
-        self.position += forward * movement_scaled.z;
+
         self.position += right * movement_scaled.x;
+        self.position.y += movement_scaled.y;
+        self.position += forward * movement_scaled.z;
+
+
+        // Rotate
+        self.yaw += rotate_scaled.x;
+        self.pitch -= rotate_scaled.y;
+
+        const SAFE_FRAC_PI_2: f32 = std::f32::consts::FRAC_PI_2 - 0.0001;
+        self.pitch = self.pitch.clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
 
 
         const SCROLL_SCALE: f32 = 0.32;
@@ -55,16 +65,6 @@ impl Camera {
             }
             _ => self.speed
         }.clamp(0.0, 125.0);
-
-        self.position.y += movement_scaled.y;
-
-        // Rotate
-        self.yaw += rotate_scaled.x;
-        self.pitch -= rotate_scaled.y;
-
-        const SAFE_FRAC_PI_2: f32 = std::f32::consts::FRAC_PI_2 - 0.0001;
-
-        self.pitch = self.pitch.clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
 
         input.mouse_manager.reset_scroll_rotate();
     }
