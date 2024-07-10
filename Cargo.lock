@@ -393,12 +393,12 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "chrono",
+ "game",
  "image",
  "nalgebra",
  "nalgebra-glm",
  "pollster",
  "rand",
- "server",
  "tinybitset",
  "tracing",
  "tracing-subscriber",
@@ -691,6 +691,17 @@ name = "foreign-types-shared"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
+
+[[package]]
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "nalgebra-glm",
+ "thiserror",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "gethostname"
@@ -1926,17 +1937,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79e674e01f999af37c49f70a6ede167a8a60b2503e56c5599532a65baa5969a0"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "nalgebra",
- "nalgebra-glm",
- "thiserror",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

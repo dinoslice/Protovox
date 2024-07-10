@@ -2,7 +2,7 @@ use std::time::Duration;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
-use server::chunk::pos::ChunkPos;
+use game::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::input::InputManager;
 use crate::rendering::face_data::{FaceData, FaceType};

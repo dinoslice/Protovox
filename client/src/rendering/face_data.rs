@@ -1,4 +1,4 @@
-use server::chunk::pos::ChunkPos;
+use game::chunk::pos::ChunkPos;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
