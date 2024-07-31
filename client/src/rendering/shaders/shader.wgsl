@@ -34,6 +34,8 @@ const FACE_BACK: u32 = 3;
 const FACE_LEFT: u32 = 4;
 const FACE_RIGHT: u32 = 5;
 
+const CHUNK_SIZE: vec3<u32> = vec3(32, 64, 32);
+
 @vertex
 fn vs_main(
     model: VertexInput,
@@ -69,7 +71,7 @@ fn vs_main(
         pos.x += 1.0;
     }
 
-    var chunk_origin = chunk_loc * vec3<i32>(32, 64, 32);
+    var chunk_origin = chunk_loc * vec3<i32>(CHUNK_SIZE);
 
     // return result
     var out: VertexOutput;
