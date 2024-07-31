@@ -23,7 +23,6 @@ pub struct Renderer<'a> {
     pub num_vertices: u32,
 
     pub face_buffer: wgpu::Buffer,
-    pub num_faces: u32,
 
     pub diffuse_texture: Texture,
     pub diffuse_bind_group: wgpu::BindGroup,
@@ -71,8 +70,6 @@ impl<'a> Renderer<'a> {
                 mapped_at_creation: false,
             }
         );
-
-        let num_faces = 0;
 
 
         // 4. load textures into bind group
@@ -194,7 +191,6 @@ impl<'a> Renderer<'a> {
             vertex_buffer,
             num_vertices,
             face_buffer,
-            num_faces,
             diffuse_texture,
             diffuse_bind_group,
             camera_uniform_buffer,
@@ -288,14 +284,12 @@ impl<'a> Renderer<'a> {
 
             render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
-            self.num_faces = faces.len() as _;
-
             render_pass.set_vertex_buffer(1, self.face_buffer.slice(
                 offset..offset + chunk_faces_size_bytes
             ));
 
             // draw the whole range of vertices, and all instances
-            render_pass.draw(0..self.num_vertices, 0..self.num_faces);
+            render_pass.draw(0..self.num_vertices, 0..faces.len() as _);
             offset += chunk_faces_size_bytes;
         }
 
