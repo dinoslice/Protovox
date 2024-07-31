@@ -97,8 +97,8 @@ impl<'a> AppState<'a> {
         // TODO: add egui to display debug info
         self.renderer.render_faces(&self.camera, &[
             (ChunkLocation(TVec3::new(0, -1, 0)), self.faces.as_slice()),
-            (ChunkLocation(TVec3::new(0, 0, 0)), self.faces.as_slice()),
-            (ChunkLocation(TVec3::new(0, 1, 0)), self.faces.as_slice())
+            (ChunkLocation(TVec3::new(0, 0, 0)), &self.faces[..5]),
+            (ChunkLocation(TVec3::new(0, 1, 0)), &self.faces[5..])
         ])
     }
 }

@@ -9,6 +9,11 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::texture::Texture;
 use crate::rendering::vertex::Vertex;
 
+const MAX_CHUNKS: u64 = 10;
+const FACES_PER_VOXEL: u64 = 6;
+const VOXELS_PER_CHUNK: u64 = 32 * 64 * 32;
+
+
 pub struct Renderer<'a> {
     pub graphics_context: GraphicsContext<'a>,
     pub pipeline: wgpu::RenderPipeline,
@@ -55,7 +60,7 @@ impl<'a> Renderer<'a> {
 
 
         // TODO: this can be reduced once culling is implemented
-        const FACE_BUFFER_MAX_SIZE: u64 = std::mem::size_of::<FaceData>() as u64 * 6 * 32 * 64 * 32;
+        const FACE_BUFFER_MAX_SIZE: u64 = std::mem::size_of::<FaceData>() as u64 * FACES_PER_VOXEL * VOXELS_PER_CHUNK * MAX_CHUNKS;
 
         let face_buffer = graphics_context.device.create_buffer(
             &wgpu::BufferDescriptor {
@@ -257,11 +262,12 @@ impl<'a> Renderer<'a> {
         render_pass.set_pipeline(&self.pipeline);
 
         // TODO: make faces take an option, which doesn't update if None
-        self.graphics_context.queue.write_buffer(&self.face_buffer, 0, bytemuck::cast_slice(&faces[0].1));
-        self.num_faces = faces[0].1.len() as _;
+        // self.graphics_context.queue.write_buffer(&self.face_buffer, 0, bytemuck::cast_slice(&faces[0].1));
+        // self.num_faces = faces[0].1.len() as _;
 
         // update the camera buffer
         self.camera_uniform_buffer.update_buffer(&self.graphics_context, &camera.as_uniform());
+        // TODO: remove chunk pos uniform
         // self.chunk_pos_uniform_buffer.update_buffer(&self.graphics_context, WorldLocation::from(&faces[0].0).0.as_ref());
 
         // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
@@ -272,9 +278,18 @@ impl<'a> Renderer<'a> {
         // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
-        for (chunk_loc, faces) in faces {
+        for (idx, (chunk_loc, faces)) in faces.iter().enumerate() {
+            let offset = (idx as u64) * (VOXELS_PER_CHUNK * FACES_PER_VOXEL) * std::mem::size_of::<FaceData>() as u64;
+
+            self.graphics_context.queue.write_buffer(&self.face_buffer, offset, bytemuck::cast_slice(faces));
+
             render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
-            render_pass.set_vertex_buffer(1, self.face_buffer.slice(0..self.num_faces as u64 * std::mem::size_of::<FaceData>() as u64));
+
+            self.num_faces = faces.len() as _;
+
+            render_pass.set_vertex_buffer(1, self.face_buffer.slice(
+                offset..offset + faces.len() as u64 * std::mem::size_of::<FaceData>() as u64
+            ));
 
             // draw the whole range of vertices, and all instances
             render_pass.draw(0..self.num_vertices, 0..self.num_faces);
