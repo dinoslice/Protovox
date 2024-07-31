@@ -11,7 +11,7 @@ impl ChunkData {
         self.blocks[pos.0 as usize] = block;
     }
 
-    pub fn get_block(&mut self, pos: ChunkPos) -> Block {
+    pub fn get_block(&self, pos: ChunkPos) -> Block {
         self.blocks[pos.0 as usize].clone()
     }
 }
