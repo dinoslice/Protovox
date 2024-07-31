@@ -3,7 +3,6 @@ use winit::window::Window;
 use game::chunk::location::ChunkLocation;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::chunk_pos_uniform_buffer::ChunkPosUniformBuffer;
 use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::texture::Texture;
@@ -28,8 +27,6 @@ pub struct Renderer<'a> {
     pub diffuse_bind_group: wgpu::BindGroup,
 
     pub camera_uniform_buffer: CameraUniformBuffer,
-
-    pub chunk_pos_uniform_buffer: ChunkPosUniformBuffer,
 
     pub depth_texture: Texture,
 }
@@ -119,7 +116,6 @@ impl<'a> Renderer<'a> {
         );
 
         let camera_uniform_buffer = CameraUniformBuffer::new(&graphics_context);
-        let chunk_pos_uniform_buffer = ChunkPosUniformBuffer::new(&graphics_context);
 
         // 5. pipeline / instructions for GPU
 
@@ -136,7 +132,7 @@ impl<'a> Renderer<'a> {
         // pipeline describes the GPU's actions on a set of data, like a shader program
         let render_pipeline_layout = graphics_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&diffuse_bind_group_layout, &camera_uniform_buffer.bind_group_layout, &chunk_pos_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+            bind_group_layouts: &[&diffuse_bind_group_layout, &camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
             push_constant_ranges: &[push_constant_range],
         });
 
@@ -194,7 +190,6 @@ impl<'a> Renderer<'a> {
             diffuse_texture,
             diffuse_bind_group,
             camera_uniform_buffer,
-            chunk_pos_uniform_buffer,
             depth_texture,
         }
     }
@@ -258,19 +253,12 @@ impl<'a> Renderer<'a> {
 
         render_pass.set_pipeline(&self.pipeline);
 
-        // TODO: make faces take an option, which doesn't update if None
-        // self.graphics_context.queue.write_buffer(&self.face_buffer, 0, bytemuck::cast_slice(&faces[0].1));
-        // self.num_faces = faces[0].1.len() as _;
-
         // update the camera buffer
         self.camera_uniform_buffer.update_buffer(&self.graphics_context, &camera.as_uniform());
-        // TODO: remove chunk pos uniform
-        // self.chunk_pos_uniform_buffer.update_buffer(&self.graphics_context, WorldLocation::from(&faces[0].0).0.as_ref());
 
         // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
         render_pass.set_bind_group(1, &self.camera_uniform_buffer.bind_group, &[]);
-        render_pass.set_bind_group(2, &self.chunk_pos_uniform_buffer.bind_group, &[]);
 
         // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
