@@ -1,8 +1,9 @@
 use crate::block::Block;
+use crate::chunk::BLOCKS_PER_CHUNK;
 use crate::chunk::pos::ChunkPos;
 
 pub struct ChunkData {
-    pub blocks: [Block; 65536],
+    pub blocks: [Block; BLOCKS_PER_CHUNK],
 }
 
 impl ChunkData {
