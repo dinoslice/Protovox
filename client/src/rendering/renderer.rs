@@ -9,7 +9,8 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::texture::Texture;
 use crate::rendering::vertex::Vertex;
 
-const MAX_CHUNKS: u64 = 10;
+// TODO: this actually represents the max chunks if all faces were present, real max is much higher
+const MAX_CHUNKS: u64 = 100;
 const FACES_PER_VOXEL: u64 = 6;
 const VOXELS_PER_CHUNK: u64 = 32 * 64 * 32;
 
@@ -278,8 +279,10 @@ impl<'a> Renderer<'a> {
         // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
-        for (idx, (chunk_loc, faces)) in faces.iter().enumerate() {
-            let offset = (idx as u64) * (VOXELS_PER_CHUNK * FACES_PER_VOXEL) * std::mem::size_of::<FaceData>() as u64;
+        let mut offset = 0;
+
+        for (chunk_loc, faces) in faces {
+            let chunk_faces_size_bytes = faces.len() as u64 * std::mem::size_of::<FaceData>() as u64;
 
             self.graphics_context.queue.write_buffer(&self.face_buffer, offset, bytemuck::cast_slice(faces));
 
@@ -288,11 +291,12 @@ impl<'a> Renderer<'a> {
             self.num_faces = faces.len() as _;
 
             render_pass.set_vertex_buffer(1, self.face_buffer.slice(
-                offset..offset + faces.len() as u64 * std::mem::size_of::<FaceData>() as u64
+                offset..offset + chunk_faces_size_bytes
             ));
 
             // draw the whole range of vertices, and all instances
             render_pass.draw(0..self.num_vertices, 0..self.num_faces);
+            offset += chunk_faces_size_bytes;
         }
 
 
