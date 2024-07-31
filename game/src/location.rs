@@ -2,6 +2,7 @@ use glm::Vec3;
 use crate::chunk;
 use crate::chunk::location::ChunkLocation;
 
+#[repr(transparent)]
 pub struct WorldLocation(pub Vec3);
 
 impl From<&ChunkLocation> for WorldLocation {

@@ -2,6 +2,7 @@ use glm::TVec3;
 use crate::chunk;
 use crate::location::WorldLocation;
 
+#[repr(transparent)]
 #[derive(Default, Eq, PartialEq, Clone, Debug)]
 pub struct ChunkLocation(pub TVec3<i32>);
 
