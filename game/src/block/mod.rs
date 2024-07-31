@@ -1,5 +1,5 @@
 #[repr(u16)]
-#[derive(Clone, Eq, PartialEq, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub enum Block {
     #[default]
     Air = 0,
