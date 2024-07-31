@@ -265,7 +265,7 @@ impl<'a> Renderer<'a> {
 
         let mut offset = 0;
 
-        for (chunk_loc, faces) in faces {
+        for (chunk_loc, faces) in faces.iter().filter(|(_, f)| !f.is_empty()) {
             let chunk_faces_size_bytes = faces.len() as u64 * std::mem::size_of::<FaceData>() as u64;
 
             self.graphics_context.queue.write_buffer(&self.face_buffer, offset, bytemuck::cast_slice(faces));
