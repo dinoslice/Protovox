@@ -1,5 +1,6 @@
 use pollster::FutureExt;
 use winit::window::Window;
+use game::chunk::location::ChunkLocation;
 
 // TODO: fix visibility
 pub struct GraphicsContext<'a> {
@@ -39,8 +40,11 @@ impl<'a> GraphicsContext<'a> {
         // device is an open connection to gpu, queue executes command buffers
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
-                required_features: wgpu::Features::empty(), // what additional features of the GPU are needed
-                required_limits: wgpu::Limits::default(), // limit properties of the gpu to support different architectures
+                required_features: wgpu::Features::empty() | wgpu::Features::PUSH_CONSTANTS, // what additional features of the GPU are needed
+                required_limits: wgpu::Limits {
+                    max_push_constant_size: std::mem::size_of::<ChunkLocation>() as u32,
+                    .. Default::default()
+                }, // limit properties of the gpu to support different architectures
                 label: None,
             },
             None // trace path for api call tracing

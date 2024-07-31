@@ -1,7 +1,6 @@
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 use game::chunk::location::ChunkLocation;
-use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::chunk_pos_uniform_buffer::ChunkPosUniformBuffer;
@@ -126,11 +125,16 @@ impl<'a> Renderer<'a> {
 
         let depth_texture = Texture::create_depth_texture(&graphics_context.device, &graphics_context.config, "depth texture");
 
+        let push_constant_range = wgpu::PushConstantRange {
+            stages: wgpu::ShaderStages::VERTEX,
+            range: 0..12,
+        };
+
         // pipeline describes the GPU's actions on a set of data, like a shader program
         let render_pipeline_layout = graphics_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&diffuse_bind_group_layout, &camera_uniform_buffer.bind_group_layout, &chunk_pos_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
-            push_constant_ranges: &[],
+            push_constant_ranges: &[push_constant_range],
         });
 
         let pipeline = graphics_context.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -258,7 +262,7 @@ impl<'a> Renderer<'a> {
 
         // update the camera buffer
         self.camera_uniform_buffer.update_buffer(&self.graphics_context, &camera.as_uniform());
-        self.chunk_pos_uniform_buffer.update_buffer(&self.graphics_context, WorldLocation::from(&faces[0].0).0.as_ref());
+        // self.chunk_pos_uniform_buffer.update_buffer(&self.graphics_context, WorldLocation::from(&faces[0].0).0.as_ref());
 
         // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
@@ -267,10 +271,15 @@ impl<'a> Renderer<'a> {
 
         // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_vertex_buffer(1, self.face_buffer.slice(0..self.num_faces as u64 * std::mem::size_of::<FaceData>() as u64));
 
-        // draw the whole range of vertices, and all instances
-        render_pass.draw(0..self.num_vertices, 0..self.num_faces);
+        for (chunk_loc, faces) in faces {
+            render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
+            render_pass.set_vertex_buffer(1, self.face_buffer.slice(0..self.num_faces as u64 * std::mem::size_of::<FaceData>() as u64));
+
+            // draw the whole range of vertices, and all instances
+            render_pass.draw(0..self.num_vertices, 0..self.num_faces);
+        }
+
 
         // finish the command buffer & submit to GPU
         drop(render_pass);

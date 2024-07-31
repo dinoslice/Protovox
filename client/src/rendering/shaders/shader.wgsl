@@ -5,8 +5,10 @@ struct Camera {
 @group(1) @binding(0)
 var<uniform> camera: Camera;
 
-@group(2) @binding(0)
-var<uniform> chunk_origin: vec3<f32>;
+//@group(2) @binding(0)
+//var<uniform> chunk_origin: vec3<f32>;
+
+var<push_constant> chunk_loc: vec3<i32>;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -67,10 +69,12 @@ fn vs_main(
         pos.x += 1.0;
     }
 
+    var chunk_origin = chunk_loc * vec3<i32>(32, 64, 32);
+
     // return result
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * vec4<f32>(pos + chunk_pos + chunk_origin, 1.0);
+    out.clip_position = camera.view_proj * vec4<f32>(pos + chunk_pos + vec3<f32>(chunk_origin), 1.0);
     return out;
 }
 
