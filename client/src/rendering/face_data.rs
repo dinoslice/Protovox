@@ -1,13 +1,17 @@
 use game::chunk::pos::ChunkPos;
+pub use game::block::face_type::FaceType;
+pub use game::block::TextureId;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+// layout PPPPPPPPPPPPPPPPFFFTTTTTTTT_____
 pub struct FaceData(u32);
 
 impl FaceData {
-    pub fn new(pos: ChunkPos, face: FaceType) -> Self {
+    pub fn new(pos: ChunkPos, face: FaceType, texture_id: TextureId) -> Self {
         let mut data = pos.0 as _;
         data |= (face as u8 as u32 & 0x7) << 16;
+        data |= (texture_id as u32 & 0xFF) << (16 + 3);
 
         Self(data)
     }
@@ -23,15 +27,4 @@ impl FaceData {
             attributes: &ATTRIBUTES, // generally a 1:1 mapping with the struct fields
         }
     }
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-pub enum FaceType {
-    Bottom, // Y-
-    Top, // Y+
-    Front, // Z+
-    Back, // Z-
-    Left, // X-
-    Right, // X+
 }

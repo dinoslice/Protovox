@@ -5,9 +5,6 @@ struct Camera {
 @group(1) @binding(0)
 var<uniform> camera: Camera;
 
-//@group(2) @binding(0)
-//var<uniform> chunk_origin: vec3<f32>;
-
 var<push_constant> chunk_loc: vec3<i32>;
 
 struct VertexInput {
@@ -25,6 +22,7 @@ struct VertexOutput {
     // in frame-buffer space -> if window is 800x600, within [0,800), [0,600)
     @builtin(position) clip_position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
+    @location(1) face_data: u32,
 }
 
 const FACE_BOTTOM: u32 = 0;
@@ -39,7 +37,6 @@ const CHUNK_SIZE: vec3<u32> = vec3(32, 64, 32);
 @vertex
 fn vs_main(
     model: VertexInput,
-//    instance: InstanceInput,
     face: FaceData,
 ) -> VertexOutput {
 
@@ -50,7 +47,6 @@ fn vs_main(
         f32(face.data >> 11 & 31),
     );
     let face_type = face.data >> 16 & 0x7;
-
 
     // correct face orientation
     var pos: vec3<f32> = model.position;
@@ -77,9 +73,15 @@ fn vs_main(
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
     out.clip_position = camera.view_proj * vec4<f32>(pos + chunk_pos + vec3<f32>(chunk_origin), 1.0);
+    out.face_data = face.data;
     return out;
 }
 
+
+const SPRITE_SIZE: vec2<f32> = vec2(16.0, 16.0);
+const SHEET_SIZE: vec2<f32> = vec2(64.0, 64.0);
+
+const SHEET_RANGE: vec2<u32> = vec2<u32>(SHEET_SIZE / SPRITE_SIZE);
 
 @group(0) @binding(0)
 var t_diffuse: texture_2d<f32>;
@@ -88,6 +90,31 @@ var s_diffuse: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { // store result in first color target
+    let face_type = in.face_data >> 16 & 0x7;
+    let texture_id = in.face_data >> (16 + 3) & 0xFF;
+
+    let ss_coords = vec2(
+        f32(texture_id % SHEET_RANGE.x),
+        f32(texture_id / SHEET_RANGE.x),
+    );
+
+    // TODO: refactor this?
+    var rotated_coords: vec2<f32>;
+
+    switch (face_type) {
+        case FACE_RIGHT, FACE_BACK: { // 180 deg
+            rotated_coords = vec2(1.0 - in.tex_coords.x, 1.0 - in.tex_coords.y);
+        }
+        case FACE_LEFT, FACE_FRONT: { // 270 deg
+            rotated_coords = vec2(in.tex_coords.y, 1.0 - in.tex_coords.x);
+        }
+        default: {
+            rotated_coords = in.tex_coords;
+        }
+    }
+
+    let final_coords = (ss_coords + rotated_coords) * (SPRITE_SIZE / SHEET_SIZE);
+
     // return the color sampled at the texture
-    return textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    return textureSample(t_diffuse, s_diffuse, final_coords);
 }

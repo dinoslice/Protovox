@@ -1,6 +1,7 @@
 use std::time::Duration;
 use glm::TVec3;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
@@ -31,15 +32,15 @@ impl<'a> AppState<'a> {
         let renderer = Renderer::new(window);
 
         let camera = Camera {
-            position: Vec3::new(0.0, 1.0, 2.0),
-            yaw: -90.0f32.to_radians(),
+            position: Vec3::new(0.0, 0.0, 0.0),
+            yaw: 90.0f32.to_radians(),
             pitch: -20.0f32.to_radians(),
             speed: 8.0,
             perspective: Perspective3::new(
                 renderer.aspect(),
                 45.0f32.to_radians(),
-                0.1,
-                100.0
+                0.01,
+                1000.0
             )
         };
 
@@ -49,7 +50,12 @@ impl<'a> AppState<'a> {
 
         for i in 0..65536 {
             if rand::thread_rng().gen_bool(0.1) {
-                chunk.blocks[i] = Block::Dirt;
+                chunk.blocks[i] = *[
+                    Block::Grass,
+                    Block::Dirt,
+                    Block::Cobblestone,
+                ].choose(&mut rand::thread_rng())
+                    .expect("blocks exist");
             }
         }
 
@@ -95,9 +101,7 @@ impl<'a> AppState<'a> {
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         // TODO: add egui to display debug info
         self.renderer.render_faces(&self.camera, &[
-            (ChunkLocation(TVec3::new(0, -1, 0)), self.faces.as_slice()),
-            (ChunkLocation(TVec3::new(0, 0, 0)), &self.faces[..5]),
-            (ChunkLocation(TVec3::new(0, 1, 0)), &self.faces[5..])
+            (ChunkLocation(TVec3::new(0, 0, 0)), &self.faces),
         ])
     }
 }

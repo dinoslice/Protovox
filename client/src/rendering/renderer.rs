@@ -70,7 +70,7 @@ impl<'a> Renderer<'a> {
 
 
         // 4. load textures into bind group
-        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/cobblestone.png"), "cobblestone.png")
+        let diffuse_texture = Texture::from_bytes(&graphics_context.device, &graphics_context.queue, include_bytes!("../../assets/spritesheet.png"), "spritesheet.png")
             .expect("cobblestone texture didn't exist");
 
         // bind group -> data constant through one draw call
