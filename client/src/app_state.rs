@@ -6,14 +6,15 @@ use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
 use game::block::Block;
+use game::chunk;
 use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::input::InputManager;
+use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::face_data::{FaceData, FaceType};
 use crate::rendering::renderer::Renderer;
-use crate::rendering::voxel_renderable::VoxelRenderable;
 
 pub struct AppState<'a> {
     pub renderer: Renderer<'a>,
@@ -61,7 +62,7 @@ impl<'a> AppState<'a> {
 
         // TODO: move this elsewhere
 
-        let faces = chunk.as_faces();
+        let faces = ChunkMesh::from_chunk(&chunk).faces;
 
         Self { renderer, faces, camera, input_manager }
     }
