@@ -38,7 +38,7 @@ impl fmt::Debug for ChunkPos {
 
 impl ChunkPos {
     pub fn new(x: u8, y: u8, z: u8) -> Result<Self, ChunkCoordOutOfRange> {
-        if x >= CHUNK_SIZE.x || y >= CHUNK_SIZE.y || z > CHUNK_SIZE.z {
+        if x >= CHUNK_SIZE.x || y >= CHUNK_SIZE.y || z >= CHUNK_SIZE.z {
             return Err(ChunkCoordOutOfRange);
         }
 
