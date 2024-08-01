@@ -1,14 +1,18 @@
 use std::time::Duration;
 use glm::TVec3;
+use rand::Rng;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use winit::window::Window;
+use game::block::Block;
+use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use crate::camera::Camera;
 use crate::input::InputManager;
 use crate::rendering::face_data::{FaceData, FaceType};
 use crate::rendering::renderer::Renderer;
+use crate::rendering::voxel_renderable::VoxelRenderable;
 
 pub struct AppState<'a> {
     pub renderer: Renderer<'a>,
@@ -41,22 +45,17 @@ impl<'a> AppState<'a> {
 
         let input_manager = InputManager::with_mouse_sensitivity(0.75);
 
-        // TODO: move this elsewhere
-        let faces = vec![
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Top),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Bottom),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Left),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Right),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Front),
-            // FaceData::new(ChunkPos::new_unchecked(0, 0, 1), FaceType::Back),
+        let mut chunk = ChunkData::default();
 
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Top),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Bottom),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Left),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Right),
-            // FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Front),
-            FaceData::new(ChunkPos::new_unchecked(0, 0, 0), FaceType::Back),
-        ];
+        for i in 0..65536 {
+            if rand::thread_rng().gen_bool(0.1) {
+                chunk.blocks[i] = Block::Dirt;
+            }
+        }
+
+        // TODO: move this elsewhere
+
+        let faces = chunk.as_faces();
 
         Self { renderer, faces, camera, input_manager }
     }
