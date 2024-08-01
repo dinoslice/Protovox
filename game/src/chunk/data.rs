@@ -18,6 +18,6 @@ impl ChunkData {
     }
 
     pub fn get_block(&self, pos: ChunkPos) -> Block {
-        self.blocks[pos.0 as usize].clone()
+        self.blocks[pos.0 as usize]
     }
 }
