@@ -5,6 +5,7 @@ use rand::Rng;
 use shipyard::{AllStoragesView, IntoWorkload, UniqueView, Workload};
 use game::block::Block;
 use game::chunk::data::ChunkData;
+use game::chunk::location::ChunkLocation;
 use crate::camera::Camera;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
@@ -23,7 +24,7 @@ pub fn startup() -> Workload {
 }
 
 fn init_chunk_faces(storages: AllStoragesView) {
-    let mut chunk = ChunkData::default();
+    let mut chunk = ChunkData::empty(ChunkLocation::default());
 
     for i in 0..65536 {
         if rand::thread_rng().gen_bool(0.1) {
