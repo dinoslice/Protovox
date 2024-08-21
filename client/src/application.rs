@@ -85,9 +85,11 @@ pub fn run() {
                         WindowEvent::Resized(physical_size) => world.run_with_data(resize, *physical_size),
 
                         WindowEvent::Focused(focused) => {
-                            world.run(|mut capture_state: UniqueViewMut<CaptureState>, g_ctx: UniqueView<GraphicsContext>| {
+                            world.run(|mut capture_state: UniqueViewMut<CaptureState>, g_ctx: UniqueView<GraphicsContext>, mut input_manager: UniqueViewMut<InputManager>| {
                                 if capture_state.set(&g_ctx.window, *focused).is_none() {
                                     error!("Unable to set capture/release mouse cursor.")
+                                } else if !focused { // only reset action map if released cursor
+                                    input_manager.action_map.reset_all();
                                 }
                             });
                         }
@@ -100,9 +102,11 @@ pub fn run() {
                             },
                             ..
                         } => {
-                            world.run(|mut capture_state: UniqueViewMut<CaptureState>, g_ctx: UniqueView<GraphicsContext>| {
-                                if capture_state.toggle(&g_ctx.window).is_none() {
-                                    error!("Unable to set capture/release mouse cursor.")
+                            world.run(|mut capture_state: UniqueViewMut<CaptureState>, g_ctx: UniqueView<GraphicsContext>, mut input: UniqueViewMut<InputManager>| {
+                                match capture_state.toggle(&g_ctx.window) {
+                                    Some(false) => input.action_map.reset_all(),
+                                    None => error!("Unable to set capture/release mouse cursor."),
+                                    _ => {}
                                 }
                             });
                         }

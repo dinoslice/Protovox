@@ -55,4 +55,8 @@ impl ActionMap {
     pub fn get_axis(&self, positive: Action, negative: Action) -> i8 {
         self.get_action(positive) as i8 - self.get_action(negative) as i8
     }
+
+    pub fn reset_all(&mut self) {
+        *self = Default::default();
+    }
 }
