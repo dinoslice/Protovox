@@ -1,6 +1,6 @@
-use crate::rendering::vertex::Vertex;
 use shipyard::{AllStoragesView, Unique, UniqueView};
 use wgpu::util::DeviceExt;
+use crate::rendering::vertex::Vertex;
 use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]

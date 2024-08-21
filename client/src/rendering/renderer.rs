@@ -1,12 +1,13 @@
 use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
-use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::face_data::FaceData;
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::texture::Texture;
-use crate::rendering::{base_face, depth_texture, face_buffer};
-use crate::rendering::spritesheet;
-use crate::rendering::spritesheet::SpritesheetTexture;
-use crate::rendering::vertex::Vertex;
+use crate::rendering;
+use rendering::camera_uniform_buffer::CameraUniformBuffer;
+use rendering::face_data::FaceData;
+use rendering::graphics_context::GraphicsContext;
+use rendering::texture::Texture;
+use rendering::{base_face, depth_texture, face_buffer};
+use rendering::spritesheet;
+use rendering::spritesheet::SpritesheetTexture;
+use rendering::vertex::Vertex;
 
 #[derive(Unique)]
 pub struct RenderPipeline(pub wgpu::RenderPipeline);
