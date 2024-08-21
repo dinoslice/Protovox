@@ -4,12 +4,12 @@ use glm::{Vec2, Vec3};
 use na::Perspective3;
 use rand::prelude::SliceRandom;
 use rand::Rng;
-use shipyard::{AllStoragesView, Unique, UniqueView, UniqueViewMut, World};
+use shipyard::{AllStoragesView, UniqueView, UniqueViewMut, World};
 use tracing::error;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
-use winit::window::{CursorGrabMode, Window, WindowBuilder};
+use winit::window::WindowBuilder;
 use game::block::Block;
 use game::chunk::data::ChunkData;
 use crate::camera::Camera;
@@ -17,7 +17,7 @@ use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::{render, renderer};
-// use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use crate::capture_state::CaptureState;
 
 pub fn run() {
     let event_loop = EventLoopBuilder::new().build()
@@ -197,29 +197,4 @@ fn reconfigure(g_ctx: UniqueViewMut<GraphicsContext>, camera: UniqueViewMut<Came
 
 fn update_camera_from_input_manager(delta_time: &Duration, mut camera: UniqueViewMut<Camera>, mut input_manager: UniqueViewMut<InputManager>) {
     camera.update_with_input(&mut input_manager, delta_time);
-}
-
-#[derive(Unique)]
-struct CaptureState(bool);
-
-impl CaptureState {
-    pub fn set(&mut self, window: &Window, captured: bool) -> Option<()> {
-        self.0 = captured;
-
-        let cursor_grab = match self.0 {
-            true => CursorGrabMode::Confined,
-            false => CursorGrabMode::None,
-        };
-
-        window.set_cursor_visible(!self.0);
-        window.set_cursor_grab(cursor_grab).ok()
-    }
-
-    pub fn is_captured(&self) -> bool {
-        self.0
-    }
-
-    pub fn toggle(&mut self, window: &Window) -> Option<bool> {
-        self.set(window, !self.0).map(|_| self.0)
-    }
 }
