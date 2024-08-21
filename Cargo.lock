@@ -398,6 +398,7 @@ dependencies = [
  "nalgebra-glm",
  "pollster",
  "rand",
+ "shipyard",
  "tinybitset",
  "tracing",
  "tracing-subscriber",
@@ -1960,6 +1961,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "shipyard"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86f4cd1f315ecb0d0ec551263aa99eeb8d6625dfb5b6cf49c9406eb882050938"
+dependencies = [
+ "hashbrown",
+ "lock_api",
+ "rayon",
+ "shipyard_proc",
+ "siphasher",
+]
+
+[[package]]
+name = "shipyard_proc"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7515c11aebbea0b9d85e1a1724792c658c701913761e23d62a8e732c0389d0a9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
 name = "simba"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1986,6 +2011,12 @@ checksum = "95890f873bec569a0362c235787f3aca6e1e887302ba4840839bcc6459c42da6"
 dependencies = [
  "quote",
 ]
+
+[[package]]
+name = "siphasher"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
 name = "slab"

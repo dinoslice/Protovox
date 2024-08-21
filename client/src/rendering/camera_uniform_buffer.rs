@@ -1,6 +1,8 @@
+use shipyard::Unique;
 use wgpu::util::DeviceExt;
 use crate::rendering::graphics_context::GraphicsContext;
 
+#[derive(Unique)]
 pub struct CameraUniformBuffer {
     pub buffer: wgpu::Buffer,
     pub bind_group_layout: wgpu::BindGroupLayout,

@@ -1,10 +1,11 @@
+use shipyard::Unique;
 use crate::input::action_map::ActionMap;
 use crate::input::mouse_manager::MouseManager;
 
 pub mod action_map;
 pub mod mouse_manager;
 
-#[derive(Debug)]
+#[derive(Debug, Unique)]
 pub struct InputManager {
     pub action_map: ActionMap,
     pub mouse_manager: MouseManager,

@@ -2,9 +2,11 @@ use std::cmp::Ordering;
 use std::time::Duration;
 use glm::{Mat4, Vec3};
 use na::{Perspective3, UnitQuaternion};
+use shipyard::Unique;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 
+#[derive(Unique)]
 pub struct Camera {
     pub position: Vec3,
     pub yaw: f32,

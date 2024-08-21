@@ -1,20 +1,28 @@
+use std::sync::Arc;
 use pollster::FutureExt;
+use shipyard::Unique;
+use tracing::debug;
 use winit::window::Window;
 use game::chunk::location::ChunkLocation;
 
 // TODO: fix visibility
-pub struct GraphicsContext<'a> {
-    pub surface: wgpu::Surface<'a>,
+#[derive(Unique)]
+pub struct GraphicsContext {
+    // TODO: can this work as 'a?
+    pub surface: wgpu::Surface<'static>,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
-    // must be dropped after the device since it has unsafe references to the window
-    pub window: &'a Window,
+    // must be dropped after the device since surface has unsafe references to the window
+    // TODO: arc to fix lifetimes
+    pub window: Arc<Window>,
 }
 
-impl<'a> GraphicsContext<'a> {
-    pub fn new(window: &'a Window) -> GraphicsContext {
+impl GraphicsContext {
+    pub fn new(window: Arc<Window>) -> Self {
+        debug!("Initializing render context");
+
         let size = window.inner_size();
 
         // handle to the GPU, interfaces with Vulkan, DX12, etc.; main purpose to create adapters and surfaces
@@ -26,7 +34,7 @@ impl<'a> GraphicsContext<'a> {
         );
 
         // surface where rendered frames can be presented, i.e. a window
-        let surface = instance.create_surface(window).expect("failed to create surface");
+        let surface = instance.create_surface(window.clone()).expect("failed to create surface");
 
         // handle to the actual GPU, can get info about GPU & create device & queue
         let adapter = instance.request_adapter(
@@ -79,6 +87,10 @@ impl<'a> GraphicsContext<'a> {
             size,
             window,
         }
+    }
+
+    pub fn aspect(&self) -> f32 {
+        self.config.width as f32 / self.config.height as f32
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {

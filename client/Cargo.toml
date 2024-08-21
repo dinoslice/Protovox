@@ -17,6 +17,7 @@ tinybitset = "0.0.1"
 chrono = "0.4.38"
 game = { path = "../game" }
 rand = "0.8.5"
+shipyard = "0.7.1"
 
 [lints.clippy]
 unwrap_used = "warn"

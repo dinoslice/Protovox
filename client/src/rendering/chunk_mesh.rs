@@ -1,3 +1,4 @@
+use shipyard::Unique;
 use game::block::Block;
 use game::block::face_type::FaceType;
 use game::chunk::BLOCKS_PER_CHUNK;
@@ -6,6 +7,7 @@ use game::chunk::pos::ChunkPos;
 use crate::rendering::face_data::FaceData;
 
 // TODO: generational arena?
+#[derive(Unique)]
 pub struct ChunkMesh {
     pub faces: Vec<FaceData>
 }
