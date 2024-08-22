@@ -15,6 +15,7 @@ use crate::workloads::startup;
 mod capture_state;
 mod input;
 mod resize;
+pub mod delta_time;
 
 pub use capture_state::CaptureState;
 
