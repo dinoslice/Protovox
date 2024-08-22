@@ -14,13 +14,15 @@ pub struct RenderPipeline(pub wgpu::RenderPipeline);
 
 pub fn initialize_renderer() -> Workload {
     (
-        base_face::initialize_base_face,
-        face_buffer::init_face_buffer,
-        spritesheet::initialize_spritesheet,
-        depth_texture::initialize_depth_texture,
-        initialize_camera_uniform_buffer,
+        (
+            base_face::initialize_base_face,
+            face_buffer::init_face_buffer,
+            spritesheet::initialize_spritesheet,
+            depth_texture::initialize_depth_texture,
+            initialize_camera_uniform_buffer,
+        ).into_workload(),
         create_pipeline,
-    ).into_workload()
+    ).into_sequential_workload()
 }
 
 pub fn initialize_camera_uniform_buffer(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
