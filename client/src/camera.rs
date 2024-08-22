@@ -24,7 +24,7 @@ impl Camera {
         glm::look_at_rh(&self.position, &target, &Vec3::y_axis())
     }
 
-    pub fn update_with_input(&mut self, input: &mut InputManager, delta_time: Duration) {
+    pub fn update_with_input(&mut self, input: &InputManager, delta_time: Duration) {
         let dt_secs = delta_time.as_secs_f32();
 
         let movement = Vec3::new(
@@ -67,8 +67,6 @@ impl Camera {
             }
             _ => self.speed
         }.clamp(0.0, 125.0);
-
-        input.mouse_manager.reset_scroll_rotate();
     }
 
     pub fn as_uniform(&self) -> [[f32; 4]; 4] {
