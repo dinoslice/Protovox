@@ -12,4 +12,4 @@ mod face_buffer;
 mod camera_uniform_buffer;
 mod base_face;
 mod depth_texture;
-mod spritesheet;
+mod texture_atlas;

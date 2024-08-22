@@ -5,8 +5,8 @@ use rendering::face_data::FaceData;
 use rendering::graphics_context::GraphicsContext;
 use rendering::texture::Texture;
 use rendering::{base_face, depth_texture, face_buffer};
-use rendering::spritesheet;
-use rendering::spritesheet::SpritesheetTexture;
+use rendering::texture_atlas;
+use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
 
 #[derive(Unique)]
@@ -17,7 +17,7 @@ pub fn initialize_renderer() -> Workload {
         (
             base_face::initialize_base_face,
             face_buffer::init_face_buffer,
-            spritesheet::initialize_spritesheet,
+            texture_atlas::initialize_texture_atlas,
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,
         ).into_workload(),
@@ -29,7 +29,7 @@ pub fn initialize_camera_uniform_buffer(g_ctx: UniqueView<GraphicsContext>, stor
     storages.add_unique(CameraUniformBuffer::new(&g_ctx));
 }
 
-pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, spritesheet: UniqueView<SpritesheetTexture>, storages: AllStoragesView) {
+pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, texture_atlas: UniqueView<TextureAtlas>, storages: AllStoragesView) {
     // 5. pipeline / instructions for GPU
 
     // loads a shader and returns a handle to the compiled shader
@@ -43,7 +43,7 @@ pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer
     // pipeline describes the GPU's actions on a set of data, like a shader program
     let render_pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[&spritesheet.bind_group_layout, &camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+        bind_group_layouts: &[&texture_atlas.bind_group_layout, &camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
         push_constant_ranges: &[push_constant_range],
     });
 

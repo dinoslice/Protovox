@@ -10,7 +10,7 @@ use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::face_buffer::FaceBuffer;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
-use crate::rendering::spritesheet::SpritesheetTexture;
+use crate::rendering::texture_atlas::TextureAtlas;
 
 pub fn render(
     g_ctx: UniqueView<GraphicsContext>,
@@ -19,7 +19,7 @@ pub fn render(
     camera: UniqueView<Camera>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
-    spritesheet: UniqueView<SpritesheetTexture>,
+    texture_atlas: UniqueView<TextureAtlas>,
     chunk_mesh: UniqueView<ChunkMesh>,
     face_buffer: UniqueView<FaceBuffer>
 ) -> Result<(), wgpu::SurfaceError> {
@@ -74,7 +74,7 @@ pub fn render(
     camera_uniform_buffer.update_buffer(&g_ctx, &camera.as_uniform());
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
-    render_pass.set_bind_group(0, &spritesheet.bind_group, &[]);
+    render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
     render_pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
 
     // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer

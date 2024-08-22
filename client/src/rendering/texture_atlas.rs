@@ -3,16 +3,16 @@ use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
-pub struct SpritesheetTexture {
+pub struct TextureAtlas {
     pub texture: Texture,
     pub bind_group: wgpu::BindGroup,
     pub bind_group_layout: wgpu::BindGroupLayout,
 }
 
-pub fn initialize_spritesheet(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
     // 4. load textures into bind group
-    let texture = Texture::from_bytes(&g_ctx.device, &g_ctx.queue, include_bytes!("../../assets/spritesheet.png"), "spritesheet.png")
-        .expect("spritesheet didn't exist");
+    let texture = Texture::from_bytes(&g_ctx.device, &g_ctx.queue, include_bytes!("../../assets/texture_atlas.png"), "texture_atlas.png")
+        .expect("atlas didn't exist");
 
     // bind group -> data constant through one draw call
     let bind_group_layout =
@@ -36,7 +36,7 @@ pub fn initialize_spritesheet(g_ctx: UniqueView<GraphicsContext>, storages: AllS
                     count: None, // not an array
                 },
             ],
-            label: Some("texture_bind_group_layout"),
+            label: Some("Texture Atlas Bind Group Layout"),
         });
 
     let bind_group = g_ctx.device.create_bind_group(
@@ -52,9 +52,9 @@ pub fn initialize_spritesheet(g_ctx: UniqueView<GraphicsContext>, storages: AllS
                     resource: wgpu::BindingResource::Sampler(&texture.sampler),
                 }
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("Texture Atlas Bind Group"),
         }
     );
 
-    storages.add_unique(SpritesheetTexture { texture, bind_group, bind_group_layout });
+    storages.add_unique(TextureAtlas { texture, bind_group, bind_group_layout });
 }
