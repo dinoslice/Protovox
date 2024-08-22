@@ -10,7 +10,7 @@ use crate::camera::Camera;
 use crate::input::InputManager;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render;
-use crate::workloads::startup;
+use crate::workloads::{startup, update};
 
 mod capture_state;
 mod input;
@@ -33,9 +33,11 @@ pub fn run() {
     let world = World::new();
 
     world.add_workload(startup);
+    world.add_workload(update);
 
     world.add_unique(GraphicsContext::new(window));
-    world.run_workload(startup).expect("TODO: panic message");
+    world.run_workload(startup)
+        .expect("TODO: panic message");
 
     let mut last_render_time = Instant::now();
 
@@ -51,9 +53,13 @@ pub fn run() {
                 if !world.run(capture_state::is_captured) || !world.run_with_data(input::input, event) {
                     match event {
                         WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
-                            world.run_with_data(update_camera_from_input_manager, &last_render_time.elapsed());
+                            world.run_with_data(delta_time::update_delta_time, last_render_time);
                             last_render_time = Instant::now();
 
+                            world.run_workload(update)
+                                .expect("TODO: panic message");
+
+                            // world.run_with_data(update_camera_from_input_manager, &last_render_time.elapsed());
 
                             match world.run(render::render) {
                                 Ok(_) => {}
@@ -96,8 +102,4 @@ pub fn run() {
     if let Err(err) = res {
         error!("Event loop encountered an error: {err:?}");
     }
-}
-
-fn update_camera_from_input_manager(delta_time: &Duration, mut camera: UniqueViewMut<Camera>, mut input_manager: UniqueViewMut<InputManager>) {
-    camera.update_with_input(&mut input_manager, delta_time);
 }

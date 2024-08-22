@@ -7,6 +7,7 @@ use game::block::Block;
 use game::chunk::data::ChunkData;
 use crate::camera::Camera;
 use crate::application::CaptureState;
+use crate::application::delta_time::LastDeltaTime;
 use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -58,5 +59,6 @@ pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStorag
 pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(InputManager::with_mouse_sensitivity(0.75));
     storages.add_unique(CaptureState::default());
+    storages.add_unique(LastDeltaTime::default())
 }
 
