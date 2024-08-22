@@ -24,7 +24,7 @@ impl Camera {
         glm::look_at_rh(&self.position, &target, &Vec3::y_axis())
     }
 
-    pub fn update_with_input(&mut self, input: &mut InputManager, delta_time: &Duration) {
+    pub fn update_with_input(&mut self, input: &mut InputManager, delta_time: Duration) {
         let dt_secs = delta_time.as_secs_f32();
 
         let movement = Vec3::new(
