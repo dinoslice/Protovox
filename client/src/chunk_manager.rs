@@ -134,7 +134,7 @@ impl ChunkManager {
         self.update_and_resize(curr_chunk, delta_time, received_chunks, None)
     }
 
-    pub fn update_and_resize(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<&U16Vec3>) -> Vec<ChunkLocation> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<&U16Vec3>) -> Vec<ChunkLocation> {
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance.cast();
         }
@@ -146,7 +146,7 @@ impl ChunkManager {
             *t > 0.0
         });
 
-        self.center = curr_chunk;
+        self.center = new_center;
 
         let mut new_loaded = Vec::new();
         new_loaded.resize_with(self.chunk_capacity(), || None);
