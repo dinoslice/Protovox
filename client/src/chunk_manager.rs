@@ -154,11 +154,8 @@ impl ChunkManager {
         // TODO: we know old center and new center, so calculate new vec positions
         for chunk_option in std::mem::take(&mut self.loaded_chunks) {
             if let Some(chunk) = chunk_option {
-                if Self::is_chunk_loc_in_render_distance(&self.center, &self.render_distance, &chunk.location) {
-                    let new_idx = self.get_index_from_chunk_location_checked(&chunk.location)
-                        .expect("norm_offset must be positive");
-
-                    *new_loaded.get_mut(new_idx).expect("index to exist") = Some(chunk);
+                if let Some(index) = self.get_index_from_chunk_location_checked(&chunk.location) {
+                    *new_loaded.get_mut(index).expect("index to exist") = Some(chunk);
                 }
             }
         }
