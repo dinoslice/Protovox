@@ -77,6 +77,10 @@ impl ChunkManager {
         self.center.0 - loc.0
     }
 
+    pub fn render_size(&self) -> IVec3 {
+        self.render_distance.map(|n| 2 * n + 1)
+    }
+
     // TODO: clones twice if doesn't exist, none if exists; if it were to take in an owned loc, then if it exists you'd lose that
     // returns whether that chunk has already been requested
     pub fn request_chunk(&mut self, loc: &ChunkLocation) -> bool {
