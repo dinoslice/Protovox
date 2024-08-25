@@ -7,3 +7,5 @@ mod rendering;
 mod input;
 mod camera;
 mod workloads;
+
+pub mod chunk_manager;

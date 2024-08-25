@@ -1,13 +1,33 @@
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, WorkloadModificator, SystemModificator};
+use game::chunk::location::ChunkLocation;
+use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
+use crate::chunk_manager::ChunkManager;
 use crate::input::InputManager;
 
 pub fn update() -> Workload {
     (
         update_camera_movement,
         reset_mouse_manager_state,
+        update_chunk_manager.after_all(update_camera_movement),
     ).into_sequential_workload()
+}
+
+fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>) {
+    let current_chunk = ChunkLocation::from(WorldLocation(camera.position));
+
+    let reqs = chunk_mgr.update(current_chunk, delta_time.0, Vec::default());
+
+    if reqs.len() > 0 {
+        tracing::debug!("requesting {}", reqs.len());
+        tracing::debug!("{reqs:?}")
+    }
+
+
+    for req in reqs {
+        chunk_mgr.request_chunk(&req);
+    }
 }
 
 fn update_camera_movement(delta_time: UniqueView<LastDeltaTime>, mut camera: UniqueViewMut<Camera>, input_manager: UniqueView<InputManager>) {

@@ -1,14 +1,16 @@
-use glm::Vec3;
+use glm::{IVec3, Vec3};
 use na::Perspective3;
 use rand::prelude::SliceRandom;
 use rand::Rng;
-use shipyard::{AllStoragesView, IntoWorkload, UniqueView, Workload};
+use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, Workload};
 use game::block::Block;
 use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
+use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
+use crate::chunk_manager::ChunkManager;
 use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -19,6 +21,7 @@ pub fn startup() -> Workload {
         renderer::initialize_renderer,
         init_chunk_faces,
         initialize_camera,
+        initialize_gameplay_systems.after_all(initialize_camera),
         initialize_application_systems,
     ).into_workload()
 }
@@ -54,12 +57,19 @@ pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStorag
             0.01,
             1000.0
         )
-    })
+    });
+}
+
+pub fn initialize_gameplay_systems(storages: AllStoragesView, camera: UniqueView<Camera>) {
+    storages.add_unique(ChunkManager::new(
+        IVec3::new(1,1,1),
+        ChunkLocation::from(WorldLocation(camera.position))
+    ));
 }
 
 pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(InputManager::with_mouse_sensitivity(0.75));
     storages.add_unique(CaptureState::default());
-    storages.add_unique(LastDeltaTime::default())
+    storages.add_unique(LastDeltaTime::default());
 }
 
