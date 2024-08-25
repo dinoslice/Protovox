@@ -3,7 +3,7 @@ use crate::block::face_type::FaceType;
 pub mod face_type;
 
 #[repr(u16)]
-#[derive(Clone, Copy, Eq, PartialEq, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Default, Debug)]
 pub enum Block {
     #[default]
     Air = 0,
