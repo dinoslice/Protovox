@@ -5,6 +5,7 @@ use crate::chunk::pos::ChunkPos;
 
 pub type ChunkBlocks = [Block; BLOCKS_PER_CHUNK];
 
+#[derive(Debug)]
 pub struct ChunkData {
     pub location: ChunkLocation,
     pub blocks: ChunkBlocks,

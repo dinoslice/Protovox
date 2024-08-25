@@ -3,6 +3,7 @@ use crate::chunk;
 use crate::chunk::location::ChunkLocation;
 
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct WorldLocation(pub Vec3);
 
 impl From<&ChunkLocation> for WorldLocation {
