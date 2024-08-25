@@ -85,6 +85,10 @@ impl ChunkManager {
         self.render_distance.map(|n| 2 * n + 1)
     }
 
+    pub fn drop_all_recently_requested(&mut self) {
+        self.recently_requested.clear();
+    }
+
     // TODO: clones twice if doesn't exist, none if exists; if it were to take in an owned loc, then if it exists you'd lose that
     // returns whether that chunk has already been requested
     pub fn request_chunk(&mut self, loc: &ChunkLocation) -> bool {
