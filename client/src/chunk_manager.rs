@@ -22,17 +22,17 @@ pub struct ChunkManager {
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: IVec3, center: ChunkLocation) -> Self {
-        assert!(render_distance.iter().all(|n| n.is_positive()));
-
+    pub fn new(render_distance: &U16Vec3, center: ChunkLocation) -> Self {
         let size = render_distance.iter()
-            .map(|n| 2 * n + 1)
-            .product::<i32>() as _;
+            .map(|n| (2 * n + 1) as usize)
+            .product();
 
         tracing::debug!("attempting to allocate size for {size} chunks.");
 
         let mut loaded_chunks = Vec::new();
         loaded_chunks.resize_with(size, || None);
+
+        let render_distance = render_distance.cast();
 
         Self {
             loaded_chunks,

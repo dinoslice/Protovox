@@ -1,4 +1,4 @@
-use glm::{IVec3, Vec3};
+use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -62,7 +62,7 @@ pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStorag
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView, camera: UniqueView<Camera>) {
     storages.add_unique(ChunkManager::new(
-        IVec3::new(1,1,1),
+        &U16Vec3::new(1,1,1),
         ChunkLocation::from(WorldLocation(camera.position))
     ));
 }
