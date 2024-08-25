@@ -163,10 +163,12 @@ impl ChunkManager {
     }
 }
 
+// TODO: make this not use i32
 fn into_1d_coordinate(coord: &IVec3, size: &IVec3) -> i32 {
     coord.x + coord.y * size.x + coord.z * size.x * size.y
 }
 
+// TODO: make this not use i32
 fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
     let x = coord % size.x;
     let y = (coord / size.x) % size.y;
