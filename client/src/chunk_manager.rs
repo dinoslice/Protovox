@@ -74,7 +74,7 @@ impl ChunkManager {
     }
 
     pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
-        self.center.0 - loc.0
+        loc.0 - self.center.0
     }
 
     pub fn render_size(&self) -> IVec3 {
