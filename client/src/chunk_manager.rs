@@ -1,5 +1,5 @@
 use std::time::Duration;
-use glm::{IVec3, U16Vec3};
+use glm::{IVec3, U16Vec3, UVec3};
 use game::chunk::data::ChunkData;
 use hashbrown::HashMap;
 use shipyard::Unique;
@@ -12,17 +12,16 @@ const REQ_TIMEOUT: f32 = 5.0;
 pub struct ChunkManager {
     // TODO: add handle to gpu buffer?
     loaded_chunks: Vec<Option<ChunkData>>,
-    // TODO: eventually change to unsigned type, rn doing this to eliminate casting
-    render_distance: IVec3,
+
+    render_distance: U16Vec3,
 
     recently_requested: HashMap<ChunkLocation, f32>,
 
-    // TODO: should we store this?
     center: ChunkLocation,
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: &U16Vec3, center: ChunkLocation) -> Self {
+    pub fn new(render_distance: U16Vec3, center: ChunkLocation) -> Self {
         let size = render_distance.iter()
             .map(|n| (2 * n + 1) as usize)
             .product();
@@ -31,8 +30,6 @@ impl ChunkManager {
 
         let mut loaded_chunks = Vec::new();
         loaded_chunks.resize_with(size, || None);
-
-        let render_distance = render_distance.cast();
 
         Self {
             loaded_chunks,
@@ -48,7 +45,7 @@ impl ChunkManager {
             .product()
     }
 
-    pub fn render_size(&self) -> IVec3 {
+    pub fn render_size(&self) -> U16Vec3 {
         self.render_distance.map(|n| 2 * n + 1)
     }
 
@@ -73,9 +70,9 @@ impl ChunkManager {
         self.update_and_resize(curr_chunk, delta_time, received_chunks, None)
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<&U16Vec3>) -> Vec<ChunkLocation> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>) -> Vec<ChunkLocation> {
         if let Some(render_distance) = new_render_distance {
-            self.render_distance = render_distance.cast();
+            self.render_distance = render_distance;
         }
 
         let delta_time_sec = delta_time.as_secs_f32();
@@ -128,24 +125,26 @@ impl ChunkManager {
     pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
         let offset = location.0 - self.center.0;
 
-        let norm_offset = offset + self.render_distance;
+        let render_dist_i32 = self.render_distance.cast();
+
+        let norm_offset = offset + render_dist_i32;
 
         if norm_offset.iter()
             .enumerate()
-            .any(|(i, n)| *n > 2 * self.render_distance[i] || n.is_negative())
+            .any(|(i, n)| *n > 2 * render_dist_i32[i] || n.is_negative())
         {
             return None;
         }
 
-        let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
+        let index = into_1d_coordinate(&norm_offset, &self.render_size().cast()) as usize;
 
         Some(index)
     }
 
     pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
-        let norm_offset = into_3d_coordinate(index as _, &self.render_size());
+        let norm_offset = into_3d_coordinate(index as _, &self.render_size().cast());
 
-        let offset = norm_offset - self.render_distance;
+        let offset = norm_offset - self.render_distance.cast();
 
         let chunk_loc = offset + self.center.0;
 
