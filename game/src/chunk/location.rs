@@ -12,3 +12,9 @@ impl From<&WorldLocation> for ChunkLocation {
     }
 }
 
+impl From<WorldLocation> for ChunkLocation {
+    fn from(loc: WorldLocation) -> Self {
+        (&loc).into()
+    }
+}
+
