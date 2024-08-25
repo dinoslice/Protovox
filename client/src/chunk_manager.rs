@@ -56,12 +56,16 @@ impl ChunkManager {
             )
     }
 
+    pub fn get_index_from_chunk_loc(&self, location: &ChunkLocation) -> usize {
+        self.get_index_from_offset(&(location.0 - self.center.0))
+    }
+
     pub fn get_index_from_offset(&self, offset: &IVec3) -> usize {
         let norm_offset = offset + self.render_distance;
 
         assert!(norm_offset.iter().all(|n| !n.is_negative()));
 
-        into_1d_coordinate(&norm_offset, &self.render_distance) as usize
+        into_1d_coordinate(&norm_offset, &self.render_size()) as usize
     }
 
     pub fn get_chunk_ref_from_offset(&self, offset: &IVec3) -> &ChunkData {
@@ -113,7 +117,7 @@ impl ChunkManager {
         for chunk_option in std::mem::take(&mut self.loaded_chunks) {
             if let Some(chunk) = chunk_option {
                 if Self::is_chunk_loc_in_render_distance(&self.center, &self.render_distance, &chunk.location) {
-                    let new_idx = self.get_index_from_offset(&(chunk.location.0 - self.center.0));
+                    let new_idx = self.get_index_from_chunk_loc(&chunk.location);
 
                     *new_loaded.get_mut(new_idx).expect("index to exist") = Some(chunk);
                 }
@@ -137,7 +141,7 @@ impl ChunkManager {
                 continue;
             }
 
-            let index = into_1d_coordinate(&norm_offset, &self.render_distance) as usize;
+            let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
 
             self.loaded_chunks
                 .get_mut(index)
@@ -152,7 +156,7 @@ impl ChunkManager {
             .filter(|(_, c)| c.is_none())
             .map(|(i ,c)| i)
             // .filter_map(|(i, &c)| c.is_none().then_some(i))
-            .map(|i| ChunkLocation(into_3d_coordinate(i as _, &self.render_distance)))
+            .map(|i| ChunkLocation(into_3d_coordinate(i as _, &self.render_size()) - self.render_distance))
             .filter(|loc| !self.recently_requested.contains_key(loc))
             .collect()
     }
