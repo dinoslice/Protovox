@@ -48,75 +48,14 @@ impl ChunkManager {
             .product()
     }
 
-    pub fn is_chunk_loc_in_render_distance(center: &ChunkLocation, render_distance: &IVec3, chunk: &ChunkLocation) -> bool {
-        let location = chunk.0;
-        let center = center.0;
-
-        let min = center - render_distance;
-        let max = center + render_distance;
-
-        location.iter()
-            .enumerate()
-            .all(|(a, n)|
-                (min[a]..=max[a]).contains(n)
-            )
-    }
-
-    pub fn get_index_from_chunk_loc(&self, location: &ChunkLocation) -> usize {
-        self.get_index_from_offset(&(location.0 - self.center.0))
-    }
-
-    pub fn get_index_from_offset(&self, offset: &IVec3) -> usize {
-        let norm_offset = offset + self.render_distance;
-
-        assert!(norm_offset.iter().all(|n| !n.is_negative()));
-
-        into_1d_coordinate(&norm_offset, &self.render_size()) as usize
-    }
-
-    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
-        let offset = location.0 - self.center.0;
-
-        let norm_offset = offset + self.render_distance;
-
-        if norm_offset.iter()
-            .enumerate()
-            .any(|(i, n)| *n > 2 * self.render_distance[i] || n.is_negative())
-        {
-            return None;
-        }
-
-        let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
-
-        Some(index)
-    }
-
-    pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
-        let norm_offset = into_3d_coordinate(index as _, &self.render_size());
-
-        let offset = norm_offset - self.render_distance;
-
-        let chunk_loc = offset + self.center.0;
-
-        ChunkLocation(chunk_loc)
-    }
-
-    pub fn get_chunk_ref_from_offset(&self, offset: &IVec3) -> &ChunkData {
-        let offset = self.get_index_from_offset(offset);
-
-        self.loaded_chunks.get(offset)
-            .expect("TODO: error handling")
-            .as_ref()
-            .expect("TODO: error handling")
-    }
-
-    pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
-        loc.0 - self.center.0
-    }
-
     pub fn render_size(&self) -> IVec3 {
         self.render_distance.map(|n| 2 * n + 1)
     }
+
+    pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
+        self.get_index_from_chunk_location_checked(chunk_loc).is_some()
+    }
+
 
     pub fn drop_all_recently_requested(&mut self) {
         self.recently_requested.clear();
@@ -183,6 +122,45 @@ impl ChunkManager {
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested.contains_key(loc))
             .collect()
+    }
+
+
+    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
+        let offset = location.0 - self.center.0;
+
+        let norm_offset = offset + self.render_distance;
+
+        if norm_offset.iter()
+            .enumerate()
+            .any(|(i, n)| *n > 2 * self.render_distance[i] || n.is_negative())
+        {
+            return None;
+        }
+
+        let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
+
+        Some(index)
+    }
+
+    pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
+        let norm_offset = into_3d_coordinate(index as _, &self.render_size());
+
+        let offset = norm_offset - self.render_distance;
+
+        let chunk_loc = offset + self.center.0;
+
+        ChunkLocation(chunk_loc)
+    }
+
+    pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
+        loc.0 - self.center.0
+    }
+
+    // TODO: error differentiating between invalid loc & not loaded chunk
+    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ChunkData> {
+        let offset = self.get_index_from_chunk_location_checked(location)?;
+
+        self.loaded_chunks.get(offset)?.as_ref()
     }
 }
 
