@@ -160,7 +160,7 @@ impl ChunkManager {
             .filter(|(_, c)| c.is_none())
             .map(|(i ,c)| i)
             // .filter_map(|(i, &c)| c.is_none().then_some(i))
-            .map(|i| ChunkLocation(into_3d_coordinate(i as _, &self.render_size()) - self.render_distance))
+            .map(|i| ChunkLocation((into_3d_coordinate(i as _, &self.render_size()) - self.render_distance) + self.center.0))
             .filter(|loc| !self.recently_requested.contains_key(loc))
             .collect()
     }
