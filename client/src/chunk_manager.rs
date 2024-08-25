@@ -1,5 +1,5 @@
 use std::time::Duration;
-use glm::IVec3;
+use glm::{IVec3, U16Vec3};
 use game::chunk::data::ChunkData;
 use hashbrown::HashMap;
 use shipyard::Unique;
@@ -42,6 +42,12 @@ impl ChunkManager {
         }
     }
 
+    pub fn chunk_capacity(&self) -> usize {
+        self.render_distance.iter()
+            .map(|n| (2 * n + 1) as usize)
+            .product()
+    }
+
     pub fn is_chunk_loc_in_render_distance(center: &ChunkLocation, render_distance: &IVec3, chunk: &ChunkLocation) -> bool {
         let location = chunk.0;
         let center = center.0;
@@ -66,6 +72,33 @@ impl ChunkManager {
         assert!(norm_offset.iter().all(|n| !n.is_negative()));
 
         into_1d_coordinate(&norm_offset, &self.render_size()) as usize
+    }
+
+    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
+        let offset = location.0 - self.center.0;
+
+        let norm_offset = offset + self.render_distance;
+
+        if norm_offset.iter()
+            .enumerate()
+            .any(|(i, n)| *n > 2 * self.render_distance[i] || n.is_negative())
+        {
+            return None;
+        }
+
+        let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
+
+        Some(index)
+    }
+
+    pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
+        let norm_offset = into_3d_coordinate(index as _, &self.render_size());
+
+        let offset = norm_offset - self.render_distance;
+
+        let chunk_loc = offset + self.center.0;
+
+        ChunkLocation(chunk_loc)
     }
 
     pub fn get_chunk_ref_from_offset(&self, offset: &IVec3) -> &ChunkData {
@@ -98,30 +131,32 @@ impl ChunkManager {
     }
 
     pub fn update(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>) -> Vec<ChunkLocation> {
+        self.update_and_resize(curr_chunk, delta_time, received_chunks, None)
+    }
+
+    pub fn update_and_resize(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<&U16Vec3>) -> Vec<ChunkLocation> {
+        if let Some(render_distance) = new_render_distance {
+            self.render_distance = render_distance.cast();
+        }
+
         let delta_time_sec = delta_time.as_secs_f32();
-
-        // update recently requested
-
-        // TODO: remove two iterations over hashmap
-        // self.recently_requested.retain(|_, f| *f - delta_time_sec > 0.0);
-        // self.recently_requested.iter_mut().for_each(|(_, t)| *t -= delta_time_sec);
 
         self.recently_requested.retain(|_, t| {
             *t -= delta_time_sec;
             *t > 0.0
         });
 
-        // remove unneeded chunks
         self.center = curr_chunk;
 
         let mut new_loaded = Vec::new();
-        new_loaded.resize_with(self.loaded_chunks.len(), || None);
+        new_loaded.resize_with(self.chunk_capacity(), || None);
 
         // TODO: we know old center and new center, so calculate new vec positions
         for chunk_option in std::mem::take(&mut self.loaded_chunks) {
             if let Some(chunk) = chunk_option {
                 if Self::is_chunk_loc_in_render_distance(&self.center, &self.render_distance, &chunk.location) {
-                    let new_idx = self.get_index_from_chunk_loc(&chunk.location);
+                    let new_idx = self.get_index_from_chunk_location_checked(&chunk.location)
+                        .expect("norm_offset must be positive");
 
                     *new_loaded.get_mut(new_idx).expect("index to exist") = Some(chunk);
                 }
@@ -133,19 +168,9 @@ impl ChunkManager {
         for chunk in received_chunks {
             self.recently_requested.remove(&chunk.location);
 
-            let offset = chunk.location.0 - self.center.0;
-
-            let norm_offset = offset + self.render_distance;
-
-            if norm_offset.iter().any(|n| n.is_negative()) {
+            let Some(index) = self.get_index_from_chunk_location_checked(&chunk.location) else {
                 continue;
-            }
-
-            if norm_offset.iter().enumerate().any(|(i, &n)| n > self.render_distance[i] * 2) {
-                continue;
-            }
-
-            let index = into_1d_coordinate(&norm_offset, &self.render_size()) as usize;
+            };
 
             self.loaded_chunks
                 .get_mut(index)
@@ -157,10 +182,8 @@ impl ChunkManager {
 
         self.loaded_chunks.iter()
             .enumerate()
-            .filter(|(_, c)| c.is_none())
-            .map(|(i ,c)| i)
-            // .filter_map(|(i, &c)| c.is_none().then_some(i))
-            .map(|i| ChunkLocation((into_3d_coordinate(i as _, &self.render_size()) - self.render_distance) + self.center.0))
+            .filter_map(|(i, c)| c.is_none().then_some(i))
+            .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested.contains_key(loc))
             .collect()
     }
