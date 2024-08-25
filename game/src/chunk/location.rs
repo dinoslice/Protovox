@@ -1,10 +1,10 @@
-use glm::TVec3;
+use glm::IVec3;
 use crate::chunk;
 use crate::location::WorldLocation;
 
 #[repr(transparent)]
-#[derive(Default, Eq, PartialEq, Clone, Debug)]
-pub struct ChunkLocation(pub TVec3<i32>);
+#[derive(Default, Eq, PartialEq, Clone, Debug, Hash)]
+pub struct ChunkLocation(pub IVec3);
 
 impl From<&WorldLocation> for ChunkLocation {
     fn from(loc: &WorldLocation) -> Self {
