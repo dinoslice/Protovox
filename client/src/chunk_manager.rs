@@ -113,12 +113,18 @@ impl ChunkManager {
             // TODO: create GPU data
         }
 
-        self.loaded_chunks.iter()
+        let requests = self.loaded_chunks.iter()
             .enumerate()
             .filter_map(|(i, c)| c.is_none().then_some(i))
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested.contains_key(loc))
-            .collect()
+            .collect::<Vec<_>>();
+
+        for req in &requests {
+            self.recently_requested.insert(req.clone(), REQ_TIMEOUT);
+        }
+
+        requests
     }
 
 
