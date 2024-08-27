@@ -1,10 +1,11 @@
 use std::time::Duration;
-use glm::{IVec3, U16Vec3, UVec3};
+use glm::{IVec3, U16Vec3};
 use game::chunk::data::ChunkData;
 use hashbrown::HashMap;
 use shipyard::Unique;
-use tracing::trace;
 use game::chunk::location::ChunkLocation;
+
+use crate::events::ChunkGenRequestEvent;
 
 const REQ_TIMEOUT: f32 = 5.0;
 
@@ -66,11 +67,11 @@ impl ChunkManager {
         // TODO: request server for chunk
     }
 
-    pub fn update(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>) -> Vec<ChunkLocation> {
+    pub fn update(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>) -> Vec<ChunkGenRequestEvent> {
         self.update_and_resize(curr_chunk, delta_time, received_chunks, None)
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>) -> Vec<ChunkLocation> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>) -> Vec<ChunkGenRequestEvent> {
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
         }
@@ -118,10 +119,11 @@ impl ChunkManager {
             .filter_map(|(i, c)| c.is_none().then_some(i))
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested.contains_key(loc))
+            .map(|loc| ChunkGenRequestEvent(loc))
             .collect::<Vec<_>>();
 
         for req in &requests {
-            self.recently_requested.insert(req.clone(), REQ_TIMEOUT);
+            self.recently_requested.insert(req.0.clone(), REQ_TIMEOUT);
         }
 
         requests
@@ -186,7 +188,6 @@ fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
 #[cfg(test)]
 mod tests {
     use glm::IVec3;
-    use super::*;
 
     #[test]
     fn test_chunk_offset_into_chunk_vec() {

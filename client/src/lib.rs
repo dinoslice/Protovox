@@ -7,5 +7,7 @@ mod rendering;
 mod input;
 mod camera;
 mod workloads;
+mod events;
+mod world_gen;
 
 pub mod chunk_manager;

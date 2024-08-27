@@ -1,4 +1,4 @@
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, WorkloadModificator, SystemModificator};
+use shipyard::{AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, UniqueViewMut, Workload};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
@@ -14,7 +14,7 @@ pub fn update() -> Workload {
     ).into_sequential_workload()
 }
 
-fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>) {
+fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>, mut all_storages: AllStoragesViewMut) {
     let current_chunk = ChunkLocation::from(WorldLocation(camera.position));
 
     let reqs = chunk_mgr.update(current_chunk, delta_time.0, Vec::default());
@@ -24,10 +24,7 @@ fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: Un
         tracing::debug!("{reqs:?}")
     }
 
-
-    for req in reqs {
-        chunk_mgr.request_chunk(&req);
-    }
+    all_storages.bulk_add_entity(reqs);
 }
 
 fn update_camera_movement(delta_time: UniqueView<LastDeltaTime>, mut camera: UniqueViewMut<Camera>, input_manager: UniqueView<InputManager>) {
