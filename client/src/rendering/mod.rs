@@ -13,3 +13,5 @@ mod camera_uniform_buffer;
 mod base_face;
 mod depth_texture;
 mod texture_atlas;
+
+pub mod sized_buffer;

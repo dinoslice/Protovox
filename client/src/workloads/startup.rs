@@ -10,7 +10,7 @@ use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
-use crate::chunk_manager::ChunkManager;
+use crate::chunks::chunk_manager::ChunkManager;
 use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;

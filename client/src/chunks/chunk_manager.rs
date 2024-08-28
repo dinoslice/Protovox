@@ -1,23 +1,30 @@
 use std::time::Duration;
-use glm::{IVec3, U16Vec3, UVec3};
+use glm::{IVec3, U16Vec3};
 use game::chunk::data::ChunkData;
 use hashbrown::HashMap;
 use shipyard::Unique;
 use tracing::trace;
+use wgpu::util::DeviceExt;
 use game::chunk::location::ChunkLocation;
+use crate::chunks::client_chunk::ClientChunk;
+use crate::rendering::chunk_mesh::ChunkMesh;
+use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::sized_buffer::SizedBuffer;
 
 const REQ_TIMEOUT: f32 = 5.0;
 
 #[derive(Unique)]
 pub struct ChunkManager {
     // TODO: add handle to gpu buffer?
-    loaded_chunks: Vec<Option<ChunkData>>,
+    loaded_chunks: Vec<Option<ClientChunk>>,
 
     render_distance: U16Vec3,
-
-    recently_requested: HashMap<ChunkLocation, f32>,
-
     center: ChunkLocation,
+
+    // TODO: one big buffer?
+    bakery: HashMap<ChunkLocation, SizedBuffer>,
+
+    recently_requested_gen: HashMap<ChunkLocation, f32>,
 }
 
 impl ChunkManager {
@@ -34,8 +41,9 @@ impl ChunkManager {
         Self {
             loaded_chunks,
             render_distance,
-            recently_requested: HashMap::default(),
             center,
+            recently_requested_gen: HashMap::default(),
+            bakery: HashMap::default(),
         }
     }
 
@@ -55,29 +63,26 @@ impl ChunkManager {
 
 
     pub fn drop_all_recently_requested(&mut self) {
-        self.recently_requested.clear();
+        self.recently_requested_gen.clear();
     }
 
     // TODO: clones twice if doesn't exist, none if exists; if it were to take in an owned loc, then if it exists you'd lose that
     // returns whether that chunk has already been requested
     pub fn request_chunk(&mut self, loc: &ChunkLocation) -> bool {
-        self.recently_requested.try_insert(loc.clone(), REQ_TIMEOUT).is_err()
+        self.recently_requested_gen.try_insert(loc.clone(), REQ_TIMEOUT).is_err()
 
         // TODO: request server for chunk
     }
 
-    pub fn update(&mut self, curr_chunk: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>) -> Vec<ChunkLocation> {
-        self.update_and_resize(curr_chunk, delta_time, received_chunks, None)
-    }
-
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>) -> Vec<ChunkLocation> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkLocation> {
+        // TODO: skip if no chunks changed
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
         }
 
         let delta_time_sec = delta_time.as_secs_f32();
 
-        self.recently_requested.retain(|_, t| {
+        self.recently_requested_gen.retain(|_, t| {
             *t -= delta_time_sec;
             *t > 0.0
         });
@@ -90,8 +95,12 @@ impl ChunkManager {
         // TODO: we know old center and new center, so calculate new vec positions
         for chunk_option in std::mem::take(&mut self.loaded_chunks) {
             if let Some(chunk) = chunk_option {
-                if let Some(index) = self.get_index_from_chunk_location_checked(&chunk.location) {
+                if let Some(index) = self.get_index_from_chunk_location_checked(&chunk.data.location) {
                     *new_loaded.get_mut(index).expect("index to exist") = Some(chunk);
+                } else {
+                    let loc = &chunk.data.location;
+                    trace!("Deleting chunk buffer at {loc:?}");
+                    self.bakery.remove(loc);
                 }
             }
         }
@@ -99,7 +108,7 @@ impl ChunkManager {
         self.loaded_chunks = new_loaded;
 
         for chunk in received_chunks {
-            self.recently_requested.remove(&chunk.location);
+            self.recently_requested_gen.remove(&chunk.location);
 
             let Some(index) = self.get_index_from_chunk_location_checked(&chunk.location) else {
                 continue;
@@ -108,20 +117,50 @@ impl ChunkManager {
             self.loaded_chunks
                 .get_mut(index)
                 .expect("index in bounds")
-                .get_or_insert(chunk);
+                .get_or_insert(ClientChunk {
+                    data: chunk,
+                    dirty: true,
+                });
 
             // TODO: create GPU data
+        }
+
+        for chunk in self.loaded_chunks.iter()
+            // TODO: .and_then()
+            .filter_map(|cc| match cc {
+                None => None,
+                Some(cc) => {
+                    (!cc.dirty).then_some(cc)
+                }
+            })
+        {
+            let baked = ChunkMesh::from_chunk(&chunk.data).faces;
+
+            let buffer = g_ctx.device.create_buffer_init(
+                &wgpu::util::BufferInitDescriptor {
+                    label: Some("chunk buffer"),
+                    contents: bytemuck::cast_slice(&baked),
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, // only needed in vertex buffer,
+                }
+            );
+
+            let buffer = SizedBuffer {
+                buffer,
+                size: baked.len() as u32,
+            };
+
+            self.bakery.insert(chunk.data.location.clone(), buffer);
         }
 
         let requests = self.loaded_chunks.iter()
             .enumerate()
             .filter_map(|(i, c)| c.is_none().then_some(i))
             .map(|i| self.get_location_from_index(i))
-            .filter(|loc| !self.recently_requested.contains_key(loc))
+            .filter(|loc| !self.recently_requested_gen.contains_key(loc))
             .collect::<Vec<_>>();
 
         for req in &requests {
-            self.recently_requested.insert(req.clone(), REQ_TIMEOUT);
+            self.recently_requested_gen.insert(req.clone(), REQ_TIMEOUT);
         }
 
         requests
@@ -162,10 +201,23 @@ impl ChunkManager {
     }
 
     // TODO: error differentiating between invalid loc & not loaded chunk
-    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ChunkData> {
+    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
         let offset = self.get_index_from_chunk_location_checked(location)?;
 
         self.loaded_chunks.get(offset)?.as_ref()
+    }
+
+    pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
+        self.loaded_chunks.iter()
+            // TODO is there a better way to do this
+            .filter_map(|n|
+                n.as_ref().map(|n| n.data.location.clone()) // TODO: remove clone
+            )
+            .collect()
+    }
+
+    pub fn baked_chunks(&self) -> &HashMap<ChunkLocation, SizedBuffer> {
+        &self.bakery
     }
 }
 
@@ -186,7 +238,6 @@ fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
 #[cfg(test)]
 mod tests {
     use glm::IVec3;
-    use super::*;
 
     #[test]
     fn test_chunk_offset_into_chunk_vec() {

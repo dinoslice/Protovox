@@ -1,13 +1,11 @@
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use shipyard::{UniqueView, UniqueViewMut, World};
+use std::time::Instant;
+use shipyard::{UniqueView, World};
 use tracing::error;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use crate::camera::Camera;
-use crate::input::InputManager;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render;
 use crate::workloads::{startup, update};
@@ -61,7 +59,7 @@ pub fn run() {
 
                             // world.run_with_data(update_camera_from_input_manager, &last_render_time.elapsed());
 
-                            match world.run(render::render) {
+                            match world.run(/*render::render*/ render::render_new) {
                                 Ok(_) => {}
                                 // Reconfigure the surface if lost
                                 Err(wgpu::SurfaceError::Lost) => world.run(resize::reconfigure),
