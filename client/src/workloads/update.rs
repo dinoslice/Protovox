@@ -1,5 +1,5 @@
 use crate::chunks::chunk_manager::ChunkManager;
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
@@ -15,7 +15,14 @@ pub fn update() -> Workload {
     ).into_sequential_workload()
 }
 
-fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>, g_ctx: UniqueView<GraphicsContext>) {
+
+// TODO: fix borrowing of storages
+fn update_chunk_manager(/*delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>, g_ctx: UniqueView<GraphicsContext>,*/ mut all_storages: AllStoragesViewMut) {
+    let delta_time = all_storages.borrow::<UniqueView<LastDeltaTime>>().unwrap();
+    let mut chunk_mgr = all_storages.borrow::<UniqueViewMut<ChunkManager>>().unwrap();
+    let camera = all_storages.borrow::<UniqueView<Camera>>().unwrap();
+    let g_ctx = all_storages.borrow::<UniqueView<GraphicsContext>>().unwrap();
+
     let current_chunk = ChunkLocation::from(WorldLocation(camera.position));
 
     let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, Vec::default(), None, &g_ctx);
@@ -25,9 +32,15 @@ fn update_chunk_manager(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: Un
         tracing::debug!("{reqs:?}")
     }
 
+    drop(delta_time);
+    drop(chunk_mgr);
+    drop(camera);
+    drop(g_ctx);
+
+    // all_storages.bulk_add_entity(reqs.into_iter());
 
     for req in reqs {
-        chunk_mgr.request_chunk(&req);
+        all_storages.add_entity(req);
     }
 }
 

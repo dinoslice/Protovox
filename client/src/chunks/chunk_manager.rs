@@ -10,6 +10,7 @@ use crate::chunks::client_chunk::ClientChunk;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
+use crate::events::ChunkGenRequestEvent;
 
 const REQ_TIMEOUT: f32 = 5.0;
 
@@ -74,7 +75,7 @@ impl ChunkManager {
         // TODO: request server for chunk
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkLocation> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         // TODO: skip if no chunks changed
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
@@ -157,10 +158,11 @@ impl ChunkManager {
             .filter_map(|(i, c)| c.is_none().then_some(i))
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested_gen.contains_key(loc))
+            .map(|loc| ChunkGenRequestEvent(loc))
             .collect::<Vec<_>>();
 
         for req in &requests {
-            self.recently_requested_gen.insert(req.clone(), REQ_TIMEOUT);
+            self.recently_requested_gen.insert(req.0.clone(), REQ_TIMEOUT);
         }
 
         requests
@@ -238,6 +240,7 @@ fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
 #[cfg(test)]
 mod tests {
     use glm::IVec3;
+    use super::*;
 
     #[test]
     fn test_chunk_offset_into_chunk_vec() {
