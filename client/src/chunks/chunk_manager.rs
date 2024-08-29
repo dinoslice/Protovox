@@ -118,11 +118,7 @@ impl ChunkManager {
             self.loaded_chunks
                 .get_mut(index)
                 .expect("index in bounds")
-                .get_or_insert(ClientChunk {
-                    data: chunk,
-                    dirty: true,
-                });
-
+                .get_or_insert(ClientChunk::new_dirty(data));
             // TODO: create GPU data
         }
 
