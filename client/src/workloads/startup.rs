@@ -15,6 +15,7 @@ use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer;
+use crate::world_gen::WorldGenerator;
 
 pub fn startup() -> Workload {
     (
@@ -62,7 +63,7 @@ pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStorag
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView, camera: UniqueView<Camera>) {
     storages.add_unique(ChunkManager::new(
-        U16Vec3::new(1,1,1),
+        U16Vec3::new(3,0,3),
         ChunkLocation::from(WorldLocation(camera.position))
     ));
 }
@@ -71,5 +72,6 @@ pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(InputManager::with_mouse_sensitivity(0.75));
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
+    storages.add_unique(WorldGenerator::new(50));
 }
 

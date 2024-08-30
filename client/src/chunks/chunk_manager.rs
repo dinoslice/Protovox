@@ -10,7 +10,7 @@ use crate::chunks::client_chunk::ClientChunk;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
-use crate::events::ChunkGenRequestEvent;
+use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
 
 const REQ_TIMEOUT: f32 = 5.0;
 
@@ -75,7 +75,7 @@ impl ChunkManager {
         // TODO: request server for chunk
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkData>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkGenEvent>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         // TODO: skip if no chunks changed
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
@@ -109,11 +109,15 @@ impl ChunkManager {
         self.loaded_chunks = new_loaded;
 
         for chunk in received_chunks {
-            self.recently_requested_gen.remove(&chunk.location);
+            let data = chunk.0;
 
-            let Some(index) = self.get_index_from_chunk_location_checked(&chunk.location) else {
+            self.recently_requested_gen.remove(&data.location);
+
+            let Some(index) = self.get_index_from_chunk_location_checked(&data.location) else {
                 continue;
             };
+
+            tracing::debug!("About to insert chunk {:?} at {}", data.location, index);
 
             self.loaded_chunks
                 .get_mut(index)
@@ -122,16 +126,16 @@ impl ChunkManager {
             // TODO: create GPU data
         }
 
-        for chunk in self.loaded_chunks.iter()
-            // TODO: .and_then()
-            .filter_map(|cc| match cc {
-                None => None,
-                Some(cc) => {
-                    (!cc.dirty).then_some(cc)
-                }
-            })
+        for chunk in self.loaded_chunks.iter_mut()
+            .filter_map(|cc|
+                cc.as_mut().and_then(|cc|
+                    cc.dirty.then_some(cc)
+                )
+            )
         {
             let baked = ChunkMesh::from_chunk(&chunk.data).faces;
+
+            tracing::debug!("Finished baking chunk at {:?}", &chunk.data.location);
 
             let buffer = g_ctx.device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
@@ -147,6 +151,7 @@ impl ChunkManager {
             };
 
             self.bakery.insert(chunk.data.location.clone(), buffer);
+            chunk.dirty = false;
         }
 
         let requests = self.loaded_chunks.iter()
@@ -155,7 +160,7 @@ impl ChunkManager {
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested_gen.contains_key(loc))
             .map(|loc| ChunkGenRequestEvent(loc))
-            .collect::<Vec<_>>();
+            .collect::<Vec<ChunkGenRequestEvent>>();
 
         for req in &requests {
             self.recently_requested_gen.insert(req.0.clone(), REQ_TIMEOUT);

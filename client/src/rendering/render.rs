@@ -180,10 +180,7 @@ pub fn render_new(
 
         render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
-        render_pass.set_vertex_buffer(1, buffer.buffer.slice(
-            // 0..buffer.size
-            ..
-        ));
+        render_pass.set_vertex_buffer(1, buffer.buffer.slice(..));
 
         // draw the whole range of vertices, and all instances
         render_pass.draw(0..base_face.num_vertices, 0..buffer.size);
