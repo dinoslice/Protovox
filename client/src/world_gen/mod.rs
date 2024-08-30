@@ -26,13 +26,13 @@ impl WorldGenerator {
         }
     }
 
-    pub fn receive_chunks(&self) -> Option<Vec<ChunkGenEvent>> {
+    pub fn receive_chunks(&self) -> Vec<ChunkGenEvent> {
         let mut out = vec![];
         while let Ok(data) = self.chunk_output.1.try_recv() {
             out.push(data);
         }
         
-        (!out.is_empty()).then_some(out)
+        out
     }
 
     pub fn spawn_generate_task(&self, chunk: ChunkLocation) {
