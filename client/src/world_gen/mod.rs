@@ -61,7 +61,7 @@ impl WorldGenerator {
 
                 out.set_block(ChunkPos::new_unchecked(x, height as u8, z), Block::Grass);
                 for y in 0..(height as u8) {
-                    if y >= (height as u8 - 3) {
+                    if y + 3 >= (height) {
                         out.set_block(ChunkPos::new_unchecked(x, y, z), Block::Dirt);
                     } else {
                         out.set_block(ChunkPos::new_unchecked(x, y, z), Block::Cobblestone);
