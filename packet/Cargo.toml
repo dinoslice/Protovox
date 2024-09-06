@@ -1,0 +1,12 @@
+[package]
+name = "packet"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+postcard = "1.0.10"
+serde = "1.0.209"
+thiserror = "1.0.63"
+
+[lints.clippy]
+unwrap_used = "warn"

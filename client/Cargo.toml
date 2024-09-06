@@ -22,6 +22,13 @@ hashbrown = "0.14.5"
 noise = "0.9.0"
 rayon = "1.10.0"
 crossbeam = "0.8.4"
+packet = { path  = "../packet" }
+packet_derive = { path  = "../packet_derive" }
+postcard = "1.0.10"
+strum = { version = "0.26.3", features = ["derive", "strum_macros"] }
+serde = { version = "1.0.209", features = ["derive"] }
+laminar = "0.5.0"
+bimap = "0.6.3"
 
 [lints.clippy]
 unwrap_used = "warn"
