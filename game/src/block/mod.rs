@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use crate::block::face_type::FaceType;
 
 pub mod face_type;
 
 #[repr(u16)]
-#[derive(Clone, Copy, Eq, PartialEq, Default, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize)]
 pub enum Block {
     #[default]
     Air = 0,

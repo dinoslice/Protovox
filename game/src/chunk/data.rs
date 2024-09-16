@@ -1,3 +1,5 @@
+use serde_big_array::BigArray;
+use serde::{Deserialize, Serialize};
 use crate::block::Block;
 use crate::chunk::BLOCKS_PER_CHUNK;
 use crate::chunk::location::ChunkLocation;
@@ -5,9 +7,10 @@ use crate::chunk::pos::ChunkPos;
 
 pub type ChunkBlocks = [Block; BLOCKS_PER_CHUNK];
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ChunkData {
     pub location: ChunkLocation,
+    #[serde(with = "BigArray")]
     pub blocks: ChunkBlocks,
 }
 
