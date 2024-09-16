@@ -14,6 +14,7 @@ use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
+use crate::render_distance::RenderDistance;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer;
@@ -66,7 +67,7 @@ pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStorag
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView, camera: UniqueView<Camera>) {
     storages.add_unique(ChunkManager::new(
-        U16Vec3::new(3,0,3),
+        RenderDistance(U16Vec3::new(3,0,3)),
         ChunkLocation::from(WorldLocation(camera.position))
     ));
 }

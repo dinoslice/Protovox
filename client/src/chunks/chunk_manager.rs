@@ -11,6 +11,7 @@ use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
+use crate::render_distance::RenderDistance;
 
 const REQ_TIMEOUT: f32 = 5.0;
 
@@ -19,7 +20,7 @@ pub struct ChunkManager {
     // TODO: add handle to gpu buffer?
     loaded_chunks: Vec<Option<ClientChunk>>,
 
-    render_distance: U16Vec3,
+    render_distance: RenderDistance,
     center: ChunkLocation,
 
     // TODO: one big buffer?
@@ -29,8 +30,8 @@ pub struct ChunkManager {
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: U16Vec3, center: ChunkLocation) -> Self {
-        let size = render_distance.iter()
+    pub fn new(render_distance: RenderDistance, center: ChunkLocation) -> Self {
+        let size = render_distance.0.iter()
             .map(|n| (2 * n + 1) as usize)
             .product();
 
@@ -49,13 +50,13 @@ impl ChunkManager {
     }
 
     pub fn chunk_capacity(&self) -> usize {
-        self.render_distance.iter()
+        self.render_distance.0.iter()
             .map(|n| (2 * n + 1) as usize)
             .product()
     }
 
     pub fn render_size(&self) -> U16Vec3 {
-        self.render_distance.map(|n| 2 * n + 1)
+        self.render_distance.0.map(|n| 2 * n + 1)
     }
 
     pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
@@ -75,7 +76,7 @@ impl ChunkManager {
         // TODO: request server for chunk
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkGenEvent>, new_render_distance: Option<U16Vec3>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         // TODO: skip if no chunks changed
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
@@ -173,7 +174,7 @@ impl ChunkManager {
     pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
         let offset = location.0 - self.center.0;
 
-        let render_dist_i32 = self.render_distance.cast();
+        let render_dist_i32 = self.render_distance.0.cast();
 
         let norm_offset = offset + render_dist_i32;
 
@@ -192,7 +193,7 @@ impl ChunkManager {
     pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
         let norm_offset = into_3d_coordinate(index as _, &self.render_size().cast());
 
-        let offset = norm_offset - self.render_distance.cast();
+        let offset = norm_offset - self.render_distance.0.cast();
 
         let chunk_loc = offset + self.center.0;
 
