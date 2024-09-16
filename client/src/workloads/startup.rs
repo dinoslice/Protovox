@@ -10,7 +10,9 @@ use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
+use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -19,6 +21,7 @@ use crate::world_gen::WorldGenerator;
 
 pub fn startup() -> Workload {
     (
+        args::parse_env,
         renderer::initialize_renderer,
         init_chunk_faces,
         initialize_camera,
