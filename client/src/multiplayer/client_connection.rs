@@ -1,0 +1,105 @@
+use std::net::SocketAddr;
+use std::thread;
+use crossbeam::channel::{Receiver, Sender};
+use laminar::{Socket, SocketEvent};
+use shipyard::{AllStoragesViewMut, EntityId, Unique};
+use packet::Packet;
+use crate::events;
+
+#[derive(Unique)]
+pub struct ServerConnection {
+    server_addr: SocketAddr,
+    tx: Sender<laminar::Packet>,
+    rx: Receiver<SocketEvent>,
+}
+
+impl ServerConnection {
+    pub fn bind(server_addr: impl Into<SocketAddr>) -> Self {
+        let mut socket = Socket::bind_any().unwrap();
+        let tx = socket.get_packet_sender();
+        let rx = socket.get_event_receiver();
+
+        let server_addr = server_addr.into();
+
+        tracing::debug!("Connected client at {} to server at {server_addr:?}", socket.local_addr().unwrap());
+
+        let _ = thread::spawn(move || socket.start_polling());
+
+        let connection_req = laminar::Packet::reliable_ordered(
+            server_addr,
+            events::ConnectionRequest.serialize_packet().expect("packet serialization"),
+            None, // TODO: configure stream ids
+        );
+
+        tx.send(connection_req).expect("sent connection req");
+
+        Self {
+            server_addr,
+            tx,
+            rx,
+        }
+    }
+
+    pub fn process(&mut self, mut storages: AllStoragesViewMut) {
+        while let Ok(evt) = self.rx.try_recv() {
+            match evt {
+                SocketEvent::Packet(packet) => {
+                    assert_eq!(packet.addr(), self.server_addr);
+                    self.add_packet(packet.payload(), &mut storages);
+                }
+                SocketEvent::Connect(addr) => {
+                    tracing::debug!("something just connected to the client, {addr:?}");
+                }
+                SocketEvent::Timeout(addr) => {
+                    tracing::debug!("socket timeout, {addr:?}");
+                }
+                SocketEvent::Disconnect(addr) => {
+                    tracing::debug!("disconnected from the client, {addr:?}");
+                }
+            }
+        }
+    }
+
+    pub fn add_packet(&mut self, buffer: &[u8], storages: &mut AllStoragesViewMut) {
+        use crate::networking::types::PacketType;
+        use packet::{PacketHeader, Packet};
+
+        macro_rules! register_packets {
+            ($bytes:expr, $storages:expr, { $($packet_type:ident),* $(,)? }) => {
+                register_packets!($bytes, $storages, { $($packet_type => $packet_type),* });
+            };
+            ($bytes:expr, $storages:expr, { $($packet_type:ident => $packet_struct:ident),* $(,)? }) => {
+                match PacketType::from_buffer($bytes) {
+                    Some(ty) => match ty {
+                        $(
+                            PacketType::$packet_type => if let Some(packet) = $packet_struct::deserialize_unchecked($bytes) {
+                                $storages.add_entity(packet);
+                            } else {
+                                println!("{ty:?} data was malformed");
+                            },
+                        )*
+                        _ => println!("Packet {:?} isn't registered", ty),
+                    },
+                    None => println!("Packet ID couldn't be determined"),
+                }
+            };
+        }
+
+        use crate::events::*;
+        use crate::events::render_distance::*;
+
+        register_packets!(buffer, storages, {
+            ChunkGenRequestEvent,
+            ChunkGenEvent,
+
+            RenderDistanceRequestEvent,
+            RenderDistanceUpdateEvent,
+
+            ClientInformationRequestEvent,
+            ClientInformationUpdateEvent,
+
+            ClientSettingsRequestEvent,
+            ClientSettingsUpdateEvent,
+        });
+    }
+}

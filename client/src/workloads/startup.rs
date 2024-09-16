@@ -14,6 +14,8 @@ use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
+use crate::multiplayer::client_connection::ServerConnection;
+use crate::networking::server_socket::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -28,7 +30,8 @@ pub fn startup() -> Workload {
         initialize_camera,
         initialize_gameplay_systems.after_all(initialize_camera),
         initialize_application_systems,
-    ).into_workload()
+        initialize_networking.after_all(args::parse_env),
+    ).into_sequential_workload()
 }
 
 fn init_chunk_faces(storages: AllStoragesView) {
@@ -77,5 +80,17 @@ pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
     storages.add_unique(WorldGenerator::new(50));
+}
+
+fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
+    if storages.run(is_hosted) {
+        storages.add_unique(ServerHandler::new());
+    } else if storages.run(is_multiplayer_client) {
+        let Environment::MultiplayerClient(addr) = *env else {
+            unreachable!();
+        };
+
+        storages.add_unique(ServerConnection::bind(addr))
+    }
 }
 

@@ -7,6 +7,7 @@ use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
 use crate::input::InputManager;
+use crate::networking::server_socket::process_network_events_system;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
@@ -14,6 +15,8 @@ pub fn update() -> Workload {
     (
         update_camera_movement,
         reset_mouse_manager_state,
+        // TODO: run_if() causes a panic
+        process_network_events_system,
         get_generated_chunks,
         chunk_manager_update_and_request.after_all(update_camera_movement),
         request_chunks,
