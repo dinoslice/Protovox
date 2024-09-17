@@ -1,15 +1,16 @@
 use std::net::SocketAddr;
 use std::thread;
 use crossbeam::channel::{Receiver, Sender};
-use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique};
-use packet::Packet;
+use laminar::{Packet, Socket, SocketEvent};
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView};
+use packet::Packet as _;
+use crate::environment::is_multiplayer_client;
 use crate::events;
 
 #[derive(Unique)]
 pub struct ServerConnection {
     server_addr: SocketAddr,
-    tx: Sender<laminar::Packet>,
+    tx: Sender<Packet>,
     rx: Receiver<SocketEvent>,
 }
 
@@ -25,7 +26,7 @@ impl ServerConnection {
 
         let _ = thread::spawn(move || socket.start_polling());
 
-        let connection_req = laminar::Packet::reliable_ordered(
+        let connection_req = Packet::reliable_ordered(
             server_addr,
             events::ConnectionRequest.serialize_packet().expect("packet serialization"),
             None, // TODO: configure stream ids
@@ -39,32 +40,54 @@ impl ServerConnection {
             rx,
         }
     }
+}
 
-    pub fn process(&mut self, mut storages: AllStoragesViewMut) {
-        while let Ok(evt) = self.rx.try_recv() {
-            match evt {
-                SocketEvent::Packet(packet) => {
-                    assert_eq!(packet.addr(), self.server_addr);
-                    self.add_packet(packet.payload(), &mut storages);
-                }
-                SocketEvent::Connect(addr) => {
-                    tracing::debug!("something just connected to the client, {addr:?}");
-                }
-                SocketEvent::Timeout(addr) => {
-                    tracing::debug!("socket timeout, {addr:?}");
-                }
-                SocketEvent::Disconnect(addr) => {
-                    tracing::debug!("disconnected from the client, {addr:?}");
-                }
+pub fn process_network_events_multiplayer_client(mut storages: AllStoragesViewMut) {
+    if !storages.run(is_multiplayer_client) {
+        return;
+    }
+
+    let addr = storages
+        .borrow::<UniqueView<ServerConnection>>()
+        .expect("server conn reborrow")
+        .server_addr;
+
+    loop {
+        let server_conn = storages
+            .borrow::<UniqueView<ServerConnection>>()
+            .expect("server conn reborrow");
+
+        let res = server_conn.rx.try_recv();
+
+        let Ok(evt) = res else {
+            break;
+        };
+
+        drop(server_conn);
+
+        match evt {
+            SocketEvent::Packet(packet) => {
+                assert_eq!(packet.addr(), addr);
+                add_packet(packet.payload(), &mut storages);
+            }
+            SocketEvent::Connect(addr) => {
+                tracing::debug!("something just connected to the client, {addr:?}");
+            }
+            SocketEvent::Timeout(addr) => {
+                tracing::debug!("socket timeout, {addr:?}");
+            }
+            SocketEvent::Disconnect(addr) => {
+                tracing::debug!("disconnected from the client, {addr:?}");
             }
         }
     }
+}
 
-    pub fn add_packet(&mut self, buffer: &[u8], storages: &mut AllStoragesViewMut) {
-        use crate::networking::types::PacketType;
-        use packet::{PacketHeader, Packet};
+fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
+    use crate::networking::types::PacketType;
+    use packet::{PacketHeader, Packet as _};
 
-        macro_rules! register_packets {
+    macro_rules! register_packets {
             ($bytes:expr, $storages:expr, { $($packet_type:ident),* $(,)? }) => {
                 register_packets!($bytes, $storages, { $($packet_type => $packet_type),* });
             };
@@ -85,21 +108,20 @@ impl ServerConnection {
             };
         }
 
-        use crate::events::*;
-        use crate::events::render_distance::*;
+    use crate::events::*;
+    use crate::events::render_distance::*;
 
-        register_packets!(buffer, storages, {
-            ChunkGenRequestEvent,
-            ChunkGenEvent,
+    register_packets!(buffer, storages, {
+        ChunkGenRequestEvent,
+        ChunkGenEvent,
 
-            RenderDistanceRequestEvent,
-            RenderDistanceUpdateEvent,
+        RenderDistanceRequestEvent,
+        RenderDistanceUpdateEvent,
 
-            ClientInformationRequestEvent,
-            ClientInformationUpdateEvent,
+        ClientInformationRequestEvent,
+        ClientInformationUpdateEvent,
 
-            ClientSettingsRequestEvent,
-            ClientSettingsUpdateEvent,
-        });
-    }
+        ClientSettingsRequestEvent,
+        ClientSettingsUpdateEvent,
+    });
 }

@@ -14,7 +14,7 @@ use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
-use crate::multiplayer::client_connection::ServerConnection;
+use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking::server_socket::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::chunk_mesh::ChunkMesh;
