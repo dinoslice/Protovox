@@ -34,34 +34,6 @@ impl ServerHandler {
             clients: BiHashMap::default(),
         }
     }
-    pub fn process(&mut self, storages: &mut AllStoragesViewMut) {
-        while let Ok(evt) = self.rx.try_recv() {
-            match evt {
-                SocketEvent::Packet(p) => {}
-                SocketEvent::Connect(addr) => {
-                    tracing::debug!("New client connected from: {addr:?}");
-
-                    let id = storages.add_entity((
-                        ClientInformationRequestEvent,
-                        ClientSettingsRequestEvent,
-                    ));
-
-                    if let Err((addr, id)) = self.clients.insert_no_overwrite(addr, id) {
-                        tracing::error!("Multiple clients connected from address {addr:?}, throwing away current connection request.");
-                        storages.delete_entity(id);
-                    }
-                }
-                SocketEvent::Timeout(_) => {}
-                SocketEvent::Disconnect(addr) => {
-                    if let Some((_, id)) = self.clients.remove_by_left(&addr) {
-                        storages.delete_entity(id);
-                    } else {
-                        tracing::error!("Client disconnected at {addr:?}, but it never existed.");
-                    }
-                }
-            }
-        }
-    }
 }
 
 pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
@@ -149,79 +121,6 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
         }
     }
 }
-
-/*pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
-    // TODO: temp fix bc of run_if crash
-    if !storages.run(is_hosted) {
-        return;
-    }
-
-    // TODO: fix insane battle with borrow checker
-    loop {
-        let mut server_handler = storages
-            .borrow::<UniqueViewMut<ServerHandler>>()
-            .expect("ServerHandler initialized");
-
-        let res = server_handler.rx.try_recv();
-        drop(server_handler);
-
-        if let Ok(evt) = res {
-            match evt {
-                SocketEvent::Packet(p) => {
-                    let mut server_handler = storages
-                        .borrow::<UniqueViewMut<ServerHandler>>()
-                        .expect("ServerHandler re-borrowed");
-
-                    let id = *server_handler
-                        .clients
-                        .get_by_left(&p.addr())
-                        .expect("player must already be created");
-
-                    drop(server_handler);
-
-                    add_packet(p.payload(), id, &mut storages);
-                }
-                SocketEvent::Connect(addr) => {
-                    tracing::debug!("New client connected from: {addr:?}");
-
-                    // Mutably borrow `storages` to add entities
-                    let id = storages.add_entity((
-                        ClientInformationRequestEvent,
-                        ClientSettingsRequestEvent,
-                    ));
-
-                    // Re-borrow `server_handler` to modify the clients list
-                    let mut server_handler = storages
-                        .borrow::<UniqueViewMut<ServerHandler>>()
-                        .expect("ServerHandler re-borrowed");
-
-                    if let Err((addr, id)) = server_handler.clients.insert_no_overwrite(addr, id) {
-                        drop(server_handler);
-                        tracing::error!("Multiple clients connected from address {addr:?}, throwing away current connection request.");
-                        storages.delete_entity(id);
-                    }
-                }
-                SocketEvent::Timeout(_) => {
-                    // Handle timeout event here
-                }
-                SocketEvent::Disconnect(addr) => {
-                    let mut server_handler = storages
-                        .borrow::<UniqueViewMut<ServerHandler>>()
-                        .expect("ServerHandler re-borrowed");
-
-                    if let Some((_, id)) = server_handler.clients.remove_by_left(&addr) {
-                        drop(server_handler);
-                        storages.delete_entity(id);
-                    } else {
-                        tracing::error!("Client disconnected at {addr:?}, but it never existed.");
-                    }
-                }
-            }
-        } else {
-            break;
-        }
-    }
-}*/
 
 fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     use crate::networking::types::PacketType;
