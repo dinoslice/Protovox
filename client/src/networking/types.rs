@@ -6,6 +6,7 @@ use packet::PacketHeader;
 #[derive(Debug, Serialize, Deserialize, FromRepr, Copy, Clone)]
 pub enum PacketType {
     ConnectionRequest,
+    ConnectionSuccess,
 
     ChunkGenRequestEvent,
     ChunkGenEvent,

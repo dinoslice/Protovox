@@ -37,3 +37,7 @@ pub struct ClientSettingsUpdateEvent(pub RenderDistance);
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ConnectionRequest)]
 pub struct ConnectionRequest;
+
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::ConnectionSuccess)]
+pub struct ConnectionSuccess;
