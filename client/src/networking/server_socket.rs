@@ -152,16 +152,15 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     use crate::events::render_distance::*;
 
     register_packets!(buffer, storages, id, {
-        ChunkGenRequestEvent,
-        ChunkGenEvent,
+        ConnectionRequest,
 
-        RenderDistanceRequestEvent,
+        ChunkGenRequestEvent,
+
         RenderDistanceUpdateEvent,
 
         ClientInformationRequestEvent,
         ClientInformationUpdateEvent,
 
-        ClientSettingsRequestEvent,
         ClientSettingsUpdateEvent,
     });
 }
