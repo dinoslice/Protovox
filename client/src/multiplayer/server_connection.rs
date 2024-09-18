@@ -112,16 +112,9 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
     use crate::events::render_distance::*;
 
     register_packets!(buffer, storages, {
-        ChunkGenRequestEvent,
         ChunkGenEvent,
 
         RenderDistanceRequestEvent,
-        RenderDistanceUpdateEvent,
-
-        ClientInformationRequestEvent,
-        ClientInformationUpdateEvent,
-
         ClientSettingsRequestEvent,
-        ClientSettingsUpdateEvent,
     });
 }
