@@ -9,14 +9,14 @@ use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut};
 use game::location::WorldLocation;
 use packet::PacketHeader;
 use crate::environment::{Environment, is_hosted};
-use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, PacketType};
+use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::render_distance::RenderDistanceRequestEvent;
 
 #[derive(Unique)]
 pub struct ServerHandler {
-    tx: Sender<laminar::Packet>,
-    rx: Receiver<SocketEvent>,
-    clients: BiHashMap<SocketAddr, EntityId>,
+    pub tx: Sender<laminar::Packet>,
+    pub rx: Receiver<SocketEvent>,
+    pub clients: BiHashMap<SocketAddr, EntityId>,
 }
 
 impl ServerHandler {
@@ -78,6 +78,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                             };
 
                             let id = storages.add_entity((
+                                ConnectionRequest,
                                 ClientInformationRequestEvent,
                                 ClientSettingsRequestEvent,
                             ));

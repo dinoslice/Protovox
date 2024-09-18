@@ -6,6 +6,7 @@ use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView};
 use packet::Packet as _;
 use crate::environment::is_multiplayer_client;
 use crate::events;
+use crate::events::PacketType::ConnectionSuccess;
 
 #[derive(Unique)]
 pub struct ServerConnection {
@@ -116,5 +117,7 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
 
         RenderDistanceRequestEvent,
         ClientSettingsRequestEvent,
+
+        ConnectionSuccess,
     });
 }
