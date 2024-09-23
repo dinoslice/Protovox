@@ -6,8 +6,10 @@ use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenRequestEvent, ClientPositionUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
+use crate::events::render_distance::RenderDistanceUpdateEvent;
 use crate::multiplayer::server_connection::{process_network_events_multiplayer_client, ServerConnection};
 use crate::networking::server_socket::{process_network_events_system, ServerHandler};
+use crate::render_distance::RenderDistance;
 
 pub mod types;
 pub mod server_socket;
@@ -20,6 +22,9 @@ pub fn update_networking() -> Workload {
         client_acknowledge_connection_success.run_if(is_multiplayer_client),
         client_update_position.run_if(is_multiplayer_client),
         server_update_client_pos.run_if(is_hosted),
+        server_request_client_settings.run_if(is_hosted),
+        client_send_settings.run_if(is_multiplayer_client),
+        server_process_render_dist_update.run_if(is_hosted)
     ).into_workload()
 }
 
@@ -68,6 +73,31 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
                 }
             }
         }
+    });
+}
+
+fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+    if let Some(_) = vm_client_settings_req.drain().next() {
+        let p = Packet::reliable_unordered(
+            server_connection.server_addr,
+            RenderDistanceUpdateEvent(RenderDistance::default()) // TODO: handle a different way
+                .serialize_packet()
+                .unwrap()
+        );
+
+        server_connection
+            .tx
+            .try_send(p)
+            .unwrap();
+    }
+}
+
+fn server_process_render_dist_update(mut vm_render_distance_update: ViewMut<RenderDistanceUpdateEvent>, entities: EntitiesView, mut vm_render_dist: ViewMut<RenderDistance>) {
+    use shipyard::Get;
+
+    vm_render_distance_update.drain().with_id().for_each(|(id, evt)| {
+        entities.add_component(id, &mut vm_render_dist, evt.0);
+        tracing::debug!("received a rend update from {id:?}, it's {:?}", vm_render_dist.get(id));
     });
 }
 

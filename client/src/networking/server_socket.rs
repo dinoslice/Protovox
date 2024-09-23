@@ -83,6 +83,8 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                                 ClientSettingsRequestEvent,
                             ));
 
+                            tracing::debug!("new joined client from {addr:?} has id {id:?}");
+
                             let mut server_handler = storages
                                 .borrow::<UniqueViewMut<ServerHandler>>()
                                 .expect("ServerHandler re-borrowed");
@@ -162,5 +164,6 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
         ClientInformationUpdateEvent,
 
         ClientSettingsUpdateEvent,
+        ClientPositionUpdate,
     });
 }

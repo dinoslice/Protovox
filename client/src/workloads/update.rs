@@ -78,6 +78,8 @@ fn broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<World
 
                 if sender.try_send(p).is_err() {
                     tracing::debug!("There was an error sending a chunk {:?} to {:?}", evt.0.location, addr);
+                } else {
+                    tracing::debug!("Successfully sent chunk packet");
                 }
             }
         }
