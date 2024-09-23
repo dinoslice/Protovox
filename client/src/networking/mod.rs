@@ -1,10 +1,12 @@
 use std::net::SocketAddr;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload, WorkloadModificator};
+use shipyard::{EntitiesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload, WorkloadModificator};
+use game::location::WorldLocation;
+use crate::camera::Camera;
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
-use crate::multiplayer::server_connection::process_network_events_multiplayer_client;
+use crate::events::{ChunkGenRequestEvent, ClientPositionUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
+use crate::multiplayer::server_connection::{process_network_events_multiplayer_client, ServerConnection};
 use crate::networking::server_socket::{process_network_events_system, ServerHandler};
 
 pub mod types;
@@ -16,6 +18,8 @@ pub fn update_networking() -> Workload {
         process_network_events_multiplayer_client, // internally, run_if(is_multiplayer_client)
         server_process_client_connection_req.run_if(is_hosted),
         client_acknowledge_connection_success.run_if(is_multiplayer_client),
+        client_update_position.run_if(is_multiplayer_client),
+        server_update_client_pos.run_if(is_hosted),
     ).into_workload()
 }
 
@@ -69,6 +73,52 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
 
 fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<ConnectionSuccess>) {
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
+}
+
+fn client_request_chunk_gen(mut vm_chunk_gen_req: ViewMut<ChunkGenRequestEvent>, server_handler: UniqueView<ServerHandler>) {
+    vm_chunk_gen_req.retain(|id, evt| {
+        match server_handler.clients.get_by_right(&id) {
+            None => {
+                tracing::debug!("Client has disconnected!");
+                false
+            },
+            Some(&addr) => {
+                let payload = evt.serialize_packet().unwrap();
+
+                let p = Packet::reliable_unordered(addr, payload);
+
+                if let Err(err) = server_handler.tx.try_send(p) {
+                    tracing::warn!("There was an error sending to client: {addr:?}, err: {err:?}");
+                    true
+                } else {
+                    tracing::debug!("Sent {evt:?} to {addr:?}");
+                    false
+                }
+            }
+        }
+    });
+}
+
+pub fn client_update_position(cam: UniqueView<Camera>, server_conn: UniqueView<ServerConnection>) {
+    let world_pos = WorldLocation(cam.position);
+
+    let p = Packet::unreliable_sequenced(
+        server_conn.server_addr,
+        ClientPositionUpdate(world_pos)
+            .serialize_packet()
+            .unwrap(),
+        None,
+    );
+
+    server_conn.tx
+        .try_send(p)
+        .unwrap();
+}
+
+pub fn server_update_client_pos(mut vm_client_pos_update: ViewMut<ClientPositionUpdate>, mut vm_world_pos: ViewMut<WorldLocation>, entities: EntitiesView) {
+    vm_client_pos_update.drain().with_id().for_each(|(id, evt)| {
+        entities.add_component(id, &mut vm_world_pos, evt.0);
+    });
 }
 
 // macro_rules! retain_unsent {
