@@ -10,3 +10,9 @@ impl Default for RenderDistance {
         Self(U16Vec3::new(4, 2, 4))
     }
 }
+
+impl RenderDistance {
+    pub fn render_size(&self) -> U16Vec3 {
+        self.0.map(|n| 2 * n + 1)
+    }
+}

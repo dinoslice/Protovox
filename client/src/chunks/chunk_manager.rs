@@ -55,10 +55,6 @@ impl ChunkManager {
             .product()
     }
 
-    pub fn render_size(&self) -> U16Vec3 {
-        self.render_distance.0.map(|n| 2 * n + 1)
-    }
-
     pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
         self.get_index_from_chunk_location_checked(chunk_loc).is_some()
     }
@@ -185,13 +181,13 @@ impl ChunkManager {
             return None;
         }
 
-        let index = into_1d_coordinate(&norm_offset, &self.render_size().cast()) as usize;
+        let index = into_1d_coordinate(&norm_offset, &self.render_distance.render_size().cast()) as usize;
 
         Some(index)
     }
 
     pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
-        let norm_offset = into_3d_coordinate(index as _, &self.render_size().cast());
+        let norm_offset = into_3d_coordinate(index as _, &self.render_distance.render_size().cast());
 
         let offset = norm_offset - self.render_distance.0.cast();
 
