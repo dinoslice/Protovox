@@ -235,6 +235,25 @@ fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
     IVec3::new(x, y, z)
 }
 
+pub fn chunk_index_in_render_distance(location: &ChunkLocation, center: &ChunkLocation, render_distance: &RenderDistance) -> Option<usize> {
+    let offset = location.0 - center.0;
+
+    let render_dist_i32 = render_distance.0.cast();
+
+    let norm_offset = offset + render_dist_i32;
+
+    if norm_offset.iter()
+        .enumerate()
+        .any(|(i, n)| *n > 2 * render_dist_i32[i] || n.is_negative())
+    {
+        return None;
+    }
+
+    let index = into_1d_coordinate(&norm_offset, &render_distance.render_size().cast()) as usize;
+
+    Some(index)
+}
+
 #[cfg(test)]
 mod tests {
     use glm::IVec3;
