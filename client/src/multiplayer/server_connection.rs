@@ -10,9 +10,9 @@ use crate::events::PacketType::ConnectionSuccess;
 
 #[derive(Unique)]
 pub struct ServerConnection {
-    server_addr: SocketAddr,
-    tx: Sender<Packet>,
-    rx: Receiver<SocketEvent>,
+    pub server_addr: SocketAddr,
+    pub tx: Sender<Packet>,
+    pub rx: Receiver<SocketEvent>,
 }
 
 impl ServerConnection {
