@@ -3,7 +3,6 @@ use glm::{IVec3, U16Vec3};
 use game::chunk::data::ChunkData;
 use hashbrown::HashMap;
 use shipyard::Unique;
-use tracing::trace;
 use wgpu::util::DeviceExt;
 use game::chunk::location::ChunkLocation;
 use crate::chunks::client_chunk::ClientChunk;
@@ -97,7 +96,7 @@ impl ChunkManager {
                     *new_loaded.get_mut(index).expect("index to exist") = Some(chunk);
                 } else {
                     let loc = &chunk.data.location;
-                    trace!("Deleting chunk buffer at {loc:?}");
+                    tracing::trace!("Deleting chunk buffer at {loc:?}");
                     self.bakery.remove(loc);
                 }
             }
@@ -114,7 +113,7 @@ impl ChunkManager {
                 continue;
             };
 
-            tracing::debug!("About to insert chunk {:?} at {}", data.location, index);
+            tracing::trace!("About to insert chunk {:?} at {}", data.location, index);
 
             self.loaded_chunks
                 .get_mut(index)
@@ -132,7 +131,7 @@ impl ChunkManager {
         {
             let baked = ChunkMesh::from_chunk(&chunk.data).faces;
 
-            tracing::debug!("Finished baking chunk at {:?}", &chunk.data.location);
+            tracing::trace!("Finished baking chunk at {:?}", &chunk.data.location);
 
             let buffer = g_ctx.device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
