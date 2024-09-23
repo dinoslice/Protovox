@@ -41,3 +41,7 @@ pub struct ConnectionRequest;
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ConnectionSuccess)]
 pub struct ConnectionSuccess;
+
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::ClientPositionUpdate)]
+pub struct ClientPositionUpdate(pub WorldLocation);
