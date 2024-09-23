@@ -17,7 +17,14 @@ pub struct ServerConnection {
 
 impl ServerConnection {
     pub fn bind(server_addr: impl Into<SocketAddr>) -> Self {
-        let mut socket = Socket::bind_any().unwrap();
+        let config = laminar::Config {
+            max_packet_size: 64 * 1024,
+            max_fragments: 64,
+            fragment_size: 1024,
+            .. Default::default()
+        };
+
+        let mut socket = Socket::bind_any_with_config(config).unwrap();
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
 

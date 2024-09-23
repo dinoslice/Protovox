@@ -21,7 +21,14 @@ pub struct ServerHandler {
 
 impl ServerHandler {
     pub fn new() -> Self {
-        let mut socket = Socket::bind_any().unwrap();
+        let config = laminar::Config {
+            max_packet_size: 64 * 1024,
+            max_fragments: 64,
+            fragment_size: 1024,
+            .. Default::default()
+        };
+
+        let mut socket = Socket::bind_any_with_config(config).unwrap();
         tracing::debug!("Bound server to socket {:?}", socket.local_addr());
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
