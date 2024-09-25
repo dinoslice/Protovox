@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-postcard = "1.0.10"
+flate2 = "1.0.33"
+postcard = { version = "1.0.10", features = ["alloc"] }
 serde = "1.0.209"
 thiserror = "1.0.63"
 

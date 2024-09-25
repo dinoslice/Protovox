@@ -1,7 +1,14 @@
+use std::alloc::GlobalAlloc;
 use std::mem;
+use postcard::{to_allocvec, to_slice, to_vec};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::{PacketDeserializationError, PacketHeader};
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
+use std::io::Write;
+use std::io::Read;
+use flate2::read::ZlibDecoder;
 
 pub trait Packet<H: PacketHeader> {
     const TYPE: H;
@@ -12,6 +19,21 @@ pub trait Packet<H: PacketHeader> {
         let buffer = id.to_le_bytes().to_vec();
 
         postcard::to_extend(self, buffer).ok()
+    }
+
+    fn serialize_packet_compress(&self) -> Option<Vec<u8>> where Self: Serialize {
+        let id = Self::TYPE.repr();
+
+        let mut buffer = id.to_le_bytes().to_vec();
+        let data = to_allocvec(self).ok()?;
+
+        let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
+        e.write_all(&data).ok()?;
+        let mut compressed = e.finish().ok()?;
+
+        buffer.append(&mut compressed);
+
+        Some(buffer)
     }
 
     fn deserialize_checked(bytes: &[u8]) -> Result<Self, PacketDeserializationError> where Self: DeserializeOwned {
@@ -30,6 +52,14 @@ pub trait Packet<H: PacketHeader> {
 
     fn deserialize_unchecked(bytes: &[u8]) -> Option<Self> where Self: DeserializeOwned {
         postcard::from_bytes(bytes.get(2..)?).ok()
+    }
+
+    fn deserialize_unchecked_decompress(bytes: &[u8]) -> Option<Self> where Self: DeserializeOwned {
+        let mut z = ZlibDecoder::new(bytes.get(2..)?);
+        let mut bytes = Vec::new();
+        z.read_to_end(&mut bytes).ok()?;
+
+        postcard::from_bytes(&bytes).ok()
     }
 }
 
