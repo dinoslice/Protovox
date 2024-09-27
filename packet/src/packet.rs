@@ -21,17 +21,15 @@ pub trait Packet<H: PacketHeader> {
         postcard::to_extend(self, buffer).ok()
     }
 
-    fn serialize_packet_compress(&self) -> Option<Vec<u8>> where Self: Serialize {
+    fn serialize_and_compress_packet(&self) -> Option<Vec<u8>> where Self: Serialize {
         let id = Self::TYPE.repr();
 
         let mut buffer = id.to_le_bytes().to_vec();
-        let data = to_allocvec(self).ok()?;
 
-        let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&data).ok()?;
-        let mut compressed = e.finish().ok()?;
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+        postcard::to_io(self, &mut encoder).ok()?;
 
-        buffer.append(&mut compressed);
+        buffer.append(&mut encoder.finish().ok()?);
 
         Some(buffer)
     }
@@ -54,7 +52,7 @@ pub trait Packet<H: PacketHeader> {
         postcard::from_bytes(bytes.get(2..)?).ok()
     }
 
-    fn deserialize_unchecked_decompress(bytes: &[u8]) -> Option<Self> where Self: DeserializeOwned {
+    fn decompress_and_deserialize_unchecked(bytes: &[u8]) -> Option<Self> where Self: DeserializeOwned {
         let mut z = ZlibDecoder::new(bytes.get(2..)?);
         let mut bytes = Vec::new();
         z.read_to_end(&mut bytes).ok()?;
