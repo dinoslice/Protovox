@@ -74,7 +74,7 @@ fn broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<World
 
         for evt in v_chunk_gen_event.iter() {
             if chunk_index_in_render_distance(&evt.0.location, &world_loc.into(), render_dist).is_some() {
-                let p = Packet::reliable_unordered(addr, evt.serialize_packet().unwrap());
+                let p = Packet::reliable_unordered(addr, evt.serialize_and_compress_packet().unwrap());
 
                 if sender.try_send(p).is_err() {
                     tracing::debug!("There was an error sending a chunk {:?} to {:?}", evt.0.location, addr);

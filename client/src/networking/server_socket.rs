@@ -137,22 +137,28 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     use packet::{PacketHeader, Packet};
 
     macro_rules! register_packets {
-            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident),* $(,)? }) => {
-                register_packets!($bytes, $storages, $id, { $($packet_type => $packet_type),* });
+            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $decompress:expr),* $(,)? }) => {
+                register_packets!($bytes, $storages, $id, { $($packet_type => $packet_type => $decompress),* });
             };
-            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $packet_struct:ident),* $(,)? }) => {
+            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $packet_struct:ident => $decompress:expr),* $(,)? }) => {
                 match PacketType::from_buffer($bytes) {
                     Some(ty) => match ty {
                         $(
-                            PacketType::$packet_type => if let Some(packet) = $packet_struct::deserialize_unchecked($bytes) {
-                                $storages.add_component($id, packet);
-                            } else {
-                                println!("{ty:?} data was malformed");
-                            },
+                            PacketType::$packet_type => {
+                                let res = match $decompress {
+                                    true => $packet_struct::decompress_and_deserialize_unchecked($bytes),
+                                    false => $packet_struct::deserialize_unchecked($bytes),
+                                };
+
+                                match res {
+                                    Some(packet) => { $storages.add_component($id, packet); },
+                                    None => tracing::error!("{ty:?} data was malformed"),
+                                };
+                            }
                         )*
-                        _ => println!("Packet {:?} isn't registered", ty),
+                        _ => tracing::debug!("Packet {:?} isn't registered", ty),
                     },
-                    None => println!("Packet ID couldn't be determined"),
+                    None => tracing::debug!("Packet ID couldn't be determined"),
                 }
             };
         }
@@ -161,16 +167,16 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     use crate::events::render_distance::*;
 
     register_packets!(buffer, storages, id, {
-        ConnectionRequest,
+        ConnectionRequest => false,
 
-        ChunkGenRequestEvent,
+        ChunkGenRequestEvent => false,
 
-        RenderDistanceUpdateEvent,
+        RenderDistanceUpdateEvent=> false,
 
-        ClientInformationRequestEvent,
-        ClientInformationUpdateEvent,
+        ClientInformationRequestEvent=> false,
+        ClientInformationUpdateEvent=> false,
 
-        ClientSettingsUpdateEvent,
-        ClientPositionUpdate,
+        ClientSettingsUpdateEvent => false,
+        ClientPositionUpdate => false,
     });
 }
