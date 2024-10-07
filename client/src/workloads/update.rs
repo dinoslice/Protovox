@@ -1,14 +1,17 @@
+use std::net::SocketAddr;
+use crossbeam::channel::Sender;
 use glm::all;
 use laminar::Packet;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut};
+use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
+use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
@@ -22,6 +25,7 @@ pub fn update() -> Workload {
         update_camera_movement,
         reset_mouse_manager_state,
         networking::update_networking,
+        server_handle_client_chunk_reqs.run_if(is_hosted),
         get_generated_chunks.run_if(is_hosted),
         broadcast_chunks.run_if(is_hosted),
         chunk_manager_update_and_request.after_all(update_camera_movement),
@@ -50,7 +54,7 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
     let sender = &server_connection.tx;
     let addr = server_connection.server_addr;
 
-    for req in reqs.drain() {
+    for req in reqs.drain().map(ClientChunkRequest::from) {
         let p = Packet::reliable_unordered(
             addr,
             req
@@ -60,6 +64,31 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
 
         if sender.try_send(p).is_err() {
             tracing::debug!("Failed to send chunk request to server");
+        }
+    }
+}
+
+fn server_handle_client_chunk_reqs(mut reqs: ViewMut<ClientChunkRequest>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+    let sender = &server_handler.tx;
+
+    for (id, ClientChunkRequest(loc)) in reqs.drain().with_id() {
+        match chunk_mgr.get_chunk_ref_from_location(&loc) {
+            Some(cc) => {
+                use std::mem;
+
+                assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
+
+                let gen_evt: &ChunkGenEvent = unsafe { mem::transmute(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
+
+                let Some(&addr) = server_handler.clients.get_by_right(&id) else {
+                    continue;
+                };
+
+                send_chunk(sender, addr, gen_evt);
+            }
+            None => {
+                entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
+            }
         }
     }
 }
@@ -74,15 +103,19 @@ fn broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<World
 
         for evt in v_chunk_gen_event.iter() {
             if chunk_index_in_render_distance(&evt.0.location, &world_loc.into(), render_dist).is_some() {
-                let p = Packet::reliable_unordered(addr, evt.serialize_and_compress_packet().unwrap());
-
-                if sender.try_send(p).is_err() {
-                    tracing::debug!("There was an error sending a chunk {:?} to {:?}", evt.0.location, addr);
-                } else {
-                    tracing::debug!("Successfully sent chunk packet");
-                }
+                send_chunk(sender, addr, evt);
             }
         }
+    }
+}
+
+fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkGenEvent) {
+    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_and_compress_packet().unwrap());
+
+    if sender.try_send(p).is_err() {
+        tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);
+    } else {
+        tracing::debug!("Successfully sent chunk packet");
     }
 }
 

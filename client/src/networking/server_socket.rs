@@ -169,7 +169,8 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     register_packets!(buffer, storages, id, {
         ConnectionRequest => false,
 
-        ChunkGenRequestEvent => false,
+        ClientChunkRequest => false,
+        // ChunkGenRequestEvent => false,
 
         RenderDistanceUpdateEvent=> false,
 

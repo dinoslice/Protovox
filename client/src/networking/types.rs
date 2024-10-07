@@ -8,6 +8,7 @@ pub enum PacketType {
     ConnectionRequest,
     ConnectionSuccess,
 
+    ClientChunkRequest,
     ChunkGenRequestEvent,
     ChunkGenEvent,
 
