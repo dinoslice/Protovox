@@ -17,3 +17,4 @@ pub mod render_distance;
 pub mod environment;
 pub mod args;
 pub mod components;
+pub mod movement;
