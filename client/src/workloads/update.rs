@@ -7,11 +7,12 @@ use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
+use crate::components::{LocalPlayer, PlayerSpeed, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
-use crate::networking;
+use crate::{movement, networking};
 use crate::networking::server_socket::{process_network_events_system, ServerHandler};
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -93,8 +94,14 @@ fn chunk_manager_update_and_request(mut all_storages: AllStoragesViewMut) {
     }
 }
 
-fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, camera: UniqueView<Camera>, g_ctx: UniqueView<GraphicsContext>, mut chunk_gen_event: ViewMut<ChunkGenEvent>) -> Option<Vec<ChunkGenRequestEvent>> {
-    let current_chunk = ChunkLocation::from(WorldLocation(camera.position));
+fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, vm_transform: View<Transform>, vm_local_player: View<LocalPlayer>, g_ctx: UniqueView<GraphicsContext>, mut chunk_gen_event: ViewMut<ChunkGenEvent>) -> Option<Vec<ChunkGenRequestEvent>> {
+    let transform = (&vm_local_player, &vm_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player with transform didn't exist")
+        .1;
+
+    let current_chunk = ChunkLocation::from(WorldLocation(transform.position));
 
     let recv = chunk_gen_event.drain().collect();
 
@@ -103,8 +110,13 @@ fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: Un
     (!reqs.is_empty()).then_some(reqs)
 }
 
-fn update_camera_movement(delta_time: UniqueView<LastDeltaTime>, mut camera: UniqueViewMut<Camera>, input_manager: UniqueView<InputManager>) {
-    camera.update_with_input(&input_manager, delta_time.0);
+fn update_camera_movement(delta_time: UniqueView<LastDeltaTime>, local_player: View<LocalPlayer>, mut transform: ViewMut<Transform>, mut player_speed: ViewMut<PlayerSpeed>, input_manager: UniqueView<InputManager>) {
+    let (_, transform, player_speed) = (&local_player, &mut transform, &mut player_speed)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have camera to render to");
+
+    movement::process_movement(transform, player_speed, &input_manager, delta_time.0);
 }
 
 fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {

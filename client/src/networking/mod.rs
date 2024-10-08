@@ -1,9 +1,10 @@
 use std::net::SocketAddr;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload, WorkloadModificator};
+use shipyard::{EntitiesView, EntitiesViewMut, IntoIter, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload, WorkloadModificator};
 use game::location::WorldLocation;
 use crate::camera::Camera;
+use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenRequestEvent, ClientPositionUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
 use crate::events::render_distance::RenderDistanceUpdateEvent;
@@ -129,8 +130,14 @@ fn client_request_chunk_gen(mut vm_chunk_gen_req: ViewMut<ChunkGenRequestEvent>,
     });
 }
 
-pub fn client_update_position(cam: UniqueView<Camera>, server_conn: UniqueView<ServerConnection>) {
-    let world_pos = WorldLocation(cam.position);
+pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
+    let transform = (&local_player, &vm_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have transform")
+        .1;
+
+    let world_pos = WorldLocation(transform.position);
 
     let p = Packet::unreliable_sequenced(
         server_conn.server_addr,

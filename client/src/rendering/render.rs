@@ -1,8 +1,8 @@
-use glm::TVec3;
-use shipyard::{UniqueView, UniqueViewMut};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::components::{LocalPlayer, Transform};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -14,12 +14,19 @@ pub fn render(
     g_ctx: UniqueView<GraphicsContext>,
     depth_texture: UniqueView<DepthTexture>,
     pipeline: UniqueView<RenderPipeline>,
-    camera: UniqueView<Camera>,
+    local_player: View<LocalPlayer>,
+    camera: View<Camera>,
+    transform: View<Transform>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
 ) -> Result<(), wgpu::SurfaceError> {
+    let (_, render_cam, transform) = (&local_player, &camera, &transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have camera to render to");
+
     // get a surface texture to render to
     let output = g_ctx.surface.get_current_texture()?;
 
@@ -64,7 +71,7 @@ pub fn render(
     render_pass.set_pipeline(&pipeline.0);
 
     // update the camera buffer
-    camera_uniform_buffer.update_buffer(&g_ctx, &camera.as_uniform());
+    camera_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
     render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
