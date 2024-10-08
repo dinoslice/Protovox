@@ -59,7 +59,7 @@ pub fn run() {
 
                             // world.run_with_data(update_camera_from_input_manager, &last_render_time.elapsed());
 
-                            match world.run(/*render::render*/ render::render_new) {
+                            match world.run(render::render) {
                                 Ok(_) => {}
                                 // Reconfigure the surface if lost
                                 Err(wgpu::SurfaceError::Lost) => world.run(resize::reconfigure),
