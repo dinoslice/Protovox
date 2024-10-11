@@ -90,7 +90,6 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                                 ConnectionRequest,
                                 ClientInformationRequestEvent,
                                 ClientSettingsRequestEvent,
-                                EventBus::<ClientChunkRequest>::default(),
                             ));
 
                             tracing::debug!("new joined client from {addr:?} has id {id:?}");
