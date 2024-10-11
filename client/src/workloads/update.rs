@@ -12,6 +12,7 @@ use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest};
+use crate::events::event_bus::EventBus;
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
@@ -68,26 +69,28 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
     }
 }
 
-fn server_handle_client_chunk_reqs(mut reqs: ViewMut<ClientChunkRequest>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
-    for (id, ClientChunkRequest(loc)) in reqs.drain().with_id() {
-        match chunk_mgr.get_chunk_ref_from_location(&loc) {
-            Some(cc) => {
-                use std::mem;
+    for (id, events) in (&mut reqs).iter().with_id() {
+        for ClientChunkRequest(loc) in events.0.drain(..) {
+            match chunk_mgr.get_chunk_ref_from_location(&loc) {
+                Some(cc) => {
+                    use std::mem;
 
-                assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
+                    assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
 
-                let gen_evt: &ChunkGenEvent = unsafe { mem::transmute(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
+                    let gen_evt: &ChunkGenEvent = unsafe { mem::transmute(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 
-                let Some(&addr) = server_handler.clients.get_by_right(&id) else {
-                    continue;
-                };
+                    let Some(&addr) = server_handler.clients.get_by_right(&id) else {
+                        continue;
+                    };
 
-                send_chunk(sender, addr, gen_evt);
-            }
-            None => {
-                entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
+                    send_chunk(sender, addr, gen_evt);
+                }
+                None => {
+                    entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
+                }
             }
         }
     }

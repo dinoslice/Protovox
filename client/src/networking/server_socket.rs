@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use std::net::SocketAddr;
 use std::thread;
 use bimap::{BiHashMap, BiMap, Overwritten};
@@ -5,11 +6,12 @@ use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use glm::U16Vec3;
 use hashbrown::HashMap;
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut};
+use shipyard::{AllStoragesViewMut, EntityId, Get, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use game::location::WorldLocation;
-use packet::PacketHeader;
+use packet::{Packet, PacketHeader};
 use crate::environment::{Environment, is_hosted};
-use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
+use crate::events::{ClientChunkRequest, ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
+use crate::events::event_bus::EventBus;
 use crate::events::render_distance::RenderDistanceRequestEvent;
 
 #[derive(Unique)]
@@ -88,6 +90,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                                 ConnectionRequest,
                                 ClientInformationRequestEvent,
                                 ClientSettingsRequestEvent,
+                                EventBus::<ClientChunkRequest>::default(),
                             ));
 
                             tracing::debug!("new joined client from {addr:?} has id {id:?}");
@@ -104,7 +107,21 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                                 tracing::debug!("Successfully connected client from {addr:?}!");
                             }
                         }
-                        Some(id) => add_packet(payload, id, &mut storages),
+                        Some(id) => {
+                            if PacketType::from_buffer(payload) == Some(PacketType::ClientChunkRequest) { // TODO: make this better
+                                if let Some(req) = ClientChunkRequest::deserialize_unchecked(payload) {
+                                    if let Ok(mut vm_evt_bus) = storages.borrow::<ViewMut<EventBus<ClientChunkRequest>>>() {
+                                        (&mut vm_evt_bus)
+                                            .get_or_insert_with(id, || Default::default())
+                                            .0
+                                            .push(req);
+                                    }
+                                }
+                            } else {
+                                add_packet(payload, id, &mut storages)
+                            }
+
+                        },
                     }
                 }
                 SocketEvent::Connect(addr) => {

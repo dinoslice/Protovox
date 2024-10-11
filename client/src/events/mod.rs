@@ -1,4 +1,5 @@
 pub mod render_distance;
+pub mod event_bus;
 
 use serde::{Deserialize, Serialize};
 use game::chunk::{data::ChunkData, location::ChunkLocation};
