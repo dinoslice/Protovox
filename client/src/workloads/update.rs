@@ -73,6 +73,10 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
     let sender = &server_handler.tx;
 
     for (id, events) in (&mut reqs).iter().with_id() {
+        let Some(&addr) = server_handler.clients.get_by_right(&id) else {
+            continue;
+        };
+
         for ClientChunkRequest(loc) in events.0.drain(..) {
             match chunk_mgr.get_chunk_ref_from_location(&loc) {
                 Some(cc) => {
@@ -80,15 +84,12 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
 
                     assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
 
-                    let gen_evt: &ChunkGenEvent = unsafe { mem::transmute(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
-
-                    let Some(&addr) = server_handler.clients.get_by_right(&id) else {
-                        continue;
-                    };
+                    let gen_evt = unsafe { mem::transmute::<_, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 
                     send_chunk(sender, addr, gen_evt);
                 }
                 None => {
+                    tracing::debug!("server didn't have chunk at {loc:?}, asking world generator to generate.");
                     entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
                 }
             }
