@@ -118,8 +118,6 @@ fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkG
 
     if sender.try_send(p).is_err() {
         tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);
-    } else {
-        tracing::debug!("Successfully sent chunk packet");
     }
 }
 
