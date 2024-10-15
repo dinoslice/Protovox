@@ -1,6 +1,5 @@
 use std::time::Duration;
-use glm::{IVec3, U16Vec3};
-use game::chunk::data::ChunkData;
+use glm::IVec3;
 use hashbrown::HashMap;
 use shipyard::Unique;
 use wgpu::util::DeviceExt;

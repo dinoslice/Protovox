@@ -2,11 +2,10 @@ use std::net::SocketAddr;
 use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView};
+use shipyard::{AllStoragesViewMut, Unique, UniqueView};
 use packet::Packet as _;
 use crate::environment::is_multiplayer_client;
 use crate::events;
-use crate::events::PacketType::ConnectionSuccess;
 
 #[derive(Unique)]
 pub struct ServerConnection {

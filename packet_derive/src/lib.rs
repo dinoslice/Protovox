@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Path};
-use packet::Packet;
 
 #[proc_macro_derive(Packet, attributes(packet_type))]
 pub fn proc_packet_derive(input: TokenStream) -> TokenStream {

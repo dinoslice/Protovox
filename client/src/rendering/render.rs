@@ -13,6 +13,7 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
 
+#[allow(dead_code)]
 pub fn render(
     g_ctx: UniqueView<GraphicsContext>,
     depth_texture: UniqueView<DepthTexture>,

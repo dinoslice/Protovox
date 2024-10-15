@@ -40,6 +40,7 @@ impl ChunkMesh {
         Self { faces }
     }
 
+    #[allow(dead_code)]
     pub fn from_chunk_unoptimized(chunk: &ChunkData) -> Self {
         let non_air_block_count = chunk.blocks
             .iter()

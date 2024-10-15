@@ -1,16 +1,12 @@
 use std::net::SocketAddr;
 use std::thread;
-use bimap::{BiHashMap, BiMap, Overwritten};
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
-use glm::U16Vec3;
-use hashbrown::HashMap;
+use bimap::BiHashMap;
+use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut};
-use game::location::WorldLocation;
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut};
 use packet::PacketHeader;
-use crate::environment::{Environment, is_hosted};
+use crate::environment::is_hosted;
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
-use crate::events::render_distance::RenderDistanceRequestEvent;
 
 #[derive(Unique)]
 pub struct ServerHandler {
@@ -51,7 +47,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
 
     // TODO: fix insane battle with borrow checker
     loop {
-        let mut server_handler = storages
+        let server_handler = storages
             .borrow::<UniqueViewMut<ServerHandler>>()
             .expect("ServerHandler initialized");
 
@@ -61,7 +57,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
         if let Ok(evt) = res {
             match evt {
                 SocketEvent::Packet(p) => {
-                    let mut server_handler = storages
+                    let server_handler = storages
                         .borrow::<UniqueViewMut<ServerHandler>>()
                         .expect("ServerHandler re-borrowed");
 

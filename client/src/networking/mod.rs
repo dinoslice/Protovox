@@ -1,7 +1,6 @@
-use std::net::SocketAddr;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload, WorkloadModificator};
+use shipyard::{EntitiesView, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
 use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::environment::{is_hosted, is_multiplayer_client};
@@ -105,6 +104,7 @@ fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<Connection
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
 }
 
+#[allow(dead_code)]
 fn client_request_chunk_gen(mut vm_chunk_gen_req: ViewMut<ChunkGenRequestEvent>, server_handler: UniqueView<ServerHandler>) {
     vm_chunk_gen_req.retain(|id, evt| {
         match server_handler.clients.get_by_right(&id) {

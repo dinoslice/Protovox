@@ -1,12 +1,9 @@
-use std::alloc::GlobalAlloc;
 use std::mem;
-use postcard::{to_allocvec, to_slice, to_vec};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::{PacketDeserializationError, PacketHeader};
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use std::io::Write;
 use std::io::Read;
 use flate2::read::ZlibDecoder;
 
@@ -61,6 +58,7 @@ pub trait Packet<H: PacketHeader> {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_id(buffer: &[u8]) -> Option<u16> {
     let first_two_bytes: [u8; 2] = buffer.get(..2)?
         .try_into()
