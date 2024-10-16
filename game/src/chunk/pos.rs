@@ -66,6 +66,14 @@ impl TryFrom<&TVec3<u8>> for ChunkPos {
     }
 }
 
+impl TryFrom<TVec3<u8>> for ChunkPos {
+    type Error = ChunkCoordOutOfRange;
+
+    fn try_from(pos: TVec3<u8>) -> Result<Self, Self::Error> {
+        (&pos).try_into()
+    }
+}
+
 impl From<ChunkPos> for TVec3<u8> {
     fn from(chunk_pos: ChunkPos) -> Self {
         Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
