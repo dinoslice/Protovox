@@ -1,4 +1,4 @@
-use glm::U16Vec3;
+use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -12,7 +12,7 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, LocalPlayer, Player, PlayerSpeed, Transform};
+use crate::components::{Entity, Hitbox, LocalPlayer, Player, PlayerSpeed, Transform};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -43,6 +43,7 @@ fn initialize_local_player(
     mut vm_transform: ViewMut<Transform>,
     mut vm_player_speed: ViewMut<PlayerSpeed>,
     mut vm_camera: ViewMut<Camera>,
+    mut vm_hitbox: ViewMut<Hitbox>,
 
     g_ctx: UniqueView<GraphicsContext>,
 ) {
@@ -54,6 +55,7 @@ fn initialize_local_player(
             &mut vm_transform,
             &mut vm_player_speed,
             &mut vm_camera,
+            &mut vm_hitbox
         ),
         (
             LocalPlayer,
@@ -68,7 +70,8 @@ fn initialize_local_player(
                     0.01,
                     1000.0
                 ),
-            }
+            },
+            Hitbox(Vec3::new(0.6, 2.0, 0.6))
         )
     );
 }

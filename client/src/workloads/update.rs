@@ -1,13 +1,16 @@
 use glm::all;
 use laminar::Packet;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, WorkloadModificator};
+use tracing::debug;
+use game::block::Block;
 use game::chunk::location::ChunkLocation;
+use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
-use crate::components::{LocalPlayer, PlayerSpeed, Transform};
+use crate::components::{Entity, Hitbox, LocalPlayer, PlayerSpeed, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
 use crate::input::InputManager;
@@ -28,6 +31,7 @@ pub fn update() -> Workload {
         chunk_manager_update_and_request.after_all(update_camera_movement),
         generate_chunks.run_if(is_hosted),
         client_request_chunks_from_server.run_if(is_multiplayer_client),
+        check_collision,
     ).into_sequential_workload()
 }
 
@@ -121,4 +125,20 @@ fn update_camera_movement(delta_time: UniqueView<LastDeltaTime>, local_player: V
 
 fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.mouse_manager.reset_scroll_rotate();
+}
+
+fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>, vm_entity: View<Entity>, world: UniqueView<ChunkManager>) {
+    for (hitbox, transform, _) in (&vm_hitbox, &mut vm_transform, &vm_entity).iter() {
+        let mut floored = transform.position.map(f32::floor);
+        floored.y -= hitbox.0.y;
+        let world_location = WorldLocation(floored);
+        let chunk_location: ChunkLocation = world_location.clone().into();
+        let chunk = world.get_chunk_ref_from_location(&chunk_location);
+        if let Some(chunk) = chunk {
+            if chunk.data.get_block(ChunkPos::from(world_location.clone())) != Block::Air {
+                transform.position.y = world_location.0.y + hitbox.0.y + 1.0;
+            }
+        }
+
+    }
 }
