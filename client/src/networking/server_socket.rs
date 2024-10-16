@@ -1,18 +1,13 @@
-use std::cmp::PartialEq;
 use std::net::SocketAddr;
 use std::thread;
-use bimap::{BiHashMap, BiMap, Overwritten};
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
-use glm::U16Vec3;
-use hashbrown::HashMap;
+use bimap::BiHashMap;
+use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Get, Unique, UniqueView, UniqueViewMut, View, ViewMut};
-use game::location::WorldLocation;
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::{Packet, PacketHeader};
-use crate::environment::{Environment, is_hosted};
+use crate::environment::is_hosted;
 use crate::events::{ClientChunkRequest, ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
-use crate::events::render_distance::RenderDistanceRequestEvent;
 
 #[derive(Unique)]
 pub struct ServerHandler {
