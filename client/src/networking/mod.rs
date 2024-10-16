@@ -96,7 +96,6 @@ fn server_process_render_dist_update(mut vm_render_distance_update: ViewMut<Rend
 
     vm_render_distance_update.drain().with_id().for_each(|(id, evt)| {
         entities.add_component(id, &mut vm_render_dist, evt.0);
-        tracing::debug!("received a rend update from {id:?}, it's {:?}", vm_render_dist.get(id));
     });
 }
 
