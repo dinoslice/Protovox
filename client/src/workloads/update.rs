@@ -2,7 +2,7 @@ use laminar::Packet;
 use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, EntitiesView};
 use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
@@ -40,7 +40,7 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
     drop(world_gen);
 
     if !chunks.is_empty() {
-        vm_entities.bulk_add_entity(vm_chunk_gen_evt, chunks.into_iter());
+        vm_entities.bulk_add_entity(vm_chunk_gen_evt, chunks);
     }
 }
 
@@ -59,7 +59,7 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
             addr,
             req
                 .serialize_packet()
-                .unwrap()
+                .expect("packet serialization failed")
         );
 
         if sender.try_send(p).is_err() {
@@ -68,7 +68,7 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
     }
 }
 
-fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, entities: EntitiesView, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
     for (id, events) in (&mut reqs).iter().with_id() {
@@ -83,7 +83,7 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
 
                     assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
 
-                    let gen_evt = unsafe { mem::transmute::<_, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
+                    let gen_evt = unsafe { mem::transmute::<&ChunkData, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 
                     send_chunk(sender, addr, gen_evt);
                 }
@@ -113,7 +113,7 @@ fn broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<World
 }
 
 fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkGenEvent) {
-    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_and_compress_packet().unwrap());
+    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_and_compress_packet().expect("packet serialization failed"));
 
     if sender.try_send(p).is_err() {
         tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);

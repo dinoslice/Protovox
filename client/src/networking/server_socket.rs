@@ -4,9 +4,9 @@ use bimap::BiHashMap;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
-use packet::{Packet, PacketHeader};
+use packet::PacketHeader;
 use crate::environment::is_hosted;
-use crate::events::{ClientChunkRequest, ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
+use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
 
 #[derive(Unique)]
@@ -25,7 +25,9 @@ impl ServerHandler {
             .. Default::default()
         };
 
-        let mut socket = Socket::bind_any_with_config(config).unwrap();
+        let mut socket = Socket::bind_any_with_config(config)
+            .expect("unable to bind to address");
+
         tracing::debug!("Bound server to socket {:?}", socket.local_addr());
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
@@ -101,21 +103,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                                 tracing::debug!("Successfully connected client from {addr:?}!");
                             }
                         }
-                        Some(id) => {
-                            if PacketType::from_buffer(payload) == Some(PacketType::ClientChunkRequest) { // TODO: make this better
-                                if let Some(req) = ClientChunkRequest::deserialize_unchecked(payload) {
-                                    if let Ok(mut vm_evt_bus) = storages.borrow::<ViewMut<EventBus<ClientChunkRequest>>>() {
-                                        (&mut vm_evt_bus)
-                                            .get_or_insert_with(id, || Default::default())
-                                            .0
-                                            .push(req);
-                                    }
-                                }
-                            } else {
-                                add_packet(payload, id, &mut storages)
-                            }
-
-                        },
+                        Some(id) => add_packet(payload, id, &mut storages),
                     }
                 }
                 SocketEvent::Connect(addr) => {
@@ -155,6 +143,7 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
             match PacketType::from_buffer($bytes) {
                 Some(ty) => match ty {
                     $(
+                        #[allow(unused_mut)]
                         PacketType::$packet_type => {
                             let mut decompress = false;
                             let mut use_bus = false;
@@ -177,12 +166,7 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
                                 Some(data) => match use_bus {
                                     false => { $storages.add_component($id, data); }
                                     true => match storages.borrow::<ViewMut<EventBus<$packet_struct>>>() {
-                                        Ok(mut vm_evt_bus) => {
-                                            (&mut vm_evt_bus)
-                                                .get_or_insert_with(id, || Default::default())
-                                                .0
-                                                .push(data);
-                                        }
+                                        Ok(mut vm_evt_bus) => vm_evt_bus.get_or_insert_with(id, Default::default).0.push(data),
                                         Err(_) => tracing::error!("Failed to borrow event bus storage"),
                                     }
                                 }

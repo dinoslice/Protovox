@@ -28,7 +28,7 @@ fn init_tracing() -> io::Result<()> {
 
     let console_layer = fmt::Layer::default()
         .event_format(console_fmt)
-        .with_writer(std::io::stdout);
+        .with_writer(io::stdout);
 
     let file_layer = fmt::Layer::default()
         .event_format(file_fmt)

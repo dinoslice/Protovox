@@ -16,7 +16,11 @@ pub fn proc_packet_derive(input: TokenStream) -> TokenStream {
         .flatten()
         .expect("Missing 'packet_type' attribute");
 
-    let ty = packet_type.segments.first().unwrap().ident.clone();
+    let ty = packet_type.segments
+        .first()
+        .expect("path should contain type of packet header")
+        .ident
+        .clone();
 
     let expanded = quote! {
         impl Packet<#ty> for #type_name {
