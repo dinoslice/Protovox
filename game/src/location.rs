@@ -5,7 +5,7 @@ use crate::chunk::location::ChunkLocation;
 use shipyard::Component;
 
 #[repr(transparent)]
-#[derive(Debug, Default, Component, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
 pub struct WorldLocation(pub Vec3);
 
 impl From<&ChunkLocation> for WorldLocation {
