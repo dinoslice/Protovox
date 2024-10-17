@@ -9,7 +9,7 @@ pub struct ChunkLocation(pub IVec3);
 
 impl From<&WorldLocation> for ChunkLocation {
     fn from(loc: &WorldLocation) -> Self {
-        Self(loc.0.component_div(&chunk::CHUNK_SIZE.cast()).map(|f| f.trunc() as i32))
+        Self(loc.0.component_div(&chunk::CHUNK_SIZE.cast::<f32>()).map(|f| f.floor() as i32))
     }
 }
 
