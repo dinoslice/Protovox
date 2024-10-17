@@ -1,4 +1,4 @@
-use glm::all;
+use glm::{all, Vec3};
 use laminar::Packet;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, WorkloadModificator};
@@ -127,18 +127,28 @@ fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.mouse_manager.reset_scroll_rotate();
 }
 
-fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>, vm_entity: View<Entity>, world: UniqueView<ChunkManager>) {
+fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>, vm_entity: View<Entity>, mut world: UniqueViewMut<ChunkManager>) {
     for (hitbox, transform, _) in (&vm_hitbox, &mut vm_transform, &vm_entity).iter() {
         let mut floored = transform.position.map(f32::floor);
         floored.y -= hitbox.0.y;
         let world_location = WorldLocation(floored);
-        let chunk_location: ChunkLocation = world_location.clone().into();
-        let chunk = world.get_chunk_ref_from_location(&chunk_location);
-        if let Some(chunk) = chunk {
-            if chunk.data.get_block(ChunkPos::from(world_location.clone())) != Block::Air {
-                transform.position.y = world_location.0.y + hitbox.0.y + 1.0;
+        let chunk_location: ChunkLocation = (&world_location).into();
+        let mut chunk = world.get_chunk_ref_from_location_mut(&chunk_location);
+
+        let a = vec![
+            WorldLocation(Vec3::new(floored.x - hitbox.0.x, floored.y, floored.z)),
+                          WorldLocation(Vec3::new(floored.x + hitbox.0.x, floored.y, floored.z)),
+                                        WorldLocation(Vec3::new(floored.x, floored.y, floored.z - hitbox.0.z)),
+                                                      WorldLocation(Vec3::new(floored.x, floored.y, floored.z + hitbox.0.z))
+        ];
+        for vertex in a {
+            if let Some(chunk) = chunk {
+                if chunk.data.get_block(ChunkPos::from(vertex.clone())) != Block::Air {
+                    chunk.data.set_block(ChunkPos::from(vertex.clone()), Block::Air);
+                    debug!("{world_location:?} {chunk_location:?}");
+                    chunk.dirty = true;
+                }
             }
         }
-
     }
 }

@@ -206,6 +206,12 @@ impl ChunkManager {
         self.loaded_chunks.get(offset)?.as_ref()
     }
 
+    pub fn get_chunk_ref_from_location_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
+        let offset = self.get_index_from_chunk_location_checked(location)?;
+
+        self.loaded_chunks.get_mut(offset)?.as_mut()
+    }
+
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
         self.loaded_chunks.iter()
             // TODO is there a better way to do this
