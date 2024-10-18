@@ -129,24 +129,28 @@ fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
 
 fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>, vm_entity: View<Entity>, mut world: UniqueViewMut<ChunkManager>) {
     for (hitbox, transform, _) in (&vm_hitbox, &mut vm_transform, &vm_entity).iter() {
-        let mut floored = transform.position.map(f32::floor);
-        floored.y -= hitbox.0.y;
-        let world_location = WorldLocation(floored);
-        let chunk_location: ChunkLocation = (&world_location).into();
-        let mut chunk = world.get_chunk_ref_from_location_mut(&chunk_location);
+        let half_hitbox = hitbox.0 * 0.5;
 
-        let a = vec![
-            WorldLocation(Vec3::new(floored.x - hitbox.0.x, floored.y, floored.z)),
-                          WorldLocation(Vec3::new(floored.x + hitbox.0.x, floored.y, floored.z)),
-                                        WorldLocation(Vec3::new(floored.x, floored.y, floored.z - hitbox.0.z)),
-                                                      WorldLocation(Vec3::new(floored.x, floored.y, floored.z + hitbox.0.z))
-        ];
-        for vertex in a {
-            if let Some(chunk) = chunk {
-                if chunk.data.get_block(ChunkPos::from(vertex.clone())) != Block::Air {
-                    chunk.data.set_block(ChunkPos::from(vertex.clone()), Block::Air);
-                    debug!("{world_location:?} {chunk_location:?}");
-                    chunk.dirty = true;
+        let min_extent = transform.position - half_hitbox;
+        let max_extent = transform.position + half_hitbox;
+
+        let min_floor = min_extent.map(|n| n.floor() as i32);
+        let max_floor = max_extent.map(|n| n.floor() as i32);
+
+        for x in min_floor.x..=max_floor.x {
+            for y in min_floor.y..=max_floor.y {
+                for z in min_floor.z..=max_floor.z {
+                    let world_loc = WorldLocation(Vec3::new(x as f32, y as f32, z as f32));
+                    let chunk_loc = ChunkLocation::from(&world_loc);
+
+                    if let Some(chunk) = world.get_chunk_ref_from_location_mut(&chunk_loc) {
+                        let chunk_pos = ChunkPos::from(&world_loc);
+
+                        if chunk.data.get_block(chunk_pos) != Block::Air {
+                            chunk.data.set_block(chunk_pos, Block::Air);
+                            chunk.dirty = true;
+                        }
+                    }
                 }
             }
         }
