@@ -12,7 +12,7 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, LocalPlayer, Player, PlayerSpeed, Transform};
+use crate::components::{Entity, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -41,6 +41,7 @@ fn initialize_local_player(
     mut vm_player: ViewMut<Player>,
     mut vm_entity: ViewMut<Entity>,
     mut vm_transform: ViewMut<Transform>,
+    mut vm_velocity: ViewMut<Velocity>,
     mut vm_player_speed: ViewMut<PlayerSpeed>,
     mut vm_camera: ViewMut<Camera>,
 
@@ -52,6 +53,7 @@ fn initialize_local_player(
             &mut vm_player,
             &mut vm_entity,
             &mut vm_transform,
+            &mut vm_velocity,
             &mut vm_player_speed,
             &mut vm_camera,
         ),
@@ -60,6 +62,7 @@ fn initialize_local_player(
             Player,
             Entity,
             Transform::default(),
+            Velocity::default(),
             PlayerSpeed(8.0),
             Camera {
                 perspective: Perspective3::new(

@@ -17,5 +17,8 @@ pub struct Transform {
     pub pitch: f32,
 }
 
+#[derive(Clone, Component, Debug, Default)]
+pub struct Velocity(pub Vec3);
+
 #[derive(Copy, Clone, Component, Debug, Default)]
 pub struct PlayerSpeed(pub f32);
