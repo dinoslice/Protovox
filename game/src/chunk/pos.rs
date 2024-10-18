@@ -81,8 +81,8 @@ impl From<ChunkPos> for TVec3<u8> {
     }
 }
 
-impl From<WorldLocation> for ChunkPos {
-    fn from(value: WorldLocation) -> Self {
+impl From<&WorldLocation> for ChunkPos {
+    fn from(value: &WorldLocation) -> Self {
         value
             .0
             .map_with_location(|r, _, n| {
@@ -92,6 +92,12 @@ impl From<WorldLocation> for ChunkPos {
             })
             .try_into()
             .expect("values in range")
+    }
+}
+
+impl From<WorldLocation> for ChunkPos {
+    fn from(value: WorldLocation) -> Self {
+        (&value).into()
     }
 }
 
