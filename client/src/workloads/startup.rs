@@ -1,6 +1,6 @@
-use glm::{U16Vec3, Vec3};
+use glm::U16Vec3;
 use na::Perspective3;
-use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, Workload};
+use shipyard::{AllStoragesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;
@@ -8,6 +8,7 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::components::{Entity, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -21,32 +22,65 @@ pub fn startup() -> Workload {
     (
         args::parse_env,
         renderer::initialize_renderer,
-        initialize_camera,
-        initialize_gameplay_systems.after_all(initialize_camera),
+        initialize_local_player,
+        initialize_gameplay_systems.after_all(initialize_local_player),
         initialize_application_systems,
         initialize_networking.after_all(args::parse_env),
     ).into_sequential_workload()
 }
 
-pub fn initialize_camera(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
-    storages.add_unique(Camera {
-        position: Vec3::new(0.0, 0.0, 0.0),
-        yaw: 90.0f32.to_radians(),
-        pitch: -20.0f32.to_radians(),
-        speed: 8.0,
-        perspective: Perspective3::new(
-            g_ctx.aspect(),
-            45.0f32.to_radians(),
-            0.01,
-            1000.0
+fn initialize_local_player(
+    mut entities: EntitiesViewMut,
+    mut vm_local_player: ViewMut<LocalPlayer>,
+    mut vm_player: ViewMut<Player>,
+    mut vm_entity: ViewMut<Entity>,
+    mut vm_transform: ViewMut<Transform>,
+    mut vm_velocity: ViewMut<Velocity>,
+    mut vm_player_speed: ViewMut<PlayerSpeed>,
+    mut vm_camera: ViewMut<Camera>,
+
+    g_ctx: UniqueView<GraphicsContext>,
+) {
+    entities.add_entity(
+        (
+            &mut vm_local_player,
+            &mut vm_player,
+            &mut vm_entity,
+            &mut vm_transform,
+            &mut vm_velocity,
+            &mut vm_player_speed,
+            &mut vm_camera,
+        ),
+        (
+            LocalPlayer,
+            Player,
+            Entity,
+            Transform::default(),
+            Velocity::default(),
+            PlayerSpeed(8.0),
+            Camera {
+                perspective: Perspective3::new(
+                    g_ctx.aspect(),
+                    45.0f32.to_radians(),
+                    0.01,
+                    1000.0
+                ),
+            }
         )
-    });
+    );
 }
 
-pub fn initialize_gameplay_systems(storages: AllStoragesView, camera: UniqueView<Camera>) {
+pub fn initialize_gameplay_systems(storages: AllStoragesView) {
+    let iter = &mut storages.iter::<(&LocalPlayer, &Transform)>();
+
+    let transform = iter.iter()
+        .next()
+        .expect("TODO: local player with transform should exist")
+        .1;
+
     storages.add_unique(ChunkManager::new(
         RenderDistance(U16Vec3::new(3,0,3)),
-        ChunkLocation::from(WorldLocation(camera.position))
+        ChunkLocation::from(WorldLocation(transform.position))
     ));
 }
 

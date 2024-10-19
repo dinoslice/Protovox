@@ -1,8 +1,9 @@
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
+use shipyard::{EntitiesView, IntoIter, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload};
 use game::location::WorldLocation;
 use crate::camera::Camera;
+use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ClientPositionUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
 use crate::events::render_distance::RenderDistanceUpdateEvent;
@@ -99,8 +100,14 @@ fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<Connection
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
 }
 
-pub fn client_update_position(cam: UniqueView<Camera>, server_conn: UniqueView<ServerConnection>) {
-    let world_pos = WorldLocation(cam.position);
+pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
+    let transform = (&local_player, &vm_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have transform")
+        .1;
+
+    let world_pos = WorldLocation(transform.position);
 
     let p = Packet::unreliable_sequenced(
         server_conn.server_addr,

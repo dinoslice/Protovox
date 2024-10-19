@@ -1,7 +1,8 @@
-use shipyard::{UniqueView, UniqueViewMut};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::components::{LocalPlayer, Transform};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::gizmos::line_render_state::GizmosLineRenderState;
@@ -10,18 +11,24 @@ use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
 
 #[allow(clippy::too_many_arguments)]
-pub fn render(
+pub fn render( // TODO: this function cannot be used as a system since it has 11 parameters
     g_ctx: UniqueView<GraphicsContext>,
     depth_texture: UniqueView<DepthTexture>,
     pipeline: UniqueView<RenderPipeline>,
-    camera: UniqueView<Camera>,
+    local_player: View<LocalPlayer>,
+    camera: View<Camera>,
+    transform: View<Transform>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
-
     gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
 ) -> Result<(), wgpu::SurfaceError> {
+    let (_, render_cam, transform) = (&local_player, &camera, &transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have camera to render to");
+
     // get a surface texture to render to
     let output = g_ctx.surface.get_current_texture()?;
 
@@ -66,7 +73,7 @@ pub fn render(
     render_pass.set_pipeline(&pipeline.0);
 
     // update the camera buffer
-    camera_uniform_buffer.update_buffer(&g_ctx, &camera.as_uniform());
+    camera_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
     render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
