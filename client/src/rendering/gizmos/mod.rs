@@ -1,19 +1,18 @@
 use glm::Vec3;
 use shipyard::{EntitiesViewMut, IntoWorkload, UniqueView, UniqueViewMut, ViewMut, Workload};
-use wgpu::util::DeviceExt;
 use settings::read_settings;
 use line_render_state::initialize_line_gizmos_render_state;
 use line_render_state::GizmosLineRenderState;
 use vertex::GizmoVertex;
-
-pub mod types;
-pub use types::*;
 use crate::application::delta_time::LastDeltaTime;
 use crate::rendering::graphics_context::GraphicsContext;
+pub use types::*;
 
 pub(super) mod line_render_state;
 mod settings;
 mod vertex;
+pub mod types;
+
 
 pub fn initialize() -> Workload {
     (
