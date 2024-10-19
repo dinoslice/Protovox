@@ -16,3 +16,4 @@ pub mod multiplayer;
 pub mod render_distance;
 pub mod environment;
 pub mod args;
+pub mod gizmos;
