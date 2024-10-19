@@ -17,6 +17,7 @@ use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
 use crate::networking::server_socket::ServerHandler;
 use crate::render_distance::RenderDistance;
+use crate::rendering::gizmos;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
@@ -31,6 +32,7 @@ pub fn update() -> Workload {
         chunk_manager_update_and_request.after_all(update_camera_movement),
         generate_chunks.run_if(is_hosted),
         client_request_chunks_from_server.run_if(is_multiplayer_client),
+        gizmos::update,
     ).into_sequential_workload()
 }
 
