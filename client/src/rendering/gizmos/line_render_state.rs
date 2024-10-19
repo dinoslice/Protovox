@@ -12,6 +12,13 @@ pub struct GizmosLineRenderState {
     pub sized_buffer: SizedBuffer,
 }
 
+impl GizmosLineRenderState {
+    pub fn update_buffer(&mut self, g_ctx: &GraphicsContext, buffer: &[GizmoVertex]) {
+        g_ctx.queue.write_buffer(&self.sized_buffer.buffer, 0, bytemuck::cast_slice(buffer));
+        self.sized_buffer.size = buffer.len() as _;
+    }
+}
+
 pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, gizmo_settings: UniqueView<GizmoRenderingSettings>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
     let num_line_gizmo_vertices = gizmo_settings.num_lines() * 2;
 
