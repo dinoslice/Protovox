@@ -15,3 +15,4 @@ pub mod depth_texture; // TODO: fix visibility
 mod texture_atlas;
 
 pub mod sized_buffer;
+pub mod gizmos;
