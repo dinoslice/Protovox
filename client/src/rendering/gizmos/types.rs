@@ -27,6 +27,15 @@ pub struct BoxGizmo {
     pub lifetime: GizmoLifetime,
 }
 
+impl BoxGizmo {
+    pub fn from_corners(a: Vec3, b: Vec3, style: GizmoStyle, lifetime: GizmoLifetime) -> Self {
+        let min = glm::min2(&a, &b);
+        let max = glm::max2(&a, &b);
+
+        Self { min, max, style, lifetime }
+    }
+}
+
 #[derive(Clone, Component, Debug, PartialEq)]
 pub struct PointGizmo {
     pub center: Vec3,
