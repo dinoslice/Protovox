@@ -4,7 +4,7 @@ use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
-use crate::rendering::gizmos::GizmosLineRenderState;
+use crate::rendering::gizmos::line_render_state::GizmosLineRenderState;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;

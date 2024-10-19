@@ -1,42 +1,10 @@
-use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
-use wgpu::util::DeviceExt;
+use shipyard::{AllStoragesView, Unique, UniqueView};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use crate::rendering::gizmos::vertex::GizmoVertex;
+use crate::rendering::gizmos::settings::GizmoRenderingSettings;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture::Texture;
-
-pub fn initialize() -> Workload {
-    (
-        read_settings,
-        initialize_line_gizmos_render_state,
-    ).into_sequential_workload()
-}
-
-pub fn read_settings(storages: AllStoragesView) {
-    // TODO: parse from file somewhere else
-    storages.add_unique(GizmoRenderingSettings::default())
-}
-
-#[derive(Unique)]
-pub struct GizmoRenderingSettings {
-    pub max_line_gizmos: u16,
-    pub max_box_gizmos: u16,
-}
-
-impl Default for GizmoRenderingSettings {
-    fn default() -> Self {
-        Self {
-            max_line_gizmos: 512,
-            max_box_gizmos: 512,
-        }
-    }
-}
-
-impl GizmoRenderingSettings {
-    fn num_lines(&self) -> u32 {
-        self.max_line_gizmos as u32 + self.max_box_gizmos as u32 * 12
-    }
-}
 
 #[derive(Unique)]
 pub struct GizmosLineRenderState {
@@ -44,28 +12,7 @@ pub struct GizmosLineRenderState {
     pub sized_buffer: SizedBuffer,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct GizmoVertex {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
-}
-
-impl GizmoVertex {
-    pub fn buffer_desc() -> wgpu::VertexBufferLayout<'static> {
-        // corresponds to using @location(x) in shader, how to read the buffer, what types and offsets
-        const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-            wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
-
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &ATTRIBUTES,
-        }
-    }
-}
-
-fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, gizmo_settings: UniqueView<GizmoRenderingSettings>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
+pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, gizmo_settings: UniqueView<GizmoRenderingSettings>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
     let num_line_gizmo_vertices = gizmo_settings.num_lines() * 2;
 
     let buffer = g_ctx.device.create_buffer(
@@ -77,7 +24,7 @@ fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, gizmo
         }
     );
 
-    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../rendering/shaders/gizmos_lines.wgsl"));
+    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../../rendering/shaders/gizmos_lines.wgsl"));
 
     let pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("line_gizmos_pipeline_layout"),
