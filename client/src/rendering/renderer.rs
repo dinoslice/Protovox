@@ -8,7 +8,7 @@ use rendering::{base_face, depth_texture, face_buffer};
 use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
-use crate::rendering::gizmos::{create_line_gizmos_pipeline, init_test_gizmos};
+use crate::rendering::gizmos;
 
 #[derive(Unique)]
 pub struct RenderPipeline(pub wgpu::RenderPipeline);
@@ -21,10 +21,9 @@ pub fn initialize_renderer() -> Workload {
             texture_atlas::initialize_texture_atlas,
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,
-            init_test_gizmos,
         ).into_workload(),
         create_pipeline,
-        create_line_gizmos_pipeline,
+        gizmos::initialize,
     ).into_sequential_workload()
 }
 

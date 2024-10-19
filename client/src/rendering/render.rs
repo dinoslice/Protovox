@@ -4,7 +4,7 @@ use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
-use crate::rendering::gizmos::{GizmosPipeline, LineGizmosBuffer};
+use crate::rendering::gizmos::GizmosLineRenderState;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
@@ -20,8 +20,7 @@ pub fn render(
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
 
-    gizmos_pipeline: UniqueView<GizmosPipeline>,
-    gizmos_buffer: UniqueView<LineGizmosBuffer>,
+    gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
 ) -> Result<(), wgpu::SurfaceError> {
     // get a surface texture to render to
     let output = g_ctx.surface.get_current_texture()?;
@@ -121,10 +120,10 @@ pub fn render(
         timestamp_writes: None,
     });
 
-    rp2.set_pipeline(&gizmos_pipeline.0);
+    rp2.set_pipeline(&gizmos_line_render_state.pipeline);
     rp2.set_bind_group(0, &camera_uniform_buffer.bind_group, &[]);
-    rp2.set_vertex_buffer(0, gizmos_buffer.buffer.slice(..));
-    rp2.draw(0..gizmos_buffer.num_vertices, 0..1);
+    rp2.set_vertex_buffer(0, gizmos_line_render_state.sized_buffer.buffer.slice(..));
+    rp2.draw(0..gizmos_line_render_state.sized_buffer.size, 0..1);
     drop(rp2);
 
     g_ctx.queue.submit(std::iter::once(encoder.finish()));

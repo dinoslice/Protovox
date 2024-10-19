@@ -1,8 +1,48 @@
-use shipyard::{AllStoragesView, Unique, UniqueView};
+use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
 use wgpu::util::DeviceExt;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture::Texture;
+
+pub fn initialize() -> Workload {
+    (
+        read_settings,
+        initialize_line_gizmos_render_state,
+    ).into_sequential_workload()
+}
+
+pub fn read_settings(storages: AllStoragesView) {
+    // TODO: parse from file somewhere else
+    storages.add_unique(GizmoRenderingSettings::default())
+}
+
+#[derive(Unique)]
+pub struct GizmoRenderingSettings {
+    pub max_line_gizmos: u16,
+    pub max_box_gizmos: u16,
+}
+
+impl Default for GizmoRenderingSettings {
+    fn default() -> Self {
+        Self {
+            max_line_gizmos: 512,
+            max_box_gizmos: 512,
+        }
+    }
+}
+
+impl GizmoRenderingSettings {
+    fn num_lines(&self) -> u32 {
+        self.max_line_gizmos as u32 + self.max_box_gizmos as u32 * 12
+    }
+}
+
+#[derive(Unique)]
+pub struct GizmosLineRenderState {
+    pub pipeline: wgpu::RenderPipeline,
+    pub sized_buffer: SizedBuffer,
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -10,15 +50,6 @@ pub struct GizmoVertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
 }
-
-#[derive(Unique)]
-pub struct LineGizmosBuffer {
-    pub buffer: wgpu::Buffer,
-    pub num_vertices: u32,
-}
-
-#[derive(Unique)]
-pub struct GizmosPipeline(pub wgpu::RenderPipeline);
 
 impl GizmoVertex {
     pub fn buffer_desc() -> wgpu::VertexBufferLayout<'static> {
@@ -34,50 +65,34 @@ impl GizmoVertex {
     }
 }
 
-pub fn init_test_gizmos(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
-    let temp_line = [
-        GizmoVertex { position: [1.0, 12.0, 2.0], color: [1.0, 0.0, 0.0] },
-        GizmoVertex { position: [-1.0, 12.0, 2.0], color: [1.0, 0.0, 0.0] },
-    ];
+fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, gizmo_settings: UniqueView<GizmoRenderingSettings>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
+    let num_line_gizmo_vertices = gizmo_settings.num_lines() * 2;
 
-    let buffer = g_ctx.device.create_buffer_init(
-        &wgpu::util::BufferInitDescriptor {
-            label: Some("camera_uniform_buffer"),
-            contents: bytemuck::cast_slice(&temp_line),
-            // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
+    let buffer = g_ctx.device.create_buffer(
+        &wgpu::BufferDescriptor {
+            label: Some("line_gizmos_buffer"),
+            size: num_line_gizmo_vertices as u64 * std::mem::size_of::<GizmoVertex>() as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         }
     );
 
-    storages.add_unique(LineGizmosBuffer {
-        buffer,
-        num_vertices: temp_line.len() as _,
-    })
-}
-
-pub fn create_line_gizmos_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
-    // 5. pipeline / instructions for GPU
-
-    // loads a shader and returns a handle to the compiled shader
     let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../rendering/shaders/gizmos_lines.wgsl"));
 
-    // pipeline describes the GPU's actions on a set of data, like a shader program
-    let render_pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Line Gizmos Pipeline Layout"),
-        bind_group_layouts: &[&camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+    let pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("line_gizmos_pipeline_layout"),
+        bind_group_layouts: &[&camera_uniform_buffer.bind_group_layout],
         .. Default::default()
     });
 
     let pipeline = g_ctx.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Line Gizmos Render Pipeline"),
-        layout: Some(&render_pipeline_layout),
+        layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
-                GizmoVertex::buffer_desc()
-            ],
+            buffers: &[GizmoVertex::buffer_desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
@@ -85,15 +100,15 @@ pub fn create_line_gizmos_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_un
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: g_ctx.config.format,
-                blend: Some(wgpu::BlendState::REPLACE), // blending, if set to replace this overwrites the contents
-                write_mask: wgpu::ColorWrites::ALL, // write to all channels (rgba)
+                blend: Some(wgpu::BlendState::REPLACE),
+                write_mask: wgpu::ColorWrites::ALL,
             })],
         }),
-        primitive: wgpu::PrimitiveState { // how to interpret vertices when converting to triangles
-            topology: wgpu::PrimitiveTopology::LineList, // 3 vert per triangle
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::LineList,
             strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw, // counter-clockwise ordered faces are front
-            cull_mode: None, // backface culling
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: None,
             polygon_mode: wgpu::PolygonMode::Fill,
             unclipped_depth: false,
             conservative: false,
@@ -101,13 +116,16 @@ pub fn create_line_gizmos_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_un
         depth_stencil: Some(wgpu::DepthStencilState {
             format: Texture::DEPTH_FORMAT,
             depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less, // draw pixels front to back based on the depth texture
-            stencil: wgpu::StencilState::default(), // usually stored in same texture as depth texture
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         }),
         multisample: wgpu::MultisampleState::default(),
-        multiview: None, // for rendering to array textures
+        multiview: None,
     });
 
-    storages.add_unique(GizmosPipeline(pipeline));
+    storages.add_unique(GizmosLineRenderState {
+        pipeline,
+        sized_buffer: SizedBuffer { buffer, size: 0 },
+    });
 }
