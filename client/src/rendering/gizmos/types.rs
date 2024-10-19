@@ -44,6 +44,15 @@ pub struct GizmoStyle {
     pub fill_color: Option<GizmoColor>,
 }
 
+impl GizmoStyle {
+    pub fn stroke(color: GizmoColor) -> Self {
+        Self {
+            stroke_color: color,
+            fill_color: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum GizmoLifetime {
     SingleFrame,
