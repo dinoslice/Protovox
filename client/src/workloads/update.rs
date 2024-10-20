@@ -23,6 +23,7 @@ use crate::networking::server_socket::ServerHandler;
 use crate::physics::process_physics;
 use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
+use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
@@ -164,7 +165,15 @@ fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.mouse_manager.reset_scroll_rotate();
 }
 
-fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>, vm_entity: View<Entity>, mut world: UniqueViewMut<ChunkManager>) {
+fn check_collision(
+    vm_hitbox: View<Hitbox>,
+    mut vm_transform: ViewMut<Transform>,
+    vm_entity: View<Entity>,
+    mut world: UniqueViewMut<ChunkManager>,
+
+    mut entities: EntitiesViewMut,
+    mut vm_box_gizmos: ViewMut<BoxGizmo>,
+) {
     for (hitbox, transform, _) in (&vm_hitbox, &mut vm_transform, &vm_entity).iter() {
         let half_hitbox = hitbox.0 * 0.5;
 
@@ -191,5 +200,12 @@ fn check_collision(vm_hitbox: View<Hitbox>, mut vm_transform: ViewMut<Transform>
                 }
             }
         }
+
+        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
+            min_extent,
+            max_extent,
+            GizmoStyle::stroke(rgb::Rgb { r: 1.0, g: 0.0, b: 0.0 }),
+            GizmoLifetime::SingleFrame,
+        ));
     }
 }
