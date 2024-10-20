@@ -29,6 +29,7 @@ pub fn startup() -> Workload {
     ).into_sequential_workload()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn initialize_local_player(
     mut entities: EntitiesViewMut,
     mut vm_local_player: ViewMut<LocalPlayer>,

@@ -9,7 +9,7 @@ use crate::input::InputManager;
 pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>) {
     let dt_secs = delta_time.0.as_secs_f32();
 
-    let (_, transform, mut velocity, player_speed) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed)
+    let (_, transform, velocity, player_speed) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed)
         .iter()
         .next()
         .expect("TODO: local player didn't have transform, velocity, player speed");
