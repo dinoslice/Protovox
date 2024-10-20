@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use shipyard::{UniqueView, World};
 use tracing::error;
+use wgpu::SurfaceError;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -32,6 +33,7 @@ pub fn run() {
 
     world.add_workload(startup);
     world.add_workload(update);
+    world.add_workload(render::render);
 
     world.add_unique(GraphicsContext::new(window));
     world.run_workload(startup)
@@ -60,19 +62,17 @@ pub fn run() {
                         world.run_workload(update)
                             .expect("TODO: panic message");
 
-                        // world.run_with_data(update_camera_from_input_manager, &last_render_time.elapsed());
-
-                        match world.run(render::render) {
-                            Ok(_) => {}
-                            // Reconfigure the surface if lost
-                            Err(wgpu::SurfaceError::Lost) => world.run(resize::reconfigure),
-                            // Quit if the system is out of memory
-                            Err(wgpu::SurfaceError::OutOfMemory) => {
-                                error!("System is out of memory!");
-                                panic!("System is out of memory!");
-                            },
-                            // All other errors (Outdated, Timeout) should be resolved by the next frame
-                            Err(e) => error!("{e:?}"),
+                        if let Err(err) = world.run_workload(render::render) {
+                            match err
+                                .custom_error()
+                                .expect("TODO: workload error")
+                                .downcast_ref::<SurfaceError>()
+                                .expect("TODO: unhandled/unexpected error returned from system")
+                            {
+                                SurfaceError::Lost => world.run(resize::reconfigure),
+                                SurfaceError::OutOfMemory => panic!("System is out of memory!"),
+                                err => error!("{err:?}"),
+                            }
                         }
                     }
                     WindowEvent::CloseRequested => control_flow.exit(),

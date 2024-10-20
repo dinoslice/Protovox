@@ -1,4 +1,4 @@
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
+use shipyard::{IntoIter, IntoWorkload, UniqueView, UniqueViewMut, View, Workload};
 use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -10,25 +10,39 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
 
+pub fn render() -> Workload {
+    (
+        update_camera_uniform_buffer,
+        render_world,
+    ).into_sequential_workload()
+}
+
+pub fn update_camera_uniform_buffer(
+    g_ctx: UniqueView<GraphicsContext>,
+    cam_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
+    v_local_player: View<LocalPlayer>,
+    v_camera: View<Camera>,
+    v_transform: View<Transform>,
+) {
+    let (_, render_cam, transform) = (&v_local_player, &v_camera, &v_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have camera to render to");
+
+    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
+}
+
 #[allow(clippy::too_many_arguments)]
-pub fn render( // TODO: this function cannot be used as a system since it has 11 parameters
+pub fn render_world(
     g_ctx: UniqueView<GraphicsContext>,
     depth_texture: UniqueView<DepthTexture>,
     pipeline: UniqueView<RenderPipeline>,
-    local_player: View<LocalPlayer>,
-    camera: View<Camera>,
-    transform: View<Transform>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
     gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
 ) -> Result<(), wgpu::SurfaceError> {
-    let (_, render_cam, transform) = (&local_player, &camera, &transform)
-        .iter()
-        .next()
-        .expect("TODO: local player did not have camera to render to");
-
     // get a surface texture to render to
     let output = g_ctx.surface.get_current_texture()?;
 
@@ -71,9 +85,6 @@ pub fn render( // TODO: this function cannot be used as a system since it has 11
     });
 
     render_pass.set_pipeline(&pipeline.0);
-
-    // update the camera buffer
-    camera_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
     render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
