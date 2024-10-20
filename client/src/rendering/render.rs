@@ -1,4 +1,4 @@
-use shipyard::{IntoIter, IntoWorkload, UniqueView, UniqueViewMut, View, Workload};
+use shipyard::{AllStoragesView, IntoIter, IntoWorkload, Unique, UniqueView, UniqueViewMut, View, Workload};
 use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -13,11 +13,38 @@ use crate::rendering::texture_atlas::TextureAtlas;
 pub fn render() -> Workload {
     (
         update_camera_uniform_buffer,
+        create_new_render_context,
         render_world,
+        render_gizmos,
+        submit_rendered_frame,
     ).into_sequential_workload()
 }
 
-pub fn update_camera_uniform_buffer(
+#[derive(Unique)]
+struct RenderContext {
+    pub output: wgpu::SurfaceTexture,
+    pub tex_view: wgpu::TextureView,
+    pub encoder: wgpu::CommandEncoder,
+}
+
+fn create_new_render_context(storages: AllStoragesView, g_ctx: UniqueView<GraphicsContext>) -> Result<(), wgpu::SurfaceError> {
+    // get a surface texture to render to
+    let output = g_ctx.surface.get_current_texture()?;
+
+    // view of the texture, so we can control how the render code interacts with the texture
+    let tex_view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+    // command encoder creates the commands to send to the GPU, commands stored in command buffer
+    let encoder = g_ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("Render encoder"),
+    });
+
+    storages.add_unique(RenderContext { output, tex_view, encoder });
+
+    Ok(())
+}
+
+fn update_camera_uniform_buffer(
     g_ctx: UniqueView<GraphicsContext>,
     cam_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     v_local_player: View<LocalPlayer>,
@@ -32,34 +59,23 @@ pub fn update_camera_uniform_buffer(
     cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn render_world(
-    g_ctx: UniqueView<GraphicsContext>,
+fn render_world(
+    mut ctx: UniqueViewMut<RenderContext>,
     depth_texture: UniqueView<DepthTexture>,
     pipeline: UniqueView<RenderPipeline>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
-    gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
-) -> Result<(), wgpu::SurfaceError> {
-    // get a surface texture to render to
-    let output = g_ctx.surface.get_current_texture()?;
+) {
+    let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
-    // view of the texture, so we can control how the render code interacts with the texture
-    let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-    // command encoder creates the commands to send to the GPU, commands stored in command buffer
-    let mut encoder = g_ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("Render encoder"),
-    });
-
-    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: Some("Render Pass"),
+    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("world_render_pass"),
         color_attachments: &[
             // @location(0) in output of fragment shader
             Some(wgpu::RenderPassColorAttachment { // where to draw color to
-                view: &view, // save the color texture view accessed earlier
+                view: tex_view, // save the color texture view accessed earlier
                 resolve_target: None, // texture to received resolved output, same as view unless multisampling
                 ops: wgpu::Operations { // what to do with the colors on the view
                     load: wgpu::LoadOp::Clear(wgpu::Color { // clears the screen with a color
@@ -84,14 +100,14 @@ pub fn render_world(
         timestamp_writes: None,
     });
 
-    render_pass.set_pipeline(&pipeline.0);
+    pass.set_pipeline(&pipeline.0);
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
-    render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
-    render_pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
+    pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
+    pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
 
     // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
-    render_pass.set_vertex_buffer(0, base_face.vertex_buffer.slice(..));
+    pass.set_vertex_buffer(0, base_face.vertex_buffer.slice(..));
 
     let bakery = chunk_manager.baked_chunks();
 
@@ -100,24 +116,29 @@ pub fn render_world(
             continue;
         };
 
-        render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
+        pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
-        render_pass.set_vertex_buffer(1, buffer.buffer.slice(..));
+        pass.set_vertex_buffer(1, buffer.buffer.slice(..));
 
         // draw the whole range of vertices, and all instances
-        render_pass.draw(0..base_face.num_vertices, 0..buffer.size);
+        pass.draw(0..base_face.num_vertices, 0..buffer.size);
     }
+}
 
+fn render_gizmos(
+    mut ctx: UniqueViewMut<RenderContext>,
+    gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
+    depth_texture: UniqueView<DepthTexture>,
+    camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>
+) {
+    let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
-    // finish the command buffer & submit to GPU
-    drop(render_pass);
-
-    let mut rp2 = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("line_gizmos_render_pass"),
         color_attachments: &[
             // @location(0) in output of fragment shader
             Some(wgpu::RenderPassColorAttachment { // where to draw color to
-                view: &view, // save the color texture view accessed earlier
+                view: tex_view, // save the color texture view accessed earlier
                 resolve_target: None, // texture to received resolved output, same as view unless multisampling
                 ops: wgpu::Operations { // what to do with the colors on the view
                     load: wgpu::LoadOp::Load,
@@ -128,7 +149,6 @@ pub fn render_world(
         depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
             view: &depth_texture.0.view,
             depth_ops: Some(wgpu::Operations {
-                // load: wgpu::LoadOp::Clear(1.0), // TODO: switch to load
                 load: wgpu::LoadOp::Load,
                 store: wgpu::StoreOp::Store,
             }),
@@ -138,14 +158,18 @@ pub fn render_world(
         timestamp_writes: None,
     });
 
-    rp2.set_pipeline(&gizmos_line_render_state.pipeline);
-    rp2.set_bind_group(0, &camera_uniform_buffer.bind_group, &[]);
-    rp2.set_vertex_buffer(0, gizmos_line_render_state.sized_buffer.buffer.slice(..));
-    rp2.draw(0..gizmos_line_render_state.sized_buffer.size, 0..1);
-    drop(rp2);
+    pass.set_pipeline(&gizmos_line_render_state.pipeline);
+    pass.set_bind_group(0, &camera_uniform_buffer.bind_group, &[]);
+    pass.set_vertex_buffer(0, gizmos_line_render_state.sized_buffer.buffer.slice(..));
+    pass.draw(0..gizmos_line_render_state.sized_buffer.size, 0..1);
+}
+
+fn submit_rendered_frame(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+    let Ok(RenderContext { output, encoder, .. }) = storages.remove_unique::<RenderContext>() else {
+        tracing::error!("Render context doesn't exist to render to.");
+        return;
+    };
 
     g_ctx.queue.submit(std::iter::once(encoder.finish()));
     output.present();
-
-    Ok(())
 }
