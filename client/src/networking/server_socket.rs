@@ -194,6 +194,6 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
         ClientInformationUpdateEvent =>,
 
         ClientSettingsUpdateEvent =>,
-        ClientPositionUpdate =>,
+        ClientTransformUpdate =>,
     });
 }

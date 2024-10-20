@@ -21,7 +21,7 @@ pub enum PacketType {
     ClientSettingsRequestEvent,
     ClientSettingsUpdateEvent,
 
-    ClientPositionUpdate,
+    ClientTransformUpdate,
 }
 
 impl PacketHeader for PacketType {
