@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Path};
-use packet::Packet;
 
 #[proc_macro_derive(Packet, attributes(packet_type))]
 pub fn proc_packet_derive(input: TokenStream) -> TokenStream {
@@ -17,7 +16,11 @@ pub fn proc_packet_derive(input: TokenStream) -> TokenStream {
         .flatten()
         .expect("Missing 'packet_type' attribute");
 
-    let ty = packet_type.segments.first().unwrap().ident.clone();
+    let ty = packet_type.segments
+        .first()
+        .expect("path should contain type of packet header")
+        .ident
+        .clone();
 
     let expanded = quote! {
         impl Packet<#ty> for #type_name {

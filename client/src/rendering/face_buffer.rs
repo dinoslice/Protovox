@@ -8,6 +8,7 @@ const FACES_PER_VOXEL: u64 = 6;
 const VOXELS_PER_CHUNK: u64 = 32 * 64 * 32;
 
 #[derive(Unique)]
+#[allow(dead_code)]
 pub struct FaceBuffer(pub wgpu::Buffer);
 
 pub fn init_face_buffer(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {

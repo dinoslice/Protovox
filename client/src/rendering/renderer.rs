@@ -8,6 +8,7 @@ use rendering::{base_face, depth_texture, face_buffer};
 use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
+use crate::rendering::gizmos;
 
 #[derive(Unique)]
 pub struct RenderPipeline(pub wgpu::RenderPipeline);
@@ -22,6 +23,7 @@ pub fn initialize_renderer() -> Workload {
             initialize_camera_uniform_buffer,
         ).into_workload(),
         create_pipeline,
+        gizmos::initialize,
     ).into_sequential_workload()
 }
 

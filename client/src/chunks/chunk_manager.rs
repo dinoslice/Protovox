@@ -1,6 +1,5 @@
 use std::time::Duration;
-use glm::{IVec3, U16Vec3};
-use game::chunk::data::ChunkData;
+use glm::IVec3;
 use hashbrown::HashMap;
 use shipyard::Unique;
 use wgpu::util::DeviceExt;
@@ -90,11 +89,10 @@ impl ChunkManager {
         new_loaded.resize_with(self.chunk_capacity(), || None);
 
         // TODO: we know old center and new center, so calculate new vec positions
-        for chunk_option in std::mem::take(&mut self.loaded_chunks) {
-            if let Some(chunk) = chunk_option {
-                if let Some(index) = self.get_index_from_chunk_location_checked(&chunk.data.location) {
-                    *new_loaded.get_mut(index).expect("index to exist") = Some(chunk);
-                } else {
+        for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
+            match self.get_index_from_chunk_location_checked(&chunk.data.location) {
+                Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
+                None => {
                     let loc = &chunk.data.location;
                     tracing::trace!("Deleting chunk buffer at {loc:?}");
                     self.bakery.remove(loc);
@@ -155,8 +153,8 @@ impl ChunkManager {
             .filter_map(|(i, c)| c.is_none().then_some(i))
             .map(|i| self.get_location_from_index(i))
             .filter(|loc| !self.recently_requested_gen.contains_key(loc))
-            .map(|loc| ChunkGenRequestEvent(loc))
-            .collect::<Vec<ChunkGenRequestEvent>>();
+            .map(ChunkGenRequestEvent)
+            .collect::<Vec<_>>();
 
         for req in &requests {
             self.recently_requested_gen.insert(req.0.clone(), REQ_TIMEOUT);
@@ -262,7 +260,6 @@ pub fn chunk_index_in_render_distance(location: &ChunkLocation, center: &ChunkLo
 #[cfg(test)]
 mod tests {
     use glm::IVec3;
-    use super::*;
 
     #[test]
     fn test_chunk_offset_into_chunk_vec() {
@@ -276,6 +273,6 @@ mod tests {
 
         assert_eq!(norm_offset, IVec3::new(2, 5, 1))
 
-        // into_1d_coordinate(&norm_offset, &self.render_distance) as usize
+        // super::into_1d_coordinate(&norm_offset, &self.render_distance) as usize
     }
 }

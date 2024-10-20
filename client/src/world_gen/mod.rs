@@ -17,7 +17,11 @@ pub struct WorldGenerator {
 
 impl WorldGenerator {
     pub fn new(seed: u32) -> Self {
-        let thread_pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
+        let thread_pool = ThreadPoolBuilder::new()
+            .num_threads(8)
+            .build()
+            .expect("thread pool did not build successfully");
+
         let chunk_output = crossbeam::channel::unbounded::<ChunkGenEvent>();
         let perlin_noise = Arc::new(Perlin::new(seed));
 
@@ -42,7 +46,8 @@ impl WorldGenerator {
         let perlin = self.perlin_noise.clone();
 
         self.thread_pool.spawn(move ||
-            sender.send(Self::generate_chunk(perlin, chunk)).unwrap()
+            sender.send(Self::generate_chunk(perlin, chunk))
+                .expect("channel should not have disconnected")
         );
     }
 
@@ -52,15 +57,15 @@ impl WorldGenerator {
 
         for x in 0..CHUNK_SIZE.x {
             for z in 0..CHUNK_SIZE.z {
-                let world_x = (out.location.0.x as i32 * CHUNK_SIZE.x as i32) + x as i32;
-                let world_z = (out.location.0.z as i32 * CHUNK_SIZE.z as i32) + z as i32;
+                let world_x = (out.location.0.x * CHUNK_SIZE.x as i32) + x as i32;
+                let world_z = (out.location.0.z * CHUNK_SIZE.z as i32) + z as i32;
 
                 let height = perlin.get([world_x as f64 / 10.0, world_z as f64 / 10.0]) * 10.0;
 
                 let height = height.abs() as u8;
 
-                out.set_block(ChunkPos::new_unchecked(x, height as u8, z), Block::Grass);
-                for y in 0..(height as u8) {
+                out.set_block(ChunkPos::new_unchecked(x, height, z), Block::Grass);
+                for y in 0..height {
                     if y + 3 >= (height) {
                         out.set_block(ChunkPos::new_unchecked(x, y, z), Block::Dirt);
                     } else {

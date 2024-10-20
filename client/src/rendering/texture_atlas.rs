@@ -3,6 +3,7 @@ use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
+#[allow(dead_code)]
 pub struct TextureAtlas {
     pub texture: Texture,
     pub bind_group: wgpu::BindGroup,

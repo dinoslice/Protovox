@@ -1,16 +1,13 @@
 use std::net::SocketAddr;
 use std::thread;
-use bimap::{BiHashMap, BiMap, Overwritten};
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
-use glm::U16Vec3;
-use hashbrown::HashMap;
+use bimap::BiHashMap;
+use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut};
-use game::location::WorldLocation;
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::PacketHeader;
-use crate::environment::{Environment, is_hosted};
+use crate::environment::is_hosted;
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
-use crate::events::render_distance::RenderDistanceRequestEvent;
+use crate::events::event_bus::EventBus;
 
 #[derive(Unique)]
 pub struct ServerHandler {
@@ -28,7 +25,9 @@ impl ServerHandler {
             .. Default::default()
         };
 
-        let mut socket = Socket::bind_any_with_config(config).unwrap();
+        let mut socket = Socket::bind_any_with_config(config)
+            .expect("unable to bind to address");
+
         tracing::debug!("Bound server to socket {:?}", socket.local_addr());
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
@@ -51,7 +50,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
 
     // TODO: fix insane battle with borrow checker
     loop {
-        let mut server_handler = storages
+        let server_handler = storages
             .borrow::<UniqueViewMut<ServerHandler>>()
             .expect("ServerHandler initialized");
 
@@ -61,7 +60,7 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
         if let Ok(evt) = res {
             match evt {
                 SocketEvent::Packet(p) => {
-                    let mut server_handler = storages
+                    let server_handler = storages
                         .borrow::<UniqueViewMut<ServerHandler>>()
                         .expect("ServerHandler re-borrowed");
 
@@ -137,46 +136,64 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
     use packet::{PacketHeader, Packet};
 
     macro_rules! register_packets {
-            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $decompress:expr),* $(,)? }) => {
-                register_packets!($bytes, $storages, $id, { $($packet_type => $packet_type => $decompress),* });
-            };
-            ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $packet_struct:ident => $decompress:expr),* $(,)? }) => {
-                match PacketType::from_buffer($bytes) {
-                    Some(ty) => match ty {
-                        $(
-                            PacketType::$packet_type => {
-                                let res = match $decompress {
-                                    true => $packet_struct::decompress_and_deserialize_unchecked($bytes),
-                                    false => $packet_struct::deserialize_unchecked($bytes),
-                                };
+        ($bytes:expr, $storages:expr, $id:expr, { $($packet:ident => $($modifier:ident)|*),* $(,)? }) => {
+            register_packets!($bytes, $storages, $id, { $($packet => $packet => $($modifier)|*),* });
+        };
+        ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $packet_struct:ident => $($modifier:ident)|*),* $(,)? }) => {
+            match PacketType::from_buffer($bytes) {
+                Some(ty) => match ty {
+                    $(
+                        #[allow(unused_mut)]
+                        PacketType::$packet_type => {
+                            let mut decompress = false;
+                            let mut use_bus = false;
 
-                                match res {
-                                    Some(packet) => { $storages.add_component($id, packet); },
-                                    None => tracing::error!("{ty:?} data was malformed"),
-                                };
-                            }
-                        )*
-                        _ => tracing::debug!("Packet {:?} isn't registered", ty),
-                    },
-                    None => tracing::debug!("Packet ID couldn't be determined"),
-                }
-            };
-        }
+                            $(
+                                match stringify!( $modifier ) {
+                                    "compressed" => decompress = true,
+                                    "bus" => use_bus = true,
+                                    _ => {}
+                                }
+                            )*
+
+                            let res = match decompress {
+                                true => $packet_struct::decompress_and_deserialize_unchecked($bytes),
+                                false => $packet_struct::deserialize_unchecked($bytes),
+                            };
+
+                            match res {
+                                None => tracing::error!("{ty:?} data was malformed"),
+                                Some(data) => match use_bus {
+                                    false => { $storages.add_component($id, data); }
+                                    true => match storages.borrow::<ViewMut<EventBus<$packet_struct>>>() {
+                                        Ok(mut vm_evt_bus) => vm_evt_bus.get_or_insert_with(id, Default::default).0.push(data),
+                                        Err(_) => tracing::error!("Failed to borrow event bus storage"),
+                                    }
+                                }
+                            };
+                        }
+                    )*
+                    _ => tracing::debug!("Packet {:?} isn't registered", ty),
+                },
+                None => tracing::debug!("Packet ID couldn't be determined"),
+            }
+        };
+    }
 
     use crate::events::*;
     use crate::events::render_distance::*;
 
     register_packets!(buffer, storages, id, {
-        ConnectionRequest => false,
+        ConnectionRequest =>,
 
-        ChunkGenRequestEvent => false,
+        ClientChunkRequest => bus,
 
-        RenderDistanceUpdateEvent=> false,
+        RenderDistanceUpdateEvent =>,
 
-        ClientInformationRequestEvent=> false,
-        ClientInformationUpdateEvent=> false,
+        ClientInformationRequestEvent =>,
+        ClientInformationUpdateEvent =>,
 
-        ClientSettingsUpdateEvent => false,
-        ClientPositionUpdate => false,
+        ClientSettingsUpdateEvent =>,
+        ClientPositionUpdate =>,
     });
 }

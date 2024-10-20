@@ -3,11 +3,12 @@ use strum::FromRepr;
 use packet::PacketHeader;
 
 #[repr(u16)]
-#[derive(Debug, Serialize, Deserialize, FromRepr, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, FromRepr, Copy, Clone, Eq, PartialEq)]
 pub enum PacketType {
     ConnectionRequest,
     ConnectionSuccess,
 
+    ClientChunkRequest,
     ChunkGenRequestEvent,
     ChunkGenEvent,
 

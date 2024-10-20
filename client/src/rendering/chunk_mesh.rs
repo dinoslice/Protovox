@@ -1,4 +1,3 @@
-use shipyard::Unique;
 use game::block::Block;
 use game::block::face_type::FaceType;
 use game::chunk::BLOCKS_PER_CHUNK;
@@ -7,7 +6,6 @@ use game::chunk::pos::ChunkPos;
 use crate::rendering::face_data::FaceData;
 
 // TODO: generational arena?
-#[derive(Unique)]
 pub struct ChunkMesh {
     pub faces: Vec<FaceData>
 }
@@ -40,6 +38,7 @@ impl ChunkMesh {
         Self { faces }
     }
 
+    #[allow(dead_code)]
     pub fn from_chunk_unoptimized(chunk: &ChunkData) -> Self {
         let non_air_block_count = chunk.blocks
             .iter()
@@ -49,7 +48,8 @@ impl ChunkMesh {
         let mut faces = Vec::with_capacity(non_air_block_count);
 
         for (pos, block) in chunk.blocks.iter().enumerate().filter(|(_, &b)| b != Block::Air) {
-            let pos = pos.try_into().unwrap();
+            assert_eq!(chunk.blocks.len(), u16::MAX as usize + 1, "size of ChunkBlocks changed");
+            let pos = pos.try_into().expect("index should fit into u16");
 
             for ft in FaceType::ALL {
                 faces.push(FaceData::new(

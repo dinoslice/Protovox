@@ -1,4 +1,5 @@
 pub mod render_distance;
+pub mod event_bus;
 
 use serde::{Deserialize, Serialize};
 use game::chunk::{data::ChunkData, location::ChunkLocation};
@@ -16,6 +17,7 @@ pub struct ChunkGenRequestEvent(pub ChunkLocation);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ChunkGenEvent)]
+#[repr(transparent)]
 pub struct ChunkGenEvent(pub ChunkData);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
@@ -45,3 +47,19 @@ pub struct ConnectionSuccess;
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ClientPositionUpdate)]
 pub struct ClientPositionUpdate(pub WorldLocation);
+
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::ClientChunkRequest)]
+pub struct ClientChunkRequest(pub ChunkLocation);
+
+impl From<ChunkGenRequestEvent> for ClientChunkRequest {
+    fn from(evt: ChunkGenRequestEvent) -> Self {
+        Self(evt.0)
+    }
+}
+
+impl From<ClientChunkRequest> for ChunkGenRequestEvent {
+    fn from(evt: ClientChunkRequest) -> Self {
+        Self(evt.0)
+    }
+}

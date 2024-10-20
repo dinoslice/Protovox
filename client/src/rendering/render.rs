@@ -1,32 +1,48 @@
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
+use shipyard::{IntoIter, IntoWorkload, UniqueView, UniqueViewMut, View, Workload};
 use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
+use crate::rendering::gizmos::line_render_state::GizmosLineRenderState;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
 
+pub fn render() -> Workload {
+    (
+        update_camera_uniform_buffer,
+        render_world,
+    ).into_sequential_workload()
+}
 
-pub fn render(
+pub fn update_camera_uniform_buffer(
     g_ctx: UniqueView<GraphicsContext>,
-    depth_texture: UniqueView<DepthTexture>,
-    pipeline: UniqueView<RenderPipeline>,
-    local_player: View<LocalPlayer>,
-    camera: View<Camera>,
-    transform: View<Transform>,
-    camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
-    base_face: UniqueView<BaseFace>,
-    texture_atlas: UniqueView<TextureAtlas>,
-    chunk_manager: UniqueView<ChunkManager>,
-) -> Result<(), wgpu::SurfaceError> {
-    let (_, render_cam, transform) = (&local_player, &camera, &transform)
+    cam_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
+    v_local_player: View<LocalPlayer>,
+    v_camera: View<Camera>,
+    v_transform: View<Transform>,
+) {
+    let (_, render_cam, transform) = (&v_local_player, &v_camera, &v_transform)
         .iter()
         .next()
         .expect("TODO: local player did not have camera to render to");
 
+    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn render_world(
+    g_ctx: UniqueView<GraphicsContext>,
+    depth_texture: UniqueView<DepthTexture>,
+    pipeline: UniqueView<RenderPipeline>,
+    camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
+    base_face: UniqueView<BaseFace>,
+    texture_atlas: UniqueView<TextureAtlas>,
+    chunk_manager: UniqueView<ChunkManager>,
+    gizmos_line_render_state: UniqueView<GizmosLineRenderState>,
+) -> Result<(), wgpu::SurfaceError> {
     // get a surface texture to render to
     let output = g_ctx.surface.get_current_texture()?;
 
@@ -70,9 +86,6 @@ pub fn render(
 
     render_pass.set_pipeline(&pipeline.0);
 
-    // update the camera buffer
-    camera_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
-
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
     render_pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
     render_pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
@@ -98,6 +111,39 @@ pub fn render(
 
     // finish the command buffer & submit to GPU
     drop(render_pass);
+
+    let mut rp2 = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("line_gizmos_render_pass"),
+        color_attachments: &[
+            // @location(0) in output of fragment shader
+            Some(wgpu::RenderPassColorAttachment { // where to draw color to
+                view: &view, // save the color texture view accessed earlier
+                resolve_target: None, // texture to received resolved output, same as view unless multisampling
+                ops: wgpu::Operations { // what to do with the colors on the view
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store, // store the result of this pass, don't discard it
+                },
+            })
+        ],
+        depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+            view: &depth_texture.0.view,
+            depth_ops: Some(wgpu::Operations {
+                // load: wgpu::LoadOp::Clear(1.0), // TODO: switch to load
+                load: wgpu::LoadOp::Load,
+                store: wgpu::StoreOp::Store,
+            }),
+            stencil_ops: None,
+        }),
+        occlusion_query_set: None,
+        timestamp_writes: None,
+    });
+
+    rp2.set_pipeline(&gizmos_line_render_state.pipeline);
+    rp2.set_bind_group(0, &camera_uniform_buffer.bind_group, &[]);
+    rp2.set_vertex_buffer(0, gizmos_line_render_state.sized_buffer.buffer.slice(..));
+    rp2.draw(0..gizmos_line_render_state.sized_buffer.size, 0..1);
+    drop(rp2);
+
     g_ctx.queue.submit(std::iter::once(encoder.finish()));
     output.present();
 

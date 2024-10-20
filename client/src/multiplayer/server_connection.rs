@@ -2,11 +2,10 @@ use std::net::SocketAddr;
 use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView};
+use shipyard::{AllStoragesViewMut, Unique, UniqueView};
 use packet::Packet as _;
 use crate::environment::is_multiplayer_client;
 use crate::events;
-use crate::events::PacketType::ConnectionSuccess;
 
 #[derive(Unique)]
 pub struct ServerConnection {
@@ -24,19 +23,21 @@ impl ServerConnection {
             .. Default::default()
         };
 
-        let mut socket = Socket::bind_any_with_config(config).unwrap();
+        let mut socket = Socket::bind_any_with_config(config)
+            .expect("unable to bind to address");
+
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
 
         let server_addr = server_addr.into();
 
-        tracing::debug!("Connected client at {} to server at {server_addr:?}", socket.local_addr().unwrap());
+        tracing::debug!("Connected client at {} to server at {server_addr:?}", socket.local_addr().expect("server addr should be initialized"));
 
         let _ = thread::spawn(move || socket.start_polling());
 
         let connection_req = Packet::reliable_ordered(
             server_addr,
-            events::ConnectionRequest.serialize_packet().expect("packet serialization"),
+            events::ConnectionRequest.serialize_packet().expect("packet serialization failed"),
             None, // TODO: configure stream ids
         );
 

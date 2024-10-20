@@ -18,6 +18,9 @@ pub struct Transform {
 }
 
 #[derive(Clone, Component, Debug, Default)]
+pub struct Velocity(pub Vec3);
+
+#[derive(Clone, Component, Debug, Default)]
 pub struct PlayerSpeed(pub f32);
 
 #[derive(Clone, Component, Debug, Default)]

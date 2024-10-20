@@ -6,6 +6,7 @@ pub struct Vertex { // VertexInput in shader
 }
 
 impl Vertex {
+    #[allow(dead_code)]
     pub fn add_pos(&self, x: f32, y: f32, z: f32) -> Self {
         Self {
             position: [
