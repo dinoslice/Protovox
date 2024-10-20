@@ -62,6 +62,7 @@ fn initialize_local_player(
             Velocity::default(),
             PlayerSpeed(8.0),
             Camera {
+                offset: Vec3::new(0.0, 0.5, 0.0),
                 perspective: Perspective3::new(
                     g_ctx.aspect(),
                     45.0f32.to_radians(),

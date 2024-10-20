@@ -5,6 +5,7 @@ use crate::components::Transform;
 
 #[derive(Component)]
 pub struct Camera {
+    pub offset: Vec3,
     pub perspective: Perspective3<f32>,
 }
 
@@ -25,6 +26,6 @@ impl Camera {
             0.0, 0.0, 0.0, 1.0,
         );
 
-        (OPENGL_TO_WGPU_MATRIX * self.perspective.as_matrix() * self.view_matrix(transform.position, transform.pitch, transform.yaw)).into()
+        (OPENGL_TO_WGPU_MATRIX * self.perspective.as_matrix() * self.view_matrix(transform.position + self.offset, transform.pitch, transform.yaw)).into()
     }
 }
