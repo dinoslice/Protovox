@@ -1,6 +1,6 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;
@@ -29,50 +29,38 @@ pub fn startup() -> Workload {
     ).into_sequential_workload()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn initialize_local_player(
-    mut entities: EntitiesViewMut,
-    mut vm_local_player: ViewMut<LocalPlayer>,
-    mut vm_player: ViewMut<Player>,
-    mut vm_entity: ViewMut<Entity>,
-    mut vm_transform: ViewMut<Transform>,
-    mut vm_velocity: ViewMut<Velocity>,
-    mut vm_player_speed: ViewMut<PlayerSpeed>,
-    mut vm_camera: ViewMut<Camera>,
-    mut vm_hitbox: ViewMut<Hitbox>,
+fn initialize_local_player(mut storages: AllStoragesViewMut) {
+    let aspect = storages
+        .borrow::<UniqueView<GraphicsContext>>()
+        .expect("unable to borrow graphics context")
+        .aspect();
 
-    g_ctx: UniqueView<GraphicsContext>,
-) {
-    entities.add_entity(
-        (
-            &mut vm_local_player,
-            &mut vm_player,
-            &mut vm_entity,
-            &mut vm_transform,
-            &mut vm_velocity,
-            &mut vm_player_speed,
-            &mut vm_camera,
-            &mut vm_hitbox
-        ),
-        (
-            LocalPlayer,
-            Player,
-            Entity,
-            Transform::default(),
-            Velocity::default(),
-            PlayerSpeed(8.0),
-            Camera {
-                offset: Vec3::new(0.0, 0.5, 0.0),
-                perspective: Perspective3::new(
-                    g_ctx.aspect(),
-                    45.0f32.to_radians(),
-                    0.01,
-                    1000.0
-                ),
-            },
-            Hitbox(Vec3::new(0.6, 2.0, 0.6))
-        )
-    );
+    storages.add_entity((
+        LocalPlayer,
+        Player,
+        Entity,
+        Transform {
+            position: Vec3::new(0.5, 20.0, 0.5),
+            .. Default::default()
+        },
+        Velocity::default(),
+        PlayerSpeed {
+            max_vel: 4.32,
+            jump_vel: 4.95,
+            accel: 0.098 * 20.0,
+            friction: 0.546 * 20.0,
+        },
+        Camera {
+            offset: Vec3::new(0.0, 0.5, 0.0),
+            perspective: Perspective3::new(
+                aspect,
+                45.0f32.to_radians(),
+                0.01,
+                1000.0
+            ),
+        },
+        Hitbox(Vec3::new(0.6, 2.0, 0.6))
+    ));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
