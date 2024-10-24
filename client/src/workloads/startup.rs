@@ -8,7 +8,7 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, Hitbox, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, Hitbox, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -39,6 +39,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
         LocalPlayer,
         Player,
         Entity,
+        GravityAffected,
         Transform {
             position: Vec3::new(0.5, 20.0, 0.5),
             .. Default::default()

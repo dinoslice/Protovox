@@ -10,6 +10,9 @@ pub struct Player;
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct Entity;
 
+#[derive(Copy, Clone, Hash, Component, Debug, Default)]
+pub struct GravityAffected;
+
 #[derive(Clone, Component, Debug, Default)]
 pub struct Transform {
     pub position: Vec3,
