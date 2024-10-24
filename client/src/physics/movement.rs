@@ -25,7 +25,7 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
     let forward = Vec3::new(yaw_cos, 0.0, yaw_sin).normalize();
     let right = Vec3::new(-yaw_sin, 0.0, yaw_cos).normalize();
 
-    let movement_scaled = movement * player_speed.0 * dt_secs;
+    let movement_scaled = movement * player_speed.max_vel * dt_secs;
 
     velocity.0 += (forward * movement_scaled.z) + (right * movement_scaled.x) + Vec3::y_axis().into_inner() * movement_scaled.y;
 }
@@ -56,16 +56,16 @@ pub fn adjust_fly_speed(input: UniqueView<InputManager>, v_local_player: View<Lo
     const SCROLL_SCALE: f32 = 0.32;
     const SCROLL_THRESHOLD: f32 = 0.2;
 
-    player_speed.0 = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
-        Ordering::Less => match player_speed.0 >= SCROLL_THRESHOLD {
-            true => player_speed.0 * (1.0 + SCROLL_SCALE),
+    player_speed.max_vel = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
+        Ordering::Less => match player_speed.max_vel >= SCROLL_THRESHOLD {
+            true => player_speed.max_vel * (1.0 + SCROLL_SCALE),
             false => SCROLL_THRESHOLD,
         },
-        Ordering::Greater => match player_speed.0 >= SCROLL_THRESHOLD {
-            true => player_speed.0 * (1.0 - SCROLL_SCALE),
+        Ordering::Greater => match player_speed.max_vel >= SCROLL_THRESHOLD {
+            true => player_speed.max_vel * (1.0 - SCROLL_SCALE),
             false => 0.0,
         }
-        _ => player_speed.0,
+        _ => player_speed.max_vel,
     }.clamp(0.0, 125.0);
 }
 
