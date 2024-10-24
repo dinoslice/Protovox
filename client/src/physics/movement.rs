@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use glm::Vec3;
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
+use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
 use crate::components::{LocalPlayer, PlayerSpeed, Transform, Velocity};
 use crate::input::action_map::Action;
@@ -66,4 +67,15 @@ pub fn adjust_fly_speed(input: UniqueView<InputManager>, v_local_player: View<Lo
         }
         _ => player_speed.0,
     }.clamp(0.0, 125.0);
+}
+
+pub fn move_towards<const N: usize> (current: &SVector<f32, N>, target: &SVector<f32, N>, max_dist: f32) -> SVector<f32, N> {
+    let dist = target - current;
+    let mag = dist.norm();
+
+    if mag <= max_dist || mag == 0.0 {
+        *target
+    } else {
+        current + dist.normalize() * max_dist
+    }
 }
