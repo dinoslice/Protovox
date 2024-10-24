@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use glm::Vec3;
+use glm::{Vec2, Vec3};
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
 use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
@@ -15,19 +15,22 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
         .next()
         .expect("TODO: local player didn't have transform, velocity, player speed");
 
-    let movement = Vec3::new(
-        input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
-        input.action_map.get_axis(Action::Jump, Action::Sneak) as f32,
+    let input_vec = Vec2::new(
         input.action_map.get_axis(Action::MoveForward, Action::MoveBackward) as f32,
-    );
+        input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
+    )
+        .try_normalize(f32::EPSILON)
+        .unwrap_or_default();
 
-    let (yaw_sin, yaw_cos) = transform.yaw.sin_cos();
-    let forward = Vec3::new(yaw_cos, 0.0, yaw_sin).normalize();
-    let right = Vec3::new(-yaw_sin, 0.0, yaw_cos).normalize();
+    let xz = glm::rotate_vec2(&input_vec, transform.yaw) * player_speed.max_vel * dt_secs;
 
-    let movement_scaled = movement * player_speed.max_vel * dt_secs;
+    let jump = Vec3::y_axis().into_inner()
+        * (input.action_map.get_action(Action::Jump) as u8 as f32)
+        * player_speed.jump_vel
+        * 2.5
+        * dt_secs;
 
-    velocity.0 += (forward * movement_scaled.z) + (right * movement_scaled.x) + Vec3::y_axis().into_inner() * movement_scaled.y;
+    velocity.0 = Vec3::new(xz.x, velocity.0.y, xz.y) + jump;
 }
 
 pub fn apply_camera_input(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>) {
