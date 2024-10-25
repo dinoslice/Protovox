@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::net::SocketAddr;
 use std::thread;
 use crossbeam::channel::{Receiver, Sender};
@@ -20,6 +21,7 @@ impl ServerConnection {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
             fragment_size: 1024,
+            idle_connection_timeout: Duration::from_secs(6),
             .. Default::default()
         };
 
