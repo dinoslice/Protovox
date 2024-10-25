@@ -3,11 +3,11 @@ use crate::application::delta_time::LastDeltaTime;
 use crate::components::{Entity, GravityAffected, Transform, Velocity};
 
 pub mod movement;
+pub mod collision_response;
 
-pub fn process_physics(mut vm_velocity: ViewMut<Velocity>, mut vm_transform: ViewMut<Transform>) {
+pub fn process_physics(mut vm_velocity: ViewMut<Velocity>, mut vm_transform: ViewMut<Transform>, delta_time: UniqueView<LastDeltaTime>) {
     for (velocity, transform) in (&mut vm_velocity, &mut vm_transform).iter() {
-        transform.position += velocity.0;
-        *velocity = Velocity::default();
+        // TODO
     }
 }
 
