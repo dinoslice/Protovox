@@ -22,6 +22,8 @@ pub enum PacketType {
     ClientSettingsUpdateEvent,
 
     ClientTransformUpdate,
+
+    KeepAlive,
 }
 
 impl PacketHeader for PacketType {

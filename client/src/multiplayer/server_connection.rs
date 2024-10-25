@@ -134,5 +134,7 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
         ClientSettingsRequestEvent => false,
 
         ConnectionSuccess => false,
+
+        KeepAlive => false,
     });
 }
