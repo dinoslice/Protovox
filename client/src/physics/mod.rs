@@ -1,17 +1,18 @@
-use shipyard::{IntoIter, UniqueView, View, ViewMut};
+use shipyard::{IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use crate::application::delta_time::LastDeltaTime;
 use crate::components::{Entity, GravityAffected, Transform, Velocity};
 
 pub mod movement;
-pub mod collision_response;
+mod collision_response;
 
-pub fn process_physics(mut vm_velocity: ViewMut<Velocity>, mut vm_transform: ViewMut<Transform>, delta_time: UniqueView<LastDeltaTime>) {
-    for (velocity, transform) in (&mut vm_velocity, &mut vm_transform).iter() {
-        // TODO
-    }
+pub fn process_physics() -> Workload {
+    (
+        collision_response::move_with_collision,
+        apply_gravity,
+    ).into_sequential_workload()
 }
 
-pub fn apply_gravity(mut vm_velocity: ViewMut<Velocity>, v_transform: View<Transform>, v_entity: View<Entity>, v_gravity_affected: View<GravityAffected>, delta_time: UniqueView<LastDeltaTime>) {
+fn apply_gravity(mut vm_velocity: ViewMut<Velocity>, v_transform: View<Transform>, v_entity: View<Entity>, v_gravity_affected: View<GravityAffected>, delta_time: UniqueView<LastDeltaTime>) {
     let dt_secs = delta_time.0.as_secs_f32();
 
     for (velocity, _, _, _) in (&mut vm_velocity, &v_transform, &v_entity, &v_gravity_affected).iter() {

@@ -20,8 +20,7 @@ use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
 use crate::networking::server_socket::ServerHandler;
-use crate::physics::collision_response::move_with_collision;
-use crate::physics::{apply_gravity, process_physics};
+use crate::physics::process_physics;
 use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
@@ -32,8 +31,6 @@ pub fn update() -> Workload {
     (
         process_input,
         process_physics,
-        apply_gravity,
-        move_with_collision,
         reset_mouse_manager_state,
         networking::update_networking,
         server_handle_client_chunk_reqs.run_if(is_hosted),
