@@ -22,7 +22,13 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
         .try_normalize(f32::EPSILON)
         .unwrap_or_default();
 
-    let xz = glm::rotate_vec2(&input_vec, transform.yaw) * player_speed.max_vel * dt_secs;
+    let plane_dir = glm::rotate_vec2(&input_vec, transform.yaw);
+
+    let xz = if input_vec != Vec3::zeros() {
+        move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel)
+    } else {
+        move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs)
+    };
 
     let jump = Vec3::y_axis().into_inner()
         * (input.action_map.get_action(Action::Jump) as u8 as f32)
