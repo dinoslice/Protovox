@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use glm::{Vec2, Vec3};
+use glm::{RealNumber, Vec2, Vec3};
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
 use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
@@ -78,11 +78,11 @@ pub fn adjust_fly_speed(input: UniqueView<InputManager>, v_local_player: View<Lo
     }.clamp(0.0, 125.0);
 }
 
-pub fn move_towards<const N: usize> (current: &SVector<f32, N>, target: &SVector<f32, N>, max_dist: f32) -> SVector<f32, N> {
+pub fn move_towards<T: RealNumber, const N: usize> (current: &SVector<T, N>, target: &SVector<T, N>, max_dist: T) -> SVector<T, N> {
     let dist = target - current;
     let mag = dist.norm();
 
-    if mag <= max_dist || mag == 0.0 {
+    if mag <= max_dist || mag.is_zero() {
         *target
     } else {
         current + dist.normalize() * max_dist
