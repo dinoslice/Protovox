@@ -3,14 +3,14 @@ use glm::{Vec2, Vec3};
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
 use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{LocalPlayer, PlayerSpeed, Transform, Velocity};
+use crate::components::{IsOnGround, LocalPlayer, PlayerSpeed, Transform, Velocity};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 
-pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>) {
+pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>, v_is_on_ground: View<IsOnGround>) {
     let dt_secs = delta_time.0.as_secs_f32();
 
-    let (_, transform, velocity, player_speed) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed)
+    let (_, transform, velocity, player_speed, is_on_ground) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed, &v_is_on_ground)
         .iter()
         .next()
         .expect("TODO: local player didn't have transform, velocity, player speed");
@@ -30,13 +30,13 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
         move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs)
     };
 
-    let jump = Vec3::y_axis().into_inner()
-        * (input.action_map.get_action(Action::Jump) as u8 as f32)
-        * player_speed.jump_vel
-        * 2.5
-        * dt_secs;
+    let jump = if input.action_map.get_action(Action::Jump) && is_on_ground.0 {
+        player_speed.jump_vel
+    } else {
+        0.0
+    };
 
-    velocity.0 = Vec3::new(xz.x, velocity.0.y, xz.y) + jump;
+    velocity.0 = Vec3::new(xz.x, velocity.0.y + jump, xz.y);
 }
 
 pub fn apply_camera_input(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>) {

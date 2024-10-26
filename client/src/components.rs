@@ -33,3 +33,6 @@ pub struct PlayerSpeed {
 
 #[derive(Clone, Component, Debug, Default)]
 pub struct Hitbox(pub Vec3);
+
+#[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
+pub struct IsOnGround(pub bool);
