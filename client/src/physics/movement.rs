@@ -18,16 +18,15 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
     let input_vec = Vec2::new(
         input.action_map.get_axis(Action::MoveForward, Action::MoveBackward) as f32,
         input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
-    )
-        .try_normalize(f32::EPSILON)
-        .unwrap_or_default();
+    );
 
-    let plane_dir = glm::rotate_vec2(&input_vec, transform.yaw);
+    let xz = match input_vec.try_normalize(f32::EPSILON) {
+        Some(norm_input) => {
+            let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw);
 
-    let xz = if input_vec != Vec3::zeros() {
-        move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel)
-    } else {
-        move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs)
+            move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel * dt_secs)
+        }
+        None => move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs),
     };
 
     let jump = if input.action_map.get_action(Action::Jump) && is_on_ground.0 {
