@@ -46,12 +46,13 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
             .. Default::default()
         },
         Velocity::default(),
-        PlayerSpeed {
-            max_vel: 4.32,
-            jump_vel: 4.95,
-            accel: 0.098 * 20.0,
-            friction: 0.546 * 20.0,
-        },
+        PlayerSpeed::from_observed(
+            4.32,
+            1.25,
+            9.8,
+            0.2,
+            0.18
+        ),
         Camera {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(
