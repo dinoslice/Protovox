@@ -1,5 +1,5 @@
 use glm::Vec3;
-use shipyard::{EntitiesViewMut, IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
@@ -7,7 +7,6 @@ use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, Hitbox, IsOnGround, Transform, Velocity};
-use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 
 pub fn move_with_collision(
     vm_hitbox: View<Hitbox>,
@@ -17,23 +16,10 @@ pub fn move_with_collision(
     mut vm_is_on_ground: ViewMut<IsOnGround>,
     mut world: UniqueViewMut<ChunkManager>,
 
-    mut entities: EntitiesViewMut,
-    mut vm_box_gizmos: ViewMut<BoxGizmo>,
-
     delta_time: UniqueView<LastDeltaTime>,
 ) {
     for (hitbox, transform, vel, _, is_on_ground) in (&vm_hitbox, &mut vm_transform, &mut vm_velocity, &vm_entity, &mut vm_is_on_ground).iter() {
         let half_hitbox = hitbox.0 * 0.5;
-
-        let min_extent = transform.position - half_hitbox;
-        let max_extent = transform.position + half_hitbox;
-
-        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
-            min_extent,
-            max_extent,
-            GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 0.0, b: 1.0 }),
-            GizmoLifetime::SingleFrame,
-        ));
 
         // Helper function to check if the given position collides with a block in the world
         let mut check_collision = |pos: Vec3| -> bool {
@@ -90,17 +76,5 @@ pub fn move_with_collision(
         } else {
             vel.0.z = 0.0; // Stop movement in the Z axis due to collision
         }
-
-        // After processing all axes, update the transform position
-
-        let min_extent = transform.position - half_hitbox;
-        let max_extent = transform.position + half_hitbox;
-
-        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
-            min_extent,
-            max_extent,
-            GizmoStyle::stroke(rgb::Rgb { r: 1.0, g: 0.0, b: 0.0 }),
-            GizmoLifetime::SingleFrame,
-        ));
     }
 }
