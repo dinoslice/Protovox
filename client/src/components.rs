@@ -31,6 +31,22 @@ pub struct PlayerSpeed {
     pub friction: f32,
 }
 
+impl PlayerSpeed {
+    pub fn from_observed(max_vel: f32, jump_height: f32, gravity: f32, accel_time: f32, friction_time: f32) -> Self {
+        assert!(max_vel >= 0.0, "max_vel must be non negative");
+        assert!(gravity >= 0.0, "gravity must be non negative");
+        assert!(jump_height >= 0.0, "jump_height must be non negative");
+        assert!(accel_time >= 0.0, "accel_time must be non negative");
+        assert!(friction_time >= 0.0, "friction_time must be non negative");
+
+        let jump_vel = (2.0 * gravity * jump_height).sqrt();
+        let accel = max_vel / accel_time;
+        let friction = max_vel / friction_time;
+
+        Self { max_vel, jump_vel, accel, friction }
+    }
+}
+
 #[derive(Clone, Component, Debug, Default)]
 pub struct Hitbox(pub Vec3);
 
