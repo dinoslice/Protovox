@@ -52,6 +52,10 @@ pub struct ClientTransformUpdate(pub Transform);
 #[packet_type(PacketType::ClientChunkRequest)]
 pub struct ClientChunkRequest(pub ChunkLocation);
 
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::KeepAlive)]
+pub struct KeepAlive;
+
 impl From<ChunkGenRequestEvent> for ClientChunkRequest {
     fn from(evt: ChunkGenRequestEvent) -> Self {
         Self(evt.0)

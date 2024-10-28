@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
 use std::thread;
+use std::time::Duration;
 use bimap::BiHashMap;
-use crossbeam::channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, TryRecvError};
 use laminar::{Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::PacketHeader;
@@ -22,6 +23,7 @@ impl ServerHandler {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
             fragment_size: 1024,
+            idle_connection_timeout: Duration::from_secs(6),
             .. Default::default()
         };
 
@@ -57,8 +59,8 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
         let res = server_handler.rx.try_recv();
         drop(server_handler);
 
-        if let Ok(evt) = res {
-            match evt {
+        match res {
+            Ok(evt) => match evt {
                 SocketEvent::Packet(p) => {
                     let server_handler = storages
                         .borrow::<UniqueViewMut<ServerHandler>>()
@@ -109,8 +111,8 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                 SocketEvent::Connect(addr) => {
                     tracing::debug!("SocketEvent::Connect from {addr:?}")
                 }
-                SocketEvent::Timeout(_) => {
-                    // Handle timeout event here
+                SocketEvent::Timeout(addr) => {
+                    tracing::debug!("timeout at {addr:?}")
                 }
                 SocketEvent::Disconnect(addr) => {
                     let mut server_handler = storages
@@ -125,8 +127,9 @@ pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
                     }
                 }
             }
-        } else {
-            break;
+            Err(_) => {
+                break;
+            }
         }
     }
 }

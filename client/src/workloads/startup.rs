@@ -12,6 +12,7 @@ use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
+use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_socket::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -26,6 +27,7 @@ pub fn startup() -> Workload {
         initialize_gameplay_systems.after_all(initialize_local_player),
         initialize_application_systems,
         initialize_networking.after_all(args::parse_env),
+        init_keep_alive,//.run_if(is_hosted),
     ).into_sequential_workload()
 }
 
