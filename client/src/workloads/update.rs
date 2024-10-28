@@ -43,6 +43,7 @@ pub fn update() -> Workload {
         client_request_chunks_from_server.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
         spawn_multiplayer_player,
+        raycast,
         gizmos::update,
     ).into_sequential_workload()
 }
@@ -53,6 +54,29 @@ pub fn process_input() -> Workload {
         process_movement,
         adjust_fly_speed,
     ).into_workload()
+}
+
+fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>) {
+    let (_, transform, camera) = (&v_local_player, &v_transform, &v_camera)
+        .iter()
+        .next()
+        .expect("TODO: local player with transform & camera didn't exist");
+
+    let raycast_origin = transform.position + camera.offset;
+
+    // TODO: get this direction vector in a better way
+    let direction = Vec3::new(
+        transform.yaw.cos() * transform.pitch.cos(),
+        transform.pitch.sin(),
+        transform.yaw.sin() * transform.pitch.cos(),
+    );
+
+    if let Some(world_loc) = chunk_mgr.raycast(&raycast_origin, &direction, 5.0, 0.1) {
+        if let Some(chunk) = chunk_mgr.get_chunk_ref_from_location_mut(&ChunkLocation::from(&world_loc)) {
+            chunk.data.set_block(ChunkPos::from(&world_loc), Block::Cobblestone);
+            chunk.dirty = true;
+        }
+    }
 }
 
 fn spawn_multiplayer_player(
