@@ -3,7 +3,10 @@ use glm::IVec3;
 use hashbrown::HashMap;
 use shipyard::Unique;
 use wgpu::util::DeviceExt;
+use game::block::Block;
 use game::chunk::location::ChunkLocation;
+use game::chunk::pos::ChunkPos;
+use game::location::WorldLocation;
 use crate::chunks::client_chunk::ClientChunk;
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -208,6 +211,28 @@ impl ChunkManager {
         let offset = self.get_index_from_chunk_location_checked(location)?;
 
         self.loaded_chunks.get_mut(offset)?.as_mut()
+    }
+
+    pub fn get_block_ref_from_world_loc(&self, world_loc: &WorldLocation) -> Option<&Block> {
+        let chunk = self.get_chunk_ref_from_location(&world_loc.into())?;
+
+        let chunk_pos = ChunkPos::from(world_loc);
+
+        chunk
+            .data
+            .blocks
+            .get(chunk_pos.0 as usize)
+    }
+
+    pub fn get_block_ref_from_world_loc_mut(&mut self, world_loc: &WorldLocation) -> Option<&mut Block> {
+        let chunk = self.get_chunk_ref_from_location_mut(&world_loc.into())?;
+
+        let chunk_pos = ChunkPos::from(world_loc);
+
+        chunk
+            .data
+            .blocks
+            .get_mut(chunk_pos.0 as usize)
     }
 
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
