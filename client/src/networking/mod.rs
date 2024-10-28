@@ -4,7 +4,7 @@ use shipyard::{EntitiesView, IntoIter, IntoWorkload, SystemModificator, UniqueVi
 use game::location::WorldLocation;
 use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ClientPositionUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
+use crate::events::{ClientTransformUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
 use crate::events::render_distance::RenderDistanceUpdateEvent;
 use crate::multiplayer::server_connection::{process_network_events_multiplayer_client, ServerConnection};
 use crate::networking::server_socket::{process_network_events_system, ServerHandler};
@@ -20,7 +20,7 @@ pub fn update_networking() -> Workload {
         server_process_client_connection_req.run_if(is_hosted),
         client_acknowledge_connection_success.run_if(is_multiplayer_client),
         client_update_position.run_if(is_multiplayer_client),
-        server_update_client_pos.run_if(is_hosted),
+        server_update_client_transform.run_if(is_hosted),
         server_request_client_settings.run_if(is_hosted),
         client_send_settings.run_if(is_multiplayer_client),
         server_process_render_dist_update.run_if(is_hosted)
@@ -106,11 +106,9 @@ pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: Vie
         .expect("TODO: local player did not have transform")
         .1;
 
-    let world_pos = WorldLocation(transform.position);
-
     let p = Packet::unreliable_sequenced(
         server_conn.server_addr,
-        ClientPositionUpdate(world_pos)
+        ClientTransformUpdate(transform.clone())
             .serialize_packet()
             .expect("packet serialization failed"),
         None,
@@ -121,9 +119,9 @@ pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: Vie
         .expect("packet serialization failed");
 }
 
-pub fn server_update_client_pos(mut vm_client_pos_update: ViewMut<ClientPositionUpdate>, mut vm_world_pos: ViewMut<WorldLocation>, entities: EntitiesView) {
+pub fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransformUpdate>, mut vm_transform: ViewMut<Transform>, entities: EntitiesView) {
     vm_client_pos_update.drain().with_id().for_each(|(id, evt)| {
-        entities.add_component(id, &mut vm_world_pos, evt.0);
+        entities.add_component(id, &mut vm_transform, evt.0);
     });
 }
 

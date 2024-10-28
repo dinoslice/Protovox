@@ -1,4 +1,5 @@
 use glm::Vec3;
+use serde::{Deserialize, Serialize};
 use shipyard::Component;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
@@ -13,7 +14,7 @@ pub struct Entity;
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct GravityAffected;
 
-#[derive(Clone, Component, Debug, Default)]
+#[derive(Clone, Component, Debug, Default, Serialize, Deserialize)]
 pub struct Transform {
     pub position: Vec3,
     pub yaw: f32,

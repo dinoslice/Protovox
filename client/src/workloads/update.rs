@@ -2,6 +2,7 @@ use laminar::Packet;
 use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use glm::Vec3;
+use na::Perspective3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, EntitiesView};
 use game::chunk::data::ChunkData;
@@ -11,9 +12,10 @@ use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{Entity, Hitbox, LocalPlayer, Transform};
+use crate::camera::Camera;
+use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest};
+use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -40,6 +42,7 @@ pub fn update() -> Workload {
         generate_chunks.run_if(is_hosted),
         client_request_chunks_from_server.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
+        spawn_multiplayer_player,
         gizmos::update,
     ).into_sequential_workload()
 }
@@ -50,6 +53,56 @@ pub fn process_input() -> Workload {
         process_movement,
         adjust_fly_speed,
     ).into_workload()
+}
+
+fn spawn_multiplayer_player(
+    // TODO: for now using this event to spawn the player's components
+    mut vm_info_req_evt: ViewMut<ClientInformationRequestEvent>,
+
+    // TODO: better way to keep component list in sync
+    mut entities: EntitiesViewMut,
+    mut vm_player: ViewMut<Player>,
+    mut vm_entity: ViewMut<Entity>,
+    mut vm_gravity_affected: ViewMut<GravityAffected>,
+    mut vm_is_on_ground: ViewMut<IsOnGround>,
+    mut vm_transform: ViewMut<Transform>,
+    mut vm_velocity: ViewMut<Velocity>,
+    mut vm_player_speed: ViewMut<PlayerSpeed>,
+    mut vm_hitbox: ViewMut<Hitbox>,
+) {
+    for (id, _) in vm_info_req_evt.drain().with_id() {
+        entities.add_component(id,
+            (
+                &mut vm_player,
+                &mut vm_entity,
+                &mut vm_gravity_affected,
+                &mut vm_is_on_ground,
+                &mut vm_transform,
+                &mut vm_velocity,
+                &mut vm_player_speed,
+                &mut vm_hitbox
+            ),
+            (
+                Player,
+                Entity,
+                GravityAffected,
+                IsOnGround::default(),
+                Transform {
+                    position: Vec3::new(0.5, 20.0, 0.5),
+                    .. Default::default()
+                },
+                Velocity::default(),
+                PlayerSpeed::from_observed(
+                    4.32,
+                    1.25,
+                    9.8,
+                    0.2,
+                    0.18
+                ),
+                Hitbox(Vec3::new(0.6, 2.0, 0.6))
+            )
+        );
+    }
 }
 
 fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: EntitiesViewMut, vm_chunk_gen_evt: ViewMut<ChunkGenEvent>) {

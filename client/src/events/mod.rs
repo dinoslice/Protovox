@@ -7,7 +7,7 @@ use shipyard::Component;
 use game::location::WorldLocation;
 use packet_derive::Packet;
 use packet::Packet;
-
+use crate::components::Transform;
 pub use crate::networking::types::PacketType;
 use crate::render_distance::RenderDistance;
 
@@ -45,8 +45,8 @@ pub struct ConnectionRequest;
 pub struct ConnectionSuccess;
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
-#[packet_type(PacketType::ClientPositionUpdate)]
-pub struct ClientPositionUpdate(pub WorldLocation);
+#[packet_type(PacketType::ClientTransformUpdate)]
+pub struct ClientTransformUpdate(pub Transform);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ClientChunkRequest)]
