@@ -8,6 +8,7 @@ use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, Hitbox, IsOnGround, Transform, Velocity};
 
+// TODO: optimize this function & fix issue of skipping through blocks if moving too fast
 pub fn move_with_collision(
     vm_hitbox: View<Hitbox>,
     mut vm_transform: ViewMut<Transform>,
