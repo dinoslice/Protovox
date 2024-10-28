@@ -1,32 +1,41 @@
 use std::cmp::Ordering;
-use glm::Vec3;
+use glm::{RealNumber, Vec2, Vec3};
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
+use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{LocalPlayer, PlayerSpeed, Transform, Velocity};
+use crate::components::{IsOnGround, LocalPlayer, PlayerSpeed, Transform, Velocity};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 
-pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>) {
+pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>, v_is_on_ground: View<IsOnGround>) {
     let dt_secs = delta_time.0.as_secs_f32();
 
-    let (_, transform, velocity, player_speed) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed)
+    let (_, transform, velocity, player_speed, is_on_ground) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed, &v_is_on_ground)
         .iter()
         .next()
         .expect("TODO: local player didn't have transform, velocity, player speed");
 
-    let movement = Vec3::new(
-        input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
-        input.action_map.get_axis(Action::Jump, Action::Sneak) as f32,
+    let input_vec = Vec2::new(
         input.action_map.get_axis(Action::MoveForward, Action::MoveBackward) as f32,
+        input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
     );
 
-    let (yaw_sin, yaw_cos) = transform.yaw.sin_cos();
-    let forward = Vec3::new(yaw_cos, 0.0, yaw_sin).normalize();
-    let right = Vec3::new(-yaw_sin, 0.0, yaw_cos).normalize();
+    let xz = match input_vec.try_normalize(f32::EPSILON) {
+        Some(norm_input) => {
+            let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw);
 
-    let movement_scaled = movement * player_speed.0 * dt_secs;
+            move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel * dt_secs)
+        }
+        None => move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs),
+    };
 
-    velocity.0 += (forward * movement_scaled.z) + (right * movement_scaled.x) + Vec3::y_axis().into_inner() * movement_scaled.y;
+    let jump = if input.action_map.get_action(Action::Jump) && is_on_ground.0 {
+        player_speed.jump_vel
+    } else {
+        0.0
+    };
+
+    velocity.0 = Vec3::new(xz.x, velocity.0.y + jump, xz.y);
 }
 
 pub fn apply_camera_input(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>) {
@@ -55,15 +64,26 @@ pub fn adjust_fly_speed(input: UniqueView<InputManager>, v_local_player: View<Lo
     const SCROLL_SCALE: f32 = 0.32;
     const SCROLL_THRESHOLD: f32 = 0.2;
 
-    player_speed.0 = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
-        Ordering::Less => match player_speed.0 >= SCROLL_THRESHOLD {
-            true => player_speed.0 * (1.0 + SCROLL_SCALE),
+    player_speed.max_vel = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
+        Ordering::Less => match player_speed.max_vel >= SCROLL_THRESHOLD {
+            true => player_speed.max_vel * (1.0 + SCROLL_SCALE),
             false => SCROLL_THRESHOLD,
         },
-        Ordering::Greater => match player_speed.0 >= SCROLL_THRESHOLD {
-            true => player_speed.0 * (1.0 - SCROLL_SCALE),
+        Ordering::Greater => match player_speed.max_vel >= SCROLL_THRESHOLD {
+            true => player_speed.max_vel * (1.0 - SCROLL_SCALE),
             false => 0.0,
         }
-        _ => player_speed.0,
+        _ => player_speed.max_vel,
     }.clamp(0.0, 125.0);
+}
+
+pub fn move_towards<T: RealNumber, const N: usize> (current: &SVector<T, N>, target: &SVector<T, N>, max_dist: T) -> SVector<T, N> {
+    let dist = target - current;
+    let mag = dist.norm();
+
+    if mag <= max_dist || mag.is_zero() {
+        *target
+    } else {
+        current + dist.normalize() * max_dist
+    }
 }

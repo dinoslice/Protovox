@@ -1,6 +1,6 @@
-use glm::U16Vec3;
+use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;
@@ -8,7 +8,7 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::args;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
@@ -29,46 +29,41 @@ pub fn startup() -> Workload {
     ).into_sequential_workload()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn initialize_local_player(
-    mut entities: EntitiesViewMut,
-    mut vm_local_player: ViewMut<LocalPlayer>,
-    mut vm_player: ViewMut<Player>,
-    mut vm_entity: ViewMut<Entity>,
-    mut vm_transform: ViewMut<Transform>,
-    mut vm_velocity: ViewMut<Velocity>,
-    mut vm_player_speed: ViewMut<PlayerSpeed>,
-    mut vm_camera: ViewMut<Camera>,
+fn initialize_local_player(mut storages: AllStoragesViewMut) {
+    let aspect = storages
+        .borrow::<UniqueView<GraphicsContext>>()
+        .expect("unable to borrow graphics context")
+        .aspect();
 
-    g_ctx: UniqueView<GraphicsContext>,
-) {
-    entities.add_entity(
-        (
-            &mut vm_local_player,
-            &mut vm_player,
-            &mut vm_entity,
-            &mut vm_transform,
-            &mut vm_velocity,
-            &mut vm_player_speed,
-            &mut vm_camera,
+    storages.add_entity((
+        LocalPlayer,
+        Player,
+        Entity,
+        GravityAffected,
+        IsOnGround::default(),
+        Transform {
+            position: Vec3::new(0.5, 20.0, 0.5),
+            .. Default::default()
+        },
+        Velocity::default(),
+        PlayerSpeed::from_observed(
+            4.32,
+            1.25,
+            9.8,
+            0.2,
+            0.18
         ),
-        (
-            LocalPlayer,
-            Player,
-            Entity,
-            Transform::default(),
-            Velocity::default(),
-            PlayerSpeed(8.0),
-            Camera {
-                perspective: Perspective3::new(
-                    g_ctx.aspect(),
-                    45.0f32.to_radians(),
-                    0.01,
-                    1000.0
-                ),
-            }
-        )
-    );
+        Camera {
+            offset: Vec3::new(0.0, 0.5, 0.0),
+            perspective: Perspective3::new(
+                aspect,
+                45.0f32.to_radians(),
+                0.01,
+                1000.0
+            ),
+        },
+        Hitbox(Vec3::new(0.6, 2.0, 0.6))
+    ));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {

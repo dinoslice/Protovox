@@ -10,6 +10,9 @@ pub struct Player;
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct Entity;
 
+#[derive(Copy, Clone, Hash, Component, Debug, Default)]
+pub struct GravityAffected;
+
 #[derive(Clone, Component, Debug, Default)]
 pub struct Transform {
     pub position: Vec3,
@@ -20,5 +23,32 @@ pub struct Transform {
 #[derive(Clone, Component, Debug, Default)]
 pub struct Velocity(pub Vec3);
 
-#[derive(Copy, Clone, Component, Debug, Default)]
-pub struct PlayerSpeed(pub f32);
+#[derive(Clone, Component, Debug, Default)]
+pub struct PlayerSpeed {
+    pub max_vel: f32,
+    pub jump_vel: f32,
+    pub accel: f32,
+    pub friction: f32,
+}
+
+impl PlayerSpeed {
+    pub fn from_observed(max_vel: f32, jump_height: f32, gravity: f32, accel_time: f32, friction_time: f32) -> Self {
+        assert!(max_vel >= 0.0, "max_vel must be non negative");
+        assert!(gravity >= 0.0, "gravity must be non negative");
+        assert!(jump_height >= 0.0, "jump_height must be non negative");
+        assert!(accel_time >= 0.0, "accel_time must be non negative");
+        assert!(friction_time >= 0.0, "friction_time must be non negative");
+
+        let jump_vel = (2.0 * gravity * jump_height).sqrt();
+        let accel = max_vel / accel_time;
+        let friction = max_vel / friction_time;
+
+        Self { max_vel, jump_vel, accel, friction }
+    }
+}
+
+#[derive(Clone, Component, Debug, Default)]
+pub struct Hitbox(pub Vec3);
+
+#[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
+pub struct IsOnGround(pub bool);

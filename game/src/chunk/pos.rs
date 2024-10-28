@@ -1,6 +1,7 @@
 use std::fmt;
 use glm::TVec3;
 use crate::chunk::CHUNK_SIZE;
+use crate::location::WorldLocation;
 
 macro_rules! impl_getters_setters {
     ($axis:ident, $set_axis:ident, $set_axis_unchecked:ident, $offset:expr, $max:expr) => {
@@ -66,9 +67,37 @@ impl TryFrom<&TVec3<u8>> for ChunkPos {
     }
 }
 
+impl TryFrom<TVec3<u8>> for ChunkPos {
+    type Error = ChunkCoordOutOfRange;
+
+    fn try_from(pos: TVec3<u8>) -> Result<Self, Self::Error> {
+        (&pos).try_into()
+    }
+}
+
 impl From<ChunkPos> for TVec3<u8> {
     fn from(chunk_pos: ChunkPos) -> Self {
         Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+    }
+}
+
+impl From<&WorldLocation> for ChunkPos {
+    fn from(value: &WorldLocation) -> Self {
+        value
+            .0
+            .map_with_location(|r, _, n| {
+                let mapped = n.rem_euclid(CHUNK_SIZE[r] as f32).floor();
+                assert!((0.0..=u8::MAX as _).contains(&mapped));
+                mapped as u8
+            })
+            .try_into()
+            .expect("values in range")
+    }
+}
+
+impl From<WorldLocation> for ChunkPos {
+    fn from(value: WorldLocation) -> Self {
+        (&value).into()
     }
 }
 

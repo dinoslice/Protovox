@@ -1,14 +1,17 @@
 use laminar::Packet;
 use std::net::SocketAddr;
 use crossbeam::channel::Sender;
+use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, EntitiesView};
 use game::chunk::data::ChunkData;
+use game::block::Block;
 use game::chunk::location::ChunkLocation;
+use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{LocalPlayer, Transform};
+use crate::components::{Entity, Hitbox, LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest};
 use crate::events::event_bus::EventBus;
@@ -20,6 +23,7 @@ use crate::networking::server_socket::ServerHandler;
 use crate::physics::process_physics;
 use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
+use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
@@ -35,6 +39,7 @@ pub fn update() -> Workload {
         chunk_manager_update_and_request,
         generate_chunks.run_if(is_hosted),
         client_request_chunks_from_server.run_if(is_multiplayer_client),
+        debug_draw_hitbox_gizmos,
         gizmos::update,
     ).into_sequential_workload()
 }
@@ -158,4 +163,26 @@ fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: Un
 
 fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.mouse_manager.reset_scroll_rotate();
+}
+
+fn debug_draw_hitbox_gizmos(
+    v_hitbox: View<Hitbox>,
+    v_transform: View<Transform>,
+
+    mut entities: EntitiesViewMut,
+    mut vm_box_gizmos: ViewMut<BoxGizmo>,
+) {
+    for (transform, hitbox) in (&v_transform, &v_hitbox).iter() {
+        let half_hitbox = hitbox.0 * 0.5;
+
+        let min_extent = transform.position - half_hitbox;
+        let max_extent = transform.position + half_hitbox;
+
+        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
+            min_extent,
+            max_extent,
+            GizmoStyle::stroke(rgb::Rgb { r: 1.0, g: 0.0, b: 0.0 }),
+            GizmoLifetime::SingleFrame,
+        ));
+    }
 }
