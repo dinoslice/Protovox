@@ -77,7 +77,7 @@ fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<Loca
     let input_break = input.action_map.get_action(Action::BreakBlock);
 
     if input_place || input_break {
-        if let RaycastResult::Hit { prev_air, hit_position, .. } = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1) {
+        if let Some(RaycastResult { prev_air, hit_position, .. }) = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1) {
             if input_place {
                 if let Some(prev_air) = prev_air {
                     if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(&prev_air) {
