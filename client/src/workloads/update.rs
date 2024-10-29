@@ -13,10 +13,12 @@ use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
+use crate::chunks::raycast::RaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
+use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
@@ -56,7 +58,7 @@ pub fn process_input() -> Workload {
     ).into_workload()
 }
 
-fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>) {
+fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, input: UniqueView<InputManager>) {
     let (_, transform, camera) = (&v_local_player, &v_transform, &v_camera)
         .iter()
         .next()
@@ -71,10 +73,24 @@ fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<Loca
         transform.yaw.sin() * transform.pitch.cos(),
     );
 
-    if let Some(world_loc) = chunk_mgr.raycast(&raycast_origin, &direction, 5.0, 0.1) {
-        if let Some(chunk) = chunk_mgr.get_chunk_ref_from_location_mut(&ChunkLocation::from(&world_loc)) {
-            chunk.data.set_block(ChunkPos::from(&world_loc), Block::Cobblestone);
-            chunk.dirty = true;
+    let input_place = input.action_map.get_action(Action::PlaceBlock);
+    let input_break = input.action_map.get_action(Action::BreakBlock);
+
+    if input_place || input_break {
+        if let RaycastResult::Hit { prev_air, hit_position, .. } = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1) {
+            if input_place {
+                if let Some(prev_air) = prev_air {
+                    if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(&prev_air) {
+                        *b = Block::Cobblestone;
+                        chunk_mgr.set_dirty_if_exists(prev_air);
+                    }
+                }
+            } else if input_break {
+                if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(&hit_position) {
+                    *b = Block::Air;
+                    chunk_mgr.set_dirty_if_exists(hit_position);
+                }
+            }
         }
     }
 }
