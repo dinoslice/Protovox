@@ -235,6 +235,12 @@ impl ChunkManager {
             .get_mut(chunk_pos.0 as usize)
     }
 
+    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) {
+        if let Some(chunk) = self.get_chunk_ref_from_location_mut(&location.into()) {
+            chunk.dirty = true;
+        }
+    }
+
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
         self.loaded_chunks.iter()
             // TODO is there a better way to do this
