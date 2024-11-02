@@ -1,12 +1,15 @@
 use shipyard::{AllStoragesView, Unique, UniqueView};
-use crate::rendering::base_face::initialize_base_face;
+use base_face::initialize_base_face;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture::Texture;
 use crate::rendering::texture_atlas::TextureAtlas;
-use crate::rendering::vertex::Vertex;
+use vertex::Vertex;
+
+mod vertex;
+mod base_face;
 
 #[derive(Unique)]
 pub struct WorldRenderState {
@@ -23,7 +26,7 @@ pub fn initialize_world_render_state(
     // 5. pipeline / instructions for GPU
 
     // loads a shader and returns a handle to the compiled shader
-    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../rendering/shaders/world.wgsl"));
+    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../../rendering/shaders/world.wgsl"));
 
     let push_constant_range = wgpu::PushConstantRange {
         stages: wgpu::ShaderStages::VERTEX,

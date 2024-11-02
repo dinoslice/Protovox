@@ -1,16 +1,11 @@
-use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
+use shipyard::{AllStoragesView, IntoWorkload, UniqueView, Workload};
 use crate::rendering;
 use rendering::camera_uniform_buffer::CameraUniformBuffer;
-use rendering::face_data::FaceData;
 use rendering::graphics_context::GraphicsContext;
-use rendering::texture::Texture;
-use rendering::{base_face, depth_texture};
+use rendering::depth_texture;
 use rendering::texture_atlas;
-use rendering::texture_atlas::TextureAtlas;
-use rendering::vertex::Vertex;
 use crate::rendering::block_outline::initialize_block_outline_render_state;
 use crate::rendering::{gizmos, world};
-
 pub fn initialize_renderer() -> Workload {
     (
         (
