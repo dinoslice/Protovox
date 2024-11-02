@@ -4,7 +4,7 @@ use rendering::camera_uniform_buffer::CameraUniformBuffer;
 use rendering::face_data::FaceData;
 use rendering::graphics_context::GraphicsContext;
 use rendering::texture::Texture;
-use rendering::{base_face, depth_texture, face_buffer};
+use rendering::{base_face, depth_texture};
 use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
@@ -17,7 +17,6 @@ pub fn initialize_renderer() -> Workload {
     (
         (
             base_face::initialize_base_face,
-            face_buffer::init_face_buffer,
             texture_atlas::initialize_texture_atlas,
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,

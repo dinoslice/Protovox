@@ -7,7 +7,6 @@ pub mod texture; // TODO: fix visibility
 mod face_data;
 
 pub mod chunk_mesh;
-mod face_buffer;
 
 mod camera_uniform_buffer;
 mod base_face;
