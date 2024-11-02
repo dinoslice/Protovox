@@ -68,7 +68,7 @@ pub fn render_block_outline(
     pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
     pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
     
-    pass.set_vertex_buffer(0, base_face.vertex_buffer.slice(..));
+    pass.set_vertex_buffer(0, base_face.buffer.buffer.slice(..));
 
     pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
@@ -78,5 +78,5 @@ pub fn render_block_outline(
     
     pass.set_vertex_buffer(1, buffer.slice(0..buffer_end as _));
 
-    pass.draw(0..base_face.num_vertices, 0..*size);
+    pass.draw(0..base_face.buffer.size, 0..*size);
 }

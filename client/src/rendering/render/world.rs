@@ -55,7 +55,7 @@ pub fn render_world(
     pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
 
     // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
-    pass.set_vertex_buffer(0, base_face.vertex_buffer.slice(..));
+    pass.set_vertex_buffer(0, base_face.buffer.buffer.slice(..));
 
     let bakery = chunk_manager.baked_chunks();
 
@@ -69,6 +69,6 @@ pub fn render_world(
         pass.set_vertex_buffer(1, buffer.buffer.slice(..));
 
         // draw the whole range of vertices, and all instances
-        pass.draw(0..base_face.num_vertices, 0..buffer.size);
+        pass.draw(0..base_face.buffer.size, 0..buffer.size);
     }
 }

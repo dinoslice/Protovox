@@ -2,11 +2,11 @@ use shipyard::{AllStoragesView, Unique, UniqueView};
 use wgpu::util::DeviceExt;
 use crate::rendering::vertex::Vertex;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::sized_buffer::SizedBuffer;
 
 #[derive(Unique)]
 pub struct BaseFace {
-    pub vertex_buffer: wgpu::Buffer,
-    pub num_vertices: u32,
+    pub buffer: SizedBuffer,
 }
 
 pub fn initialize_base_face(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
@@ -19,7 +19,7 @@ pub fn initialize_base_face(g_ctx: UniqueView<GraphicsContext>, storages: AllSto
     ];
 
     // holds vertices, available in shader
-    let vertex_buffer = g_ctx.device.create_buffer_init(
+    let buffer = g_ctx.device.create_buffer_init(
         &wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(&BASE_FACE),
@@ -27,5 +27,5 @@ pub fn initialize_base_face(g_ctx: UniqueView<GraphicsContext>, storages: AllSto
         }
     );
 
-    storages.add_unique(BaseFace { vertex_buffer, num_vertices: BASE_FACE.len() as _ })
+    storages.add_unique(BaseFace { buffer: SizedBuffer { buffer, size: BASE_FACE.len() as _ } });
 }
