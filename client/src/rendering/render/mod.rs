@@ -49,7 +49,7 @@ fn create_new_render_context(storages: AllStoragesView, g_ctx: UniqueView<Graphi
 
 fn update_camera_uniform_buffer(
     g_ctx: UniqueView<GraphicsContext>,
-    cam_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
+    cam_uniform_buffer: UniqueView<CameraUniformBuffer>,
     v_local_player: View<LocalPlayer>,
     v_camera: View<Camera>,
     v_transform: View<Transform>,
