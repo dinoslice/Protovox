@@ -18,3 +18,4 @@ pub mod environment;
 pub mod args;
 pub mod components;
 pub mod physics;
+pub mod looking_at_block;

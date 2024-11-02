@@ -11,6 +11,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
+use crate::looking_at_block::LookingAtBlock;
 use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_socket::ServerHandler;
@@ -37,7 +38,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
         .expect("unable to borrow graphics context")
         .aspect();
 
-    storages.add_entity((
+    let id = storages.add_entity((
         LocalPlayer,
         Player,
         Entity,
@@ -66,6 +67,8 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
         },
         Hitbox(Vec3::new(0.6, 2.0, 0.6))
     ));
+    
+    storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
