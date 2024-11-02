@@ -8,6 +8,7 @@ use rendering::{base_face, depth_texture};
 use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
+use crate::rendering::block_outline::initialize_block_outline_render_state;
 use crate::rendering::gizmos;
 
 #[derive(Unique)]
@@ -22,6 +23,7 @@ pub fn initialize_renderer() -> Workload {
             initialize_camera_uniform_buffer,
         ).into_workload(),
         create_pipeline,
+        initialize_block_outline_render_state,
         gizmos::initialize,
     ).into_sequential_workload()
 }
@@ -65,7 +67,7 @@ pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: g_ctx.config.format,
-                blend: Some(wgpu::BlendState::REPLACE), // blending, if set to replace this overwrites the contents
+                blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING), // blending, if set to replace this overwrites the contents
                 write_mask: wgpu::ColorWrites::ALL, // write to all channels (rgba)
             })],
         }),
@@ -81,7 +83,7 @@ pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer
         depth_stencil: Some(wgpu::DepthStencilState {
             format: Texture::DEPTH_FORMAT,
             depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less, // draw pixels front to back based on the depth texture
+            depth_compare: wgpu::CompareFunction::LessEqual, // draw pixels front to back based on the depth texture
             stencil: wgpu::StencilState::default(), // usually stored in same texture as depth texture
             bias: wgpu::DepthBiasState::default(),
         }),

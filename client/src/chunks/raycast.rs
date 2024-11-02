@@ -3,6 +3,7 @@ use game::block::Block;
 use game::location::WorldLocation;
 use crate::chunks::chunk_manager::ChunkManager;
 
+#[derive(Debug, Clone)]
 pub struct RaycastResult {
     pub hit_position: WorldLocation,
     pub prev_air: Option<WorldLocation>,

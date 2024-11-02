@@ -20,6 +20,7 @@ use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, Cli
 use crate::events::event_bus::EventBus;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
+use crate::looking_at_block::LookingAtBlock;
 use crate::multiplayer::server_connection::ServerConnection;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
@@ -58,8 +59,8 @@ pub fn process_input() -> Workload {
     ).into_workload()
 }
 
-fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, input: UniqueView<InputManager>) {
-    let (_, transform, camera) = (&v_local_player, &v_transform, &v_camera)
+fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, input: UniqueView<InputManager>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
+    let (_, transform, camera, looking_at_block) = (&v_local_player, &v_transform, &v_camera, &mut vm_looking_at_block)
         .iter()
         .next()
         .expect("TODO: local player with transform & camera didn't exist");
@@ -73,26 +74,26 @@ fn raycast(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<Loca
         transform.yaw.sin() * transform.pitch.cos(),
     );
 
-    let input_place = input.action_map.get_action(Action::PlaceBlock);
-    let input_break = input.action_map.get_action(Action::BreakBlock);
-
-    if input_place || input_break {
-        if let Some(RaycastResult { prev_air, hit_position, .. }) = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1) {
-            if input_place {
-                if let Some(prev_air) = prev_air {
-                    if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(&prev_air) {
-                        *b = Block::Cobblestone;
-                        chunk_mgr.set_dirty_if_exists(prev_air);
-                    }
+    let raycast_res = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1);
+    
+    if let Some(RaycastResult { prev_air, hit_position, .. }) = &raycast_res {
+        if input.action_map.get_action(Action::PlaceBlock) {
+            if let Some(prev_air) = prev_air {
+                if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(prev_air) {
+                    *b = Block::Cobblestone;
+                    chunk_mgr.set_dirty_if_exists(prev_air);
                 }
-            } else if input_break {
-                if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(&hit_position) {
-                    *b = Block::Air;
-                    chunk_mgr.set_dirty_if_exists(hit_position);
-                }
+            }
+        } else if input.action_map.get_action(Action::BreakBlock) {
+            if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(hit_position) {
+                *b = Block::Air;
+                chunk_mgr.set_dirty_if_exists(hit_position);
             }
         }
     }
+    
+    looking_at_block.0 = raycast_res;
+    // tracing::debug!("{:?}", looking_at_block.0);
 }
 
 fn spawn_multiplayer_player(
