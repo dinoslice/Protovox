@@ -4,13 +4,13 @@ use crate::rendering::base_face::BaseFace;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::render::RenderContext;
-use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::texture_atlas::TextureAtlas;
+use crate::rendering::world::WorldRenderState;
 
 pub fn render_world(
     mut ctx: UniqueViewMut<RenderContext>,
     depth_texture: UniqueView<DepthTexture>,
-    pipeline: UniqueView<RenderPipeline>,
+    world_rend_state: UniqueView<WorldRenderState>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
@@ -48,7 +48,7 @@ pub fn render_world(
         timestamp_writes: None,
     });
 
-    pass.set_pipeline(&pipeline.0);
+    pass.set_pipeline(&world_rend_state.pipeline);
 
     // bind group is data constant through the draw call, index is the @group(n) used to access in the shader
     pass.set_bind_group(0, &texture_atlas.bind_group, &[]);

@@ -16,3 +16,4 @@ mod texture_atlas;
 pub mod sized_buffer;
 pub mod gizmos;
 mod block_outline;
+mod world;

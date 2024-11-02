@@ -10,19 +10,19 @@ use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::RenderContext;
-use crate::rendering::renderer::RenderPipeline;
+use crate::rendering::world::WorldRenderState;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture_atlas::TextureAtlas;
 
 pub fn render_block_outline(
     mut ctx: UniqueViewMut<RenderContext>,
     depth_texture: UniqueView<DepthTexture>,
-    pipeline: UniqueView<RenderPipeline>,
+    world_rend_state: UniqueView<WorldRenderState>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
     base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     block_outline_render_state: UniqueView<BlockOutlineRenderState>,
-    
+
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
 ) {
@@ -63,7 +63,7 @@ pub fn render_block_outline(
         timestamp_writes: None,
     });
 
-    pass.set_pipeline(&pipeline.0);
+    pass.set_pipeline(&world_rend_state.pipeline);
     
     pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
     pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
