@@ -6,18 +6,6 @@ pub struct Vertex { // VertexInput in shader
 }
 
 impl Vertex {
-    #[allow(dead_code)]
-    pub fn add_pos(&self, x: f32, y: f32, z: f32) -> Self {
-        Self {
-            position: [
-                self.position[0] + x,
-                self.position[1] + y,
-                self.position[2] + z,
-            ],
-            tex_coords: self.tex_coords,
-        }
-    }
-
     pub fn buffer_desc() -> wgpu::VertexBufferLayout<'static> {
         // corresponds to using @location(x) in shader, how to read the buffer, what types and offsets
         const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
