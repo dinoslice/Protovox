@@ -1,7 +1,9 @@
 use shipyard::{AllStoragesView, Unique, UniqueView};
+use crate::rendering::base_face::initialize_base_face;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture::Texture;
 use crate::rendering::texture_atlas::TextureAtlas;
 use crate::rendering::vertex::Vertex;
@@ -9,6 +11,7 @@ use crate::rendering::vertex::Vertex;
 #[derive(Unique)]
 pub struct WorldRenderState {
     pub pipeline: wgpu::RenderPipeline,
+    pub base_face: SizedBuffer,
 }
 
 pub fn initialize_world_render_state(
@@ -79,5 +82,7 @@ pub fn initialize_world_render_state(
         multiview: None, // for rendering to array textures
     });
 
-    storages.add_unique(WorldRenderState{ pipeline });
+    let base_face = initialize_base_face(&g_ctx);
+
+    storages.add_unique(WorldRenderState { pipeline, base_face });
 }

@@ -1,5 +1,4 @@
 use shipyard::{AllStoragesView, IntoIter, IntoWorkload, Unique, UniqueView, UniqueViewMut, View, Workload};
-use crate::rendering::base_face::BaseFace;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};

@@ -1,6 +1,5 @@
 use shipyard::{UniqueView, UniqueViewMut};
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::rendering::base_face::BaseFace;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::render::RenderContext;
@@ -12,7 +11,6 @@ pub fn render_world(
     depth_texture: UniqueView<DepthTexture>,
     world_rend_state: UniqueView<WorldRenderState>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
-    base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     chunk_manager: UniqueView<ChunkManager>,
 ) {
@@ -55,7 +53,7 @@ pub fn render_world(
     pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
 
     // assign a vertex buffer to a slot, slot corresponds to the desc used when creating the pipeline, slice(..) to use whole buffer
-    pass.set_vertex_buffer(0, base_face.buffer.buffer.slice(..));
+    pass.set_vertex_buffer(0, world_rend_state.base_face.buffer.slice(..));
 
     let bakery = chunk_manager.baked_chunks();
 
@@ -69,6 +67,6 @@ pub fn render_world(
         pass.set_vertex_buffer(1, buffer.buffer.slice(..));
 
         // draw the whole range of vertices, and all instances
-        pass.draw(0..base_face.buffer.size, 0..buffer.size);
+        pass.draw(0..world_rend_state.base_face.size, 0..buffer.size);
     }
 }

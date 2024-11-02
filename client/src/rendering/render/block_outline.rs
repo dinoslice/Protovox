@@ -3,7 +3,6 @@ use wgpu::util::RenderEncoder;
 use game::chunk::location::ChunkLocation;
 use crate::components::LocalPlayer;
 use crate::looking_at_block::LookingAtBlock;
-use crate::rendering::base_face::BaseFace;
 use crate::rendering::block_outline::BlockOutlineRenderState;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
@@ -19,7 +18,6 @@ pub fn render_block_outline(
     depth_texture: UniqueView<DepthTexture>,
     world_rend_state: UniqueView<WorldRenderState>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
-    base_face: UniqueView<BaseFace>,
     texture_atlas: UniqueView<TextureAtlas>,
     block_outline_render_state: UniqueView<BlockOutlineRenderState>,
 
@@ -68,7 +66,7 @@ pub fn render_block_outline(
     pass.set_bind_group(0, &texture_atlas.bind_group, &[]);
     pass.set_bind_group(1, &camera_uniform_buffer.bind_group, &[]);
     
-    pass.set_vertex_buffer(0, base_face.buffer.buffer.slice(..));
+    pass.set_vertex_buffer(0, world_rend_state.base_face.buffer.slice(..));
 
     pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
@@ -78,5 +76,5 @@ pub fn render_block_outline(
     
     pass.set_vertex_buffer(1, buffer.slice(0..buffer_end as _));
 
-    pass.draw(0..base_face.buffer.size, 0..*size);
+    pass.draw(0..world_rend_state.base_face.size, 0..*size);
 }

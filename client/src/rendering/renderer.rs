@@ -14,7 +14,6 @@ use crate::rendering::{gizmos, world};
 pub fn initialize_renderer() -> Workload {
     (
         (
-            base_face::initialize_base_face,
             texture_atlas::initialize_texture_atlas,
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,

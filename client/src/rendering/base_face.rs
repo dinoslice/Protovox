@@ -1,15 +1,9 @@
-use shipyard::{AllStoragesView, Unique, UniqueView};
 use wgpu::util::DeviceExt;
 use crate::rendering::vertex::Vertex;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 
-#[derive(Unique)]
-pub struct BaseFace {
-    pub buffer: SizedBuffer,
-}
-
-pub fn initialize_base_face(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+pub fn initialize_base_face(g_ctx: &GraphicsContext) -> SizedBuffer {
     // TODO: each vertex can be compressed into 5 bits
     const BASE_FACE: [Vertex; 4] = [
         Vertex { position: [0.0, 0.0, 0.0], tex_coords: [0.0, 0.0] },
@@ -27,5 +21,5 @@ pub fn initialize_base_face(g_ctx: UniqueView<GraphicsContext>, storages: AllSto
         }
     );
 
-    storages.add_unique(BaseFace { buffer: SizedBuffer { buffer, size: BASE_FACE.len() as _ } });
+    SizedBuffer { buffer, size: BASE_FACE.len() as _ }
 }
