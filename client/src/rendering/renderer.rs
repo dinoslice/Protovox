@@ -9,6 +9,8 @@ use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
 use crate::rendering::gizmos;
+use crate::rendering::render::BlockOutlineRenderState;
+use crate::rendering::sized_buffer::SizedBuffer;
 
 #[derive(Unique)]
 pub struct RenderPipeline(pub wgpu::RenderPipeline);
@@ -23,8 +25,24 @@ pub fn initialize_renderer() -> Workload {
             initialize_camera_uniform_buffer,
         ).into_workload(),
         create_pipeline,
+        initialize_block_outline_render_state,
         gizmos::initialize,
     ).into_sequential_workload()
+}
+
+pub fn initialize_block_outline_render_state(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+    let buffer = g_ctx.device.create_buffer(
+        &wgpu::BufferDescriptor {
+            label: Some("block_outline_buffer"),
+            size: 6 * size_of::<FaceData>() as u64,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        }
+    );
+    
+    storages.add_unique(BlockOutlineRenderState {
+        buffer: SizedBuffer { buffer, size: 0 },
+    })
 }
 
 pub fn initialize_camera_uniform_buffer(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
@@ -82,7 +100,7 @@ pub fn create_pipeline(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer
         depth_stencil: Some(wgpu::DepthStencilState {
             format: Texture::DEPTH_FORMAT,
             depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less, // draw pixels front to back based on the depth texture
+            depth_compare: wgpu::CompareFunction::LessEqual, // draw pixels front to back based on the depth texture
             stencil: wgpu::StencilState::default(), // usually stored in same texture as depth texture
             bias: wgpu::DepthBiasState::default(),
         }),

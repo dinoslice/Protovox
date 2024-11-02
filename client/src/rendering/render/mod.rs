@@ -12,6 +12,9 @@ use crate::rendering::texture_atlas::TextureAtlas;
 
 mod world;
 mod gizmos;
+mod block_outline;
+
+pub use block_outline::BlockOutlineRenderState; // TODO: fix visibility
 
 pub fn render() -> Workload {
     (
@@ -19,6 +22,7 @@ pub fn render() -> Workload {
         create_new_render_context,
         world::render_world,
         gizmos::render_line_gizmos,
+        block_outline::render_block_outline,
         submit_rendered_frame,
     ).into_sequential_workload()
 }
