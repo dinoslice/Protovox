@@ -14,12 +14,15 @@ mod world;
 mod gizmos;
 mod block_outline;
 
-pub use block_outline::BlockOutlineRenderState; // TODO: fix visibility
+use crate::rendering::block_outline::update_block_outline_buffer;
 
 pub fn render() -> Workload {
     (
-        update_camera_uniform_buffer,
-        create_new_render_context,
+        (
+            update_block_outline_buffer,
+            update_camera_uniform_buffer,
+            create_new_render_context,
+        ).into_workload(),
         world::render_world,
         gizmos::render_line_gizmos,
         block_outline::render_block_outline,

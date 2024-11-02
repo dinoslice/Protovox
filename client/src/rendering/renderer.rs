@@ -8,9 +8,8 @@ use rendering::{base_face, depth_texture, face_buffer};
 use rendering::texture_atlas;
 use rendering::texture_atlas::TextureAtlas;
 use rendering::vertex::Vertex;
+use crate::rendering::block_outline::initialize_block_outline_render_state;
 use crate::rendering::gizmos;
-use crate::rendering::render::BlockOutlineRenderState;
-use crate::rendering::sized_buffer::SizedBuffer;
 
 #[derive(Unique)]
 pub struct RenderPipeline(pub wgpu::RenderPipeline);
@@ -28,21 +27,6 @@ pub fn initialize_renderer() -> Workload {
         initialize_block_outline_render_state,
         gizmos::initialize,
     ).into_sequential_workload()
-}
-
-pub fn initialize_block_outline_render_state(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
-    let buffer = g_ctx.device.create_buffer(
-        &wgpu::BufferDescriptor {
-            label: Some("block_outline_buffer"),
-            size: 6 * size_of::<FaceData>() as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        }
-    );
-    
-    storages.add_unique(BlockOutlineRenderState {
-        buffer: SizedBuffer { buffer, size: 0 },
-    })
 }
 
 pub fn initialize_camera_uniform_buffer(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {

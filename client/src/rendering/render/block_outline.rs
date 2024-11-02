@@ -1,12 +1,10 @@
-use std::array;
-use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use wgpu::util::RenderEncoder;
-use game::block::face_type::FaceType;
 use game::chunk::location::ChunkLocation;
-use game::chunk::pos::ChunkPos;
 use crate::components::LocalPlayer;
 use crate::looking_at_block::LookingAtBlock;
 use crate::rendering::base_face::BaseFace;
+use crate::rendering::block_outline::BlockOutlineRenderState;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::face_data::FaceData;
@@ -16,14 +14,8 @@ use crate::rendering::renderer::RenderPipeline;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture_atlas::TextureAtlas;
 
-#[derive(Unique)]
-pub struct BlockOutlineRenderState {
-    pub buffer: SizedBuffer,
-}
-
 pub fn render_block_outline(
     mut ctx: UniqueViewMut<RenderContext>,
-    g_ctx: UniqueView<GraphicsContext>,
     depth_texture: UniqueView<DepthTexture>,
     pipeline: UniqueView<RenderPipeline>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>,
@@ -45,7 +37,6 @@ pub fn render_block_outline(
     };
     
     let chunk_loc = ChunkLocation::from(&raycast.hit_position);
-    let chunk_pos = ChunkPos::from(&raycast.hit_position);
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("block_outline_render_pass"),
@@ -80,14 +71,8 @@ pub fn render_block_outline(
     pass.set_vertex_buffer(0, base_face.vertex_buffer.slice(..));
 
     pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
-    
-    let faces: [_; 6] = array::from_fn(|ty| FaceData::new(chunk_pos, FaceType::ALL[ty], 1));
 
     let SizedBuffer { buffer, size } = &block_outline_render_state.buffer;
-    
-    let size = &6; // TODO: fix this
-
-    g_ctx.queue.write_buffer(buffer, 0, bytemuck::cast_slice(&faces));
     
     let buffer_end = *size as usize * size_of::<FaceData>();
     
