@@ -1,9 +1,15 @@
+use std::net::SocketAddr;
+use crossbeam::channel::Sender;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload, WorkloadModificator};
+use shipyard::{EntitiesView, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload, WorkloadModificator};
+use game::chunk::data::ChunkData;
+use game::location::WorldLocation;
+use crate::chunks::chunk_manager::{chunk_index_in_render_distance, ChunkManager};
 use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess};
+use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess};
+use crate::events::event_bus::EventBus;
 use crate::events::render_distance::RenderDistanceUpdateEvent;
 use crate::networking::keep_alive::server_send_keep_alive;
 use crate::networking::server_connection::{client_process_network_events_multiplayer, ServerConnection};
@@ -20,11 +26,13 @@ pub fn update_networking() -> Workload {
         // SERVER
         server_process_network_events, // internally, run_if(is_hosted)
         (
+            server_broadcast_chunks,
             server_process_client_connection_req,
             server_update_client_transform,
             server_request_client_settings,
             server_process_render_dist_update,
-            server_send_keep_alive
+            server_handle_client_chunk_reqs,
+            server_send_keep_alive,
         ).into_workload().run_if(is_hosted),
         
         // CLIENT
@@ -32,6 +40,7 @@ pub fn update_networking() -> Workload {
         (
             client_acknowledge_connection_success,
             client_update_position,
+            client_request_chunks_from_server,
             client_send_settings,
         ).into_workload().run_if(is_multiplayer_client),
     ).into_workload()
@@ -109,7 +118,7 @@ fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<Connection
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
 }
 
-pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
+fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
     let transform = (&local_player, &vm_transform)
         .iter()
         .next()
@@ -129,10 +138,80 @@ pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: Vie
         .expect("packet serialization failed");
 }
 
-pub fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransformUpdate>, mut vm_transform: ViewMut<Transform>, entities: EntitiesView) {
+fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransformUpdate>, mut vm_transform: ViewMut<Transform>, entities: EntitiesView) {
     vm_client_pos_update.drain().with_id().for_each(|(id, evt)| {
         entities.add_component(id, &mut vm_transform, evt.0);
     });
+}
+
+fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, entities: EntitiesView, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+    let sender = &server_handler.tx;
+
+    for (id, events) in (&mut reqs).iter().with_id() {
+        let Some(&addr) = server_handler.clients.get_by_right(&id) else {
+            continue;
+        };
+
+        for ClientChunkRequest(loc) in events.0.drain(..) {
+            match chunk_mgr.get_chunk_ref_from_location(&loc) {
+                Some(cc) => {
+                    use std::mem;
+
+                    assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
+
+                    let gen_evt = unsafe { mem::transmute::<&ChunkData, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
+
+                    send_chunk(sender, addr, gen_evt);
+                }
+                None => {
+                    tracing::debug!("server didn't have chunk at {loc:?}, asking world generator to generate.");
+                    entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
+                }
+            }
+        }
+    }
+}
+
+fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+    let sender = &server_connection.tx;
+    let addr = server_connection.server_addr;
+
+    for req in reqs.drain().map(ClientChunkRequest::from) {
+        let p = Packet::reliable_unordered(
+            addr,
+            req
+                .serialize_packet()
+                .expect("packet serialization failed")
+        );
+
+        if sender.try_send(p).is_err() {
+            tracing::debug!("Failed to send chunk request to server");
+        }
+    }
+}
+
+fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<WorldLocation>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
+    let sender = &server_handler.tx;
+
+    for (id, (render_dist, world_loc)) in (&v_render_dist, &v_world_loc).iter().with_id() {
+        let Some(&addr) = server_handler.clients.get_by_right(&id) else {
+            continue;
+        };
+
+        for evt in v_chunk_gen_event.iter() {
+            if chunk_index_in_render_distance(&evt.0.location, &world_loc.into(), render_dist).is_some() {
+                send_chunk(sender, addr, evt);
+            }
+        }
+    }
+}
+
+fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkGenEvent) {
+    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_and_compress_packet().expect("packet serialization failed"));
+
+    if sender.try_send(p).is_err() {
+        tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);
+    }
 }
 
 // macro_rules! retain_unsent {
