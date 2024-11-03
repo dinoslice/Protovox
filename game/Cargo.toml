@@ -12,6 +12,7 @@ thiserror = "1.0.61"
 shipyard = "0.7.1"
 serde = { version = "1.0.210", features = ["derive"] }
 serde-big-array = "0.5.1"
+num-traits = "0.2.19"
 
 [lints]
 workspace = true

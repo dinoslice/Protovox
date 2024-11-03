@@ -83,12 +83,15 @@ impl From<ChunkPos> for TVec3<u8> {
 
 impl From<&WorldLocation> for ChunkPos {
     fn from(value: &WorldLocation) -> Self {
+        use num_traits::cast::ToPrimitive;
+        
         value
             .0
             .map_with_location(|r, _, n| { // TODO: add tests for this function
-                let mapped = n.floor().rem_euclid(CHUNK_SIZE[r] as f32);
-                assert!((0.0..=u8::MAX as _).contains(&mapped));
-                mapped as u8
+                n.floor()
+                    .rem_euclid(CHUNK_SIZE[r] as f32)
+                    .to_u8()
+                    .expect("rem_euclid should be within range")
             })
             .try_into()
             .expect("values in range")
