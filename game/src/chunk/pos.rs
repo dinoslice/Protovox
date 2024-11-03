@@ -85,8 +85,8 @@ impl From<&WorldLocation> for ChunkPos {
     fn from(value: &WorldLocation) -> Self {
         value
             .0
-            .map_with_location(|r, _, n| {
-                let mapped = n.rem_euclid(CHUNK_SIZE[r] as f32).floor();
+            .map_with_location(|r, _, n| { // TODO: add tests for this function
+                let mapped = n.floor().rem_euclid(CHUNK_SIZE[r] as f32);
                 assert!((0.0..=u8::MAX as _).contains(&mapped));
                 mapped as u8
             })
