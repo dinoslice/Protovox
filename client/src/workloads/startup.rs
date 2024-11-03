@@ -1,6 +1,6 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoWorkload, SystemModificator, UniqueView, ViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, Workload};
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;

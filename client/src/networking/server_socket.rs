@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 use bimap::BiHashMap;
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
+use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::PacketHeader;
@@ -18,6 +18,7 @@ pub struct ServerHandler {
 }
 
 impl ServerHandler {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,

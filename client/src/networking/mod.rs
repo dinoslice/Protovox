@@ -1,7 +1,6 @@
 use laminar::Packet;
 use packet::Packet as _;
 use shipyard::{EntitiesView, IntoIter, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload};
-use game::location::WorldLocation;
 use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ClientTransformUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};

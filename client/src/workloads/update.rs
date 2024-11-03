@@ -2,13 +2,11 @@ use laminar::Packet;
 use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use glm::Vec3;
-use na::Perspective3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_index_in_render_distance};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, IntoWithId, EntitiesViewMut, EntitiesView};
 use game::chunk::data::ChunkData;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
-use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
 use packet::Packet as _;
 use crate::application::delta_time::LastDeltaTime;
@@ -101,7 +99,7 @@ fn spawn_multiplayer_player(
     mut vm_info_req_evt: ViewMut<ClientInformationRequestEvent>,
 
     // TODO: better way to keep component list in sync
-    mut entities: EntitiesViewMut,
+    entities: EntitiesViewMut,
     mut vm_player: ViewMut<Player>,
     mut vm_entity: ViewMut<Entity>,
     mut vm_gravity_affected: ViewMut<GravityAffected>,

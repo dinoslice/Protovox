@@ -1,12 +1,8 @@
-use shipyard::{AllStoragesView, IntoIter, IntoWorkload, Unique, UniqueView, UniqueViewMut, View, Workload};
+use shipyard::{AllStoragesView, IntoIter, IntoWorkload, Unique, UniqueView, View, Workload};
 use crate::camera::Camera;
-use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::depth_texture::DepthTexture;
-use crate::rendering::gizmos::line_render_state::GizmosLineRenderState;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::texture_atlas::TextureAtlas;
 
 mod world;
 mod gizmos;
