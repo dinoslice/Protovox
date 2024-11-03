@@ -4,6 +4,7 @@ use crate::components::{Entity, GravityAffected, IsOnGround, Transform, Velocity
 
 pub mod movement;
 mod collision_response;
+pub mod collision;
 
 pub fn process_physics() -> Workload {
     (

@@ -234,6 +234,13 @@ impl ChunkManager {
             .blocks
             .get_mut(chunk_pos.0 as usize)
     }
+    
+    pub fn modify_block_from_world_loc(&mut self, world_loc: &WorldLocation, block: Block) -> Option<()> {
+        *self.get_block_ref_from_world_loc_mut(world_loc)? = block;
+        self.set_dirty_if_exists(world_loc);
+        
+        Some(())
+    }
 
     pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) {
         if let Some(chunk) = self.get_chunk_ref_from_location_mut(&location.into()) {
