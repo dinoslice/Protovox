@@ -15,7 +15,7 @@ use crate::input::InputManager;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
-use crate::physics::process_physics;
+use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::rendering::graphics_context::GraphicsContext;
@@ -64,7 +64,17 @@ fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer
     looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1);
 }
 
-fn place_break_blocks(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player: View<LocalPlayer>, v_looking_at_block: View<LookingAtBlock>, input: UniqueView<InputManager>) {
+fn place_break_blocks(
+    mut chunk_mgr: UniqueViewMut<ChunkManager>,
+    v_local_player: View<LocalPlayer>,
+    v_looking_at_block: View<LookingAtBlock>,
+    input: UniqueView<InputManager>,
+
+    // to ensure we're placing at a valid spot
+    v_entity: View<Entity>,
+    v_transform: View<Transform>,
+    v_hitbox: View<Hitbox>,
+) {
     let Some(RaycastResult { prev_air, hit_position, .. }) = (&v_local_player, &v_looking_at_block)
         .iter()
         .next()
@@ -75,7 +85,12 @@ fn place_break_blocks(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player
 
     if input.action_map.get_action(Action::PlaceBlock) {
         if let Some(prev_air) = prev_air {
-            chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
+            let min = prev_air.0.map(f32::floor);
+            let max = min.map(|n| n + 1.0);
+            
+            if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
+                chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
+            }
         }
     } else if input.action_map.get_action(Action::BreakBlock) {
         chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
