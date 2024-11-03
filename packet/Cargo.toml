@@ -9,5 +9,5 @@ postcard = { version = "1.0.10", features = ["alloc", "use-std"] }
 serde = "1.0.209"
 thiserror = "1.0.63"
 
-[lints.clippy]
-unwrap_used = "warn"
+[lints]
+workspace = true

@@ -12,3 +12,4 @@ members = ["client", "game", "packet", "packet_derive"]
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
+too_many_arguments = "allow"

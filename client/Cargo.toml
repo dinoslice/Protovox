@@ -32,5 +32,5 @@ bimap = "0.6.3"
 clap = { version = "4.5.17", features = ["derive"] }
 rgb = "0.8.50"
 
-[lints.clippy]
-unwrap_used = "warn"
+[lints]
+workspace = true

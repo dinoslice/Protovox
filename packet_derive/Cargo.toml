@@ -9,8 +9,8 @@ syn = "2.0"
 quote = "1.0"
 packet = { path = "../packet" }
 
-[lints.clippy]
-unwrap_used = "warn"
+[lints]
+workspace = true
 
 [lib]
 proc-macro = true
