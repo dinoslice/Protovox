@@ -60,8 +60,8 @@ fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer
         transform.pitch.sin(),
         transform.yaw.sin() * transform.pitch.cos(),
     );
-
-    looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 15.0, 0.1);
+    
+    looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);
 }
 
 fn place_break_blocks(
