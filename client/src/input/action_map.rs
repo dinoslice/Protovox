@@ -1,4 +1,5 @@
 use tinybitset::TinyBitSet;
+use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
 const N: usize = std::mem::size_of::<Action>() * u8::BITS as usize;
@@ -39,13 +40,13 @@ impl Action {
 }
 
 impl ActionMap {
-    pub fn process_input(&mut self, key: &KeyCode, is_pressed: bool) -> bool {
-        match Action::mapped_from_key(key) {
-            Some(action) => {
+    pub fn process_input(&mut self, input: impl TryInto<Action>, is_pressed: bool) -> bool {
+        match input.try_into() {
+            Ok(action) => {
                 self.set_action(action, is_pressed);
                 true
             }
-            None => false
+            Err(_) => false
         }
     }
 
@@ -63,5 +64,41 @@ impl ActionMap {
 
     pub fn reset_all(&mut self) {
         *self = Default::default();
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("Could not convert to action")]
+pub struct UnmappedAction;
+
+impl TryFrom<&KeyCode> for Action {
+    type Error = UnmappedAction;
+
+    fn try_from(key: &KeyCode) -> Result<Self, Self::Error> {
+        use KeyCode as KC;
+
+        match key {
+            KC::KeyW => Ok(Self::MoveForward),
+            KC::KeyS => Ok(Self::MoveBackward),
+            KC::KeyA => Ok(Self::MoveLeft),
+            KC::KeyD => Ok(Self::MoveRight),
+            KC::Space => Ok(Self::Jump),
+            KC::ShiftLeft => Ok(Self::Sneak),
+            _ => Err(UnmappedAction),
+        }
+    }
+}
+
+impl TryFrom<&MouseButton> for Action {
+    type Error = UnmappedAction;
+
+    fn try_from(button: &MouseButton) -> Result<Self, Self::Error> {
+        use MouseButton as MB;
+        
+        match button {
+            MB::Left => Ok(Self::BreakBlock),
+            MB::Right => Ok(Self::PlaceBlock),
+            _ => Err(UnmappedAction),
+        }
     }
 }
