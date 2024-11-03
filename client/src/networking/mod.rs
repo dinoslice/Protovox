@@ -1,6 +1,6 @@
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, IntoIter, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload};
+use shipyard::{EntitiesView, IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload, WorkloadModificator};
 use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess};
@@ -17,16 +17,23 @@ pub mod server_connection;
 
 pub fn update_networking() -> Workload {
     (
+        // SERVER
         server_process_network_events, // internally, run_if(is_hosted)
+        (
+            server_process_client_connection_req,
+            server_update_client_transform,
+            server_request_client_settings,
+            server_process_render_dist_update,
+            server_send_keep_alive
+        ).into_workload().run_if(is_hosted),
+        
+        // CLIENT
         client_process_network_events_multiplayer, // internally, run_if(is_multiplayer_client)
-        server_process_client_connection_req.run_if(is_hosted),
-        client_acknowledge_connection_success.run_if(is_multiplayer_client),
-        client_update_position.run_if(is_multiplayer_client),
-        server_update_client_transform.run_if(is_hosted),
-        server_request_client_settings.run_if(is_hosted),
-        client_send_settings.run_if(is_multiplayer_client),
-        server_process_render_dist_update.run_if(is_hosted),
-        server_send_keep_alive.run_if(is_hosted),
+        (
+            client_acknowledge_connection_success,
+            client_update_position,
+            client_send_settings,
+        ).into_workload().run_if(is_multiplayer_client),
     ).into_workload()
 }
 
