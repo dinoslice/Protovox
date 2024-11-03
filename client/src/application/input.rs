@@ -14,8 +14,7 @@ pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut in
 pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>) -> bool {
     match event {
         WindowEvent::KeyboardInput {
-            event:
-            KeyEvent {
+            event: KeyEvent {
                 physical_key: PhysicalKey::Code(key),
                 state,
                 ..
@@ -25,7 +24,8 @@ pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>
         WindowEvent::MouseWheel { delta, .. } => {
             input_manager.mouse_manager.process_scroll(delta);
             true
-        }
+        },
+        WindowEvent::MouseInput { button, state, .. } => input_manager.action_map.process_input(button, *state == ElementState::Pressed),
         _ => false, // returns false if the event hasn't been processed, so it can be further processed later
     }
 }
