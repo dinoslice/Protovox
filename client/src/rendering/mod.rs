@@ -3,7 +3,7 @@ use crate::rendering::block_outline::initialize_block_outline_render_state;
 use crate::rendering::camera_uniform_buffer::initialize_camera_uniform_buffer;
 
 pub mod graphics_context;
-pub mod render;
+mod render;
 
 pub mod texture; // TODO: fix visibility
 mod face_data;
@@ -18,6 +18,8 @@ pub mod sized_buffer;
 pub mod gizmos;
 mod block_outline;
 mod world;
+
+pub use render::render;
 
 pub fn initialize() -> Workload {
     (

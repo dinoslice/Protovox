@@ -8,7 +8,7 @@ use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::render;
+use crate::rendering;
 use crate::workloads::{startup, update};
 
 mod capture_state;
@@ -33,7 +33,7 @@ pub fn run() {
 
     world.add_workload(startup);
     world.add_workload(update);
-    world.add_workload(render::render);
+    world.add_workload(rendering::render);
 
     world.add_unique(GraphicsContext::new(window));
     world.run_workload(startup)
@@ -62,7 +62,7 @@ pub fn run() {
                         world.run_workload(update)
                             .expect("TODO: panic message");
 
-                        if let Err(err) = world.run_workload(render::render) {
+                        if let Err(err) = world.run_workload(rendering::render) {
                             match err
                                 .custom_error()
                                 .expect("TODO: workload error")

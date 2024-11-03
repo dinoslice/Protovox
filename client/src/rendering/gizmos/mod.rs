@@ -11,7 +11,7 @@ pub use types::*;
 pub(super) mod line_render_state;
 mod settings;
 mod vertex;
-pub mod types;
+mod types;
 
 
 pub fn initialize() -> Workload {
