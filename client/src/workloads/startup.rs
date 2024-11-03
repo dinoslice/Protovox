@@ -6,7 +6,7 @@ use game::location::WorldLocation;
 use crate::camera::Camera;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
-use crate::args;
+use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
@@ -17,13 +17,12 @@ use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_socket::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::renderer;
 use crate::world_gen::WorldGenerator;
 
 pub fn startup() -> Workload {
     (
         args::parse_env,
-        renderer::initialize_renderer,
+        rendering::initialize,
         initialize_local_player,
         initialize_gameplay_systems.after_all(initialize_local_player),
         initialize_application_systems,

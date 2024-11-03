@@ -1,5 +1,8 @@
+use shipyard::{IntoWorkload, Workload};
+use crate::rendering::block_outline::initialize_block_outline_render_state;
+use crate::rendering::camera_uniform_buffer::initialize_camera_uniform_buffer;
+
 pub mod graphics_context;
-pub mod renderer;
 pub mod render;
 
 pub mod texture; // TODO: fix visibility
@@ -15,3 +18,16 @@ pub mod sized_buffer;
 pub mod gizmos;
 mod block_outline;
 mod world;
+
+pub fn initialize() -> Workload {
+    (
+        (
+            texture_atlas::initialize_texture_atlas,
+            depth_texture::initialize_depth_texture,
+            initialize_camera_uniform_buffer,
+        ).into_workload(),
+        world::initialize_world_render_state,
+        initialize_block_outline_render_state,
+        gizmos::initialize,
+    ).into_sequential_workload()
+}

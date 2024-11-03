@@ -1,14 +1,12 @@
-use shipyard::{AllStoragesView, IntoIter, IntoWorkload, Unique, UniqueView, View, Workload};
-use crate::camera::Camera;
-use crate::components::{LocalPlayer, Transform};
-use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::block_outline::update_block_outline_buffer;
+use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 
 mod world;
 mod gizmos;
 mod block_outline;
 
-use crate::rendering::block_outline::update_block_outline_buffer;
 
 pub fn render() -> Workload {
     (
@@ -46,21 +44,6 @@ fn create_new_render_context(storages: AllStoragesView, g_ctx: UniqueView<Graphi
     storages.add_unique(RenderContext { output, tex_view, encoder });
 
     Ok(())
-}
-
-fn update_camera_uniform_buffer(
-    g_ctx: UniqueView<GraphicsContext>,
-    cam_uniform_buffer: UniqueView<CameraUniformBuffer>,
-    v_local_player: View<LocalPlayer>,
-    v_camera: View<Camera>,
-    v_transform: View<Transform>,
-) {
-    let (_, render_cam, transform) = (&v_local_player, &v_camera, &v_transform)
-        .iter()
-        .next()
-        .expect("TODO: local player did not have camera to render to");
-
-    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 }
 
 fn submit_rendered_frame(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {

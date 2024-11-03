@@ -1,5 +1,7 @@
-use shipyard::Unique;
+use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, View};
 use wgpu::util::DeviceExt;
+use crate::camera::Camera;
+use crate::components::{LocalPlayer, Transform};
 use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
@@ -66,4 +68,23 @@ impl CameraUniformBuffer {
     pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[[f32; 4]; 4]) {
         g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(uniform));
     }
+}
+
+pub fn initialize_camera_uniform_buffer(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+    storages.add_unique(CameraUniformBuffer::new(&g_ctx));
+}
+
+pub fn update_camera_uniform_buffer(
+    g_ctx: UniqueView<GraphicsContext>,
+    cam_uniform_buffer: UniqueView<CameraUniformBuffer>,
+    v_local_player: View<LocalPlayer>,
+    v_camera: View<Camera>,
+    v_transform: View<Transform>,
+) {
+    let (_, render_cam, transform) = (&v_local_player, &v_camera, &v_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player did not have camera to render to");
+
+    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
 }
