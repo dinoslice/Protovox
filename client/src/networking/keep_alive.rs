@@ -3,7 +3,7 @@ use laminar::Packet;
 use shipyard::{AllStoragesView, Unique, UniqueView, UniqueViewMut};
 use packet::Packet as _;
 use crate::events::KeepAlive;
-use crate::networking::server_socket::ServerHandler;
+use crate::networking::server_handler::ServerHandler;
 
 #[derive(Unique, Debug)]
 pub struct LastKeepAlive(pub Instant);
@@ -12,7 +12,7 @@ pub fn init_keep_alive(storages: AllStoragesView) {
     storages.add_unique(LastKeepAlive(Instant::now()));
 }
 
-pub fn send_keep_alive(mut last_keep_alive: UniqueViewMut<LastKeepAlive>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_send_keep_alive(mut last_keep_alive: UniqueViewMut<LastKeepAlive>, server_handler: UniqueView<ServerHandler>) {
     let tx = &server_handler.tx;
 
     if Instant::now().duration_since(last_keep_alive.0) > Duration::from_secs(5) {

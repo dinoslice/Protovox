@@ -3,21 +3,22 @@ use packet::Packet as _;
 use shipyard::{EntitiesView, IntoIter, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload};
 use crate::components::{LocalPlayer, Transform};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ClientTransformUpdate, ClientSettingsRequestEvent, ConnectionRequest, ConnectionSuccess};
+use crate::events::{ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess};
 use crate::events::render_distance::RenderDistanceUpdateEvent;
-use crate::multiplayer::server_connection::{process_network_events_multiplayer_client, ServerConnection};
-use crate::networking::keep_alive::send_keep_alive;
-use crate::networking::server_socket::{process_network_events_system, ServerHandler};
+use crate::networking::keep_alive::server_send_keep_alive;
+use crate::networking::server_connection::{client_process_network_events_multiplayer, ServerConnection};
+use crate::networking::server_handler::{server_process_network_events, ServerHandler};
 use crate::render_distance::RenderDistance;
 
 pub mod types;
-pub mod server_socket;
+pub mod server_handler;
 pub mod keep_alive;
+pub mod server_connection;
 
 pub fn update_networking() -> Workload {
     (
-        process_network_events_system, // internally, run_if(is_hosted)
-        process_network_events_multiplayer_client, // internally, run_if(is_multiplayer_client)
+        server_process_network_events, // internally, run_if(is_hosted)
+        client_process_network_events_multiplayer, // internally, run_if(is_multiplayer_client)
         server_process_client_connection_req.run_if(is_hosted),
         client_acknowledge_connection_success.run_if(is_multiplayer_client),
         client_update_position.run_if(is_multiplayer_client),
@@ -25,7 +26,7 @@ pub fn update_networking() -> Workload {
         server_request_client_settings.run_if(is_hosted),
         client_send_settings.run_if(is_multiplayer_client),
         server_process_render_dist_update.run_if(is_hosted),
-        send_keep_alive.run_if(is_hosted),
+        server_send_keep_alive.run_if(is_hosted),
     ).into_workload()
 }
 

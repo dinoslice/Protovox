@@ -45,7 +45,7 @@ impl ServerHandler {
     }
 }
 
-pub fn process_network_events_system(mut storages: AllStoragesViewMut) {
+pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
     // TODO: temp fix bc of run_if crash
     if !storages.run(is_hosted) {
         return;

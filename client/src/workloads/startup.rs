@@ -12,9 +12,9 @@ use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
 use crate::looking_at_block::LookingAtBlock;
-use crate::multiplayer::server_connection::ServerConnection;
+use crate::networking::server_connection::ServerConnection;
 use crate::networking::keep_alive::init_keep_alive;
-use crate::networking::server_socket::ServerHandler;
+use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
