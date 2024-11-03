@@ -75,16 +75,10 @@ fn place_break_blocks(mut chunk_mgr: UniqueViewMut<ChunkManager>, v_local_player
 
     if input.action_map.get_action(Action::PlaceBlock) {
         if let Some(prev_air) = prev_air {
-            if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(prev_air) {
-                *b = Block::Cobblestone;
-                chunk_mgr.set_dirty_if_exists(prev_air);
-            }
+            chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
         }
     } else if input.action_map.get_action(Action::BreakBlock) {
-        if let Some(b) = chunk_mgr.get_block_ref_from_world_loc_mut(hit_position) {
-            *b = Block::Air;
-            chunk_mgr.set_dirty_if_exists(hit_position);
-        }
+        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
     }
 }
 
