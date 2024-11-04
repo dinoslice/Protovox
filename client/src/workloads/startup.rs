@@ -82,13 +82,13 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
         RenderDistance(U16Vec3::new(3,0,3)),
         ChunkLocation::from(WorldLocation(transform.position))
     ));
+    storages.add_unique(WorldGenerator::new(50));
 }
 
 pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(InputManager::with_mouse_sensitivity(0.75));
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
-    storages.add_unique(WorldGenerator::new(50));
 }
 
 fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
