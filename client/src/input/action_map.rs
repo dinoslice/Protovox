@@ -31,9 +31,6 @@ impl Action {
             KC::KeyD => Some(Self::MoveRight),
             KC::Space => Some(Self::Jump),
             KC::ShiftLeft => Some(Self::Sneak),
-            // TODO: use mouse input
-            KC::KeyN => Some(Self::PlaceBlock),
-            KC::KeyM => Some(Self::BreakBlock),
             _ => None,
         }
     }
