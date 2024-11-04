@@ -20,12 +20,12 @@ pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>
                 ..
             },
             ..
-        } => input_manager.action_map.process_input(key, *state == ElementState::Pressed),
+        } => input_manager.process_input(key, *state == ElementState::Pressed),
         WindowEvent::MouseWheel { delta, .. } => {
             input_manager.mouse_manager.process_scroll(delta);
             true
         },
-        WindowEvent::MouseInput { button, state, .. } => input_manager.action_map.process_input(button, *state == ElementState::Pressed),
+        WindowEvent::MouseInput { button, state, .. } => input_manager.process_input(button, *state == ElementState::Pressed),
         _ => false, // returns false if the event hasn't been processed, so it can be further processed later
     }
 }

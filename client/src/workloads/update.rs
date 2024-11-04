@@ -23,6 +23,7 @@ use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
     (
+        update_input_manager,
         process_input,
         process_physics,
         reset_mouse_manager_state,
@@ -44,6 +45,10 @@ pub fn process_input() -> Workload {
         process_movement,
         adjust_fly_speed,
     ).into_workload()
+}
+
+fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
+    input.process();
 }
 
 fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
@@ -83,7 +88,7 @@ fn place_break_blocks(
         return
     };
 
-    if input.action_map.get_action(Action::PlaceBlock) {
+    if input.just_pressed().get_action(Action::PlaceBlock) {
         if let Some(prev_air) = prev_air {
             let min = prev_air.0.map(f32::floor);
             let max = min.map(|n| n + 1.0);
@@ -92,7 +97,7 @@ fn place_break_blocks(
                 chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
             }
         }
-    } else if input.action_map.get_action(Action::BreakBlock) {
+    } else if input.just_pressed().get_action(Action::BreakBlock) {
         chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
     }
 }

@@ -16,8 +16,8 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
         .expect("TODO: local player didn't have transform, velocity, player speed");
 
     let input_vec = Vec2::new(
-        input.action_map.get_axis(Action::MoveForward, Action::MoveBackward) as f32,
-        input.action_map.get_axis(Action::MoveRight, Action::MoveLeft) as f32,
+        input.pressed().get_axis(Action::MoveForward, Action::MoveBackward) as f32,
+        input.pressed().get_axis(Action::MoveRight, Action::MoveLeft) as f32,
     );
 
     let xz = match input_vec.try_normalize(f32::EPSILON) {
@@ -29,7 +29,7 @@ pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<
         None => move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs),
     };
 
-    let jump = if input.action_map.get_action(Action::Jump) && is_on_ground.0 {
+    let jump = if input.pressed().get_action(Action::Jump) && is_on_ground.0 {
         player_speed.jump_vel
     } else {
         0.0
