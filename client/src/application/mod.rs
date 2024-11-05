@@ -9,7 +9,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering;
-use crate::workloads::{startup, update};
+use crate::workloads::{shutdown, startup, update};
 use crate::application::exit::{request_exit, ExitRequested};
 
 mod capture_state;
@@ -36,6 +36,7 @@ pub fn run() {
     world.add_workload(startup);
     world.add_workload(update);
     world.add_workload(rendering::render);
+    world.add_workload(shutdown);
 
     world.add_unique(GraphicsContext::new(window));
     world.run_workload(startup)
@@ -60,6 +61,8 @@ pub fn run() {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         if world.get_unique::<&ExitRequested>().is_ok() {
                             // TODO: for now, immediately exit upon receiving ExitRequested
+                            world.run_workload(shutdown)
+                                .expect("TODO: panic message");
                             control_flow.exit();
                         }
                         
