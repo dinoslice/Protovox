@@ -16,12 +16,12 @@ pub struct InputManager {
 }
 
 impl InputManager {
-    pub fn with_mouse_sensitivity(sensitivity: f32) -> Self {
+    pub fn with_mouse_manager(mouse_manager: MouseManager) -> Self {
         Self {
             pressed: ActionMap::default(),
             just_pressed: ActionMap::default(),
-            mouse_manager: MouseManager::with_sensitivity(sensitivity),
             queue: Vec::default(),
+            mouse_manager,
         }
     }
 

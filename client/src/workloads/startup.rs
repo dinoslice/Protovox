@@ -12,6 +12,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
+use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
@@ -89,7 +90,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 }
 
 pub fn initialize_application_systems(storages: AllStoragesView) {
-    storages.add_unique(InputManager::with_mouse_sensitivity(0.75));
+    storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
 }
