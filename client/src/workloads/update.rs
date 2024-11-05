@@ -1,6 +1,6 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::ChunkManager;
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, EntitiesViewMut};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
@@ -8,7 +8,7 @@ use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::chunks::raycast::RaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
-use crate::environment::is_hosted;
+use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
@@ -26,7 +26,8 @@ pub fn update() -> Workload {
         process_input,
         process_physics,
         reset_mouse_manager_state,
-        networking::update_networking,
+        networking::update_networking_server.run_if(is_hosted),
+        networking::update_networking_client.run_if(is_multiplayer_client),
         get_generated_chunks.run_if(is_hosted),
         chunk_manager_update_and_request,
         generate_chunks.run_if(is_hosted),
