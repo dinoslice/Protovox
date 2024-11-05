@@ -237,15 +237,13 @@ impl ChunkManager {
     
     pub fn modify_block_from_world_loc(&mut self, world_loc: &WorldLocation, block: Block) -> Option<()> {
         *self.get_block_ref_from_world_loc_mut(world_loc)? = block;
-        self.set_dirty_if_exists(world_loc);
-        
-        Some(())
+        self.set_dirty_if_exists(world_loc)
     }
 
-    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) {
-        if let Some(chunk) = self.get_chunk_ref_from_location_mut(&location.into()) {
-            chunk.dirty = true;
-        }
+    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) -> Option<()> {
+        self.get_chunk_ref_from_location_mut(&location.into())?.dirty = true;
+        
+        Some(())
     }
 
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
