@@ -66,7 +66,7 @@ impl ChunkManager {
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         // TODO: skip if no chunks changed
         if let Some(render_distance) = new_render_distance {
             self.render_distance = render_distance;
@@ -257,31 +257,26 @@ pub fn chunk_manager_update_and_request(
     mut vm_chunk_gen_req_evt: ViewMut<ChunkGenRequestEvent>,
 
     delta_time: UniqueView<LastDeltaTime>,
-    chunk_mgr: UniqueViewMut<ChunkManager>,
+    mut chunk_mgr: UniqueViewMut<ChunkManager>,
     vm_transform: View<Transform>,
     vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
-    chunk_gen_event: ViewMut<ChunkGenEvent>,
+    mut chunk_gen_event: ViewMut<ChunkGenEvent>,
 ) {
-    if let Some(reqs) = chunk_manager_update(delta_time, chunk_mgr, vm_transform, vm_local_player, g_ctx, chunk_gen_event) {
-        entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
-    }
-}
-
-fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, vm_transform: View<Transform>, vm_local_player: View<LocalPlayer>, g_ctx: UniqueView<GraphicsContext>, mut chunk_gen_event: ViewMut<ChunkGenEvent>) -> Option<Vec<ChunkGenRequestEvent>> {
-    let transform = (&vm_local_player, &vm_transform)
+    let (_, transform) = (&vm_local_player, &vm_transform)
         .iter()
         .next()
-        .expect("TODO: local player with transform didn't exist")
-        .1;
+        .expect("TODO: local player with transform didn't exist");
 
-    let current_chunk = ChunkLocation::from(WorldLocation(transform.position));
+    let current_chunk = WorldLocation(transform.position).into();
 
-    let recv = chunk_gen_event.drain().collect();
+    let recv = chunk_gen_event.drain();
 
     let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
-
-    (!reqs.is_empty()).then_some(reqs)
+    
+    if !reqs.is_empty() {
+        entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
+    }
 }
 
 // TODO: make this not use i32
