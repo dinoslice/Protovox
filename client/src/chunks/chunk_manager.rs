@@ -59,18 +59,9 @@ impl ChunkManager {
     pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
         self.get_index_from_chunk_location_checked(chunk_loc).is_some()
     }
-
-
+    
     pub fn drop_all_recently_requested(&mut self) {
         self.recently_requested_gen.clear();
-    }
-
-    // TODO: clones twice if doesn't exist, none if exists; if it were to take in an owned loc, then if it exists you'd lose that
-    // returns whether that chunk has already been requested
-    pub fn request_chunk(&mut self, loc: &ChunkLocation) -> bool {
-        self.recently_requested_gen.try_insert(loc.clone(), REQ_TIMEOUT).is_err()
-
-        // TODO: request server for chunk
     }
 
     pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: Vec<ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
@@ -165,8 +156,7 @@ impl ChunkManager {
 
         requests
     }
-
-
+    
     pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
         let offset = location.0 - self.center.0;
 
