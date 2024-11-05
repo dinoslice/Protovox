@@ -23,6 +23,8 @@ pub enum PacketType {
 
     ClientTransformUpdate,
 
+    KickedByServer,
+    
     KeepAlive,
 }
 

@@ -56,6 +56,10 @@ pub struct ClientChunkRequest(pub ChunkLocation);
 #[packet_type(PacketType::KeepAlive)]
 pub struct KeepAlive;
 
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::KickedByServer)]
+pub struct KickedByServer(pub String);
+
 impl From<ChunkGenRequestEvent> for ClientChunkRequest {
     fn from(evt: ChunkGenRequestEvent) -> Self {
         Self(evt.0)

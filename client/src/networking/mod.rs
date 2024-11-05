@@ -2,13 +2,13 @@ use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{EntitiesView, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload, WorkloadModificator};
+use shipyard::{AllStoragesView, EntitiesView, IntoIter, IntoWithId, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload, WorkloadModificator};
 use game::chunk::data::ChunkData;
 use game::location::WorldLocation;
+use crate::application::exit::ExitRequested;
 use crate::chunks::chunk_manager::{chunk_index_in_render_distance, ChunkManager};
 use crate::components::{LocalPlayer, Transform};
-use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess};
+use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess, KickedByServer};
 use crate::events::event_bus::EventBus;
 use crate::events::render_distance::RenderDistanceUpdateEvent;
 use crate::networking::keep_alive::server_send_keep_alive;
@@ -40,6 +40,7 @@ pub fn update_networking_client() -> Workload {
     (
         client_process_network_events_multiplayer,
         (
+            client_handle_kicked_by_server,
             client_acknowledge_connection_success,
             client_update_position,
             client_request_chunks_from_server,
@@ -213,6 +214,16 @@ fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkG
 
     if sender.try_send(p).is_err() {
         tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);
+    }
+}
+
+fn client_handle_kicked_by_server(v_kick_evt: View<KickedByServer>, storages: AllStoragesView) {
+    if let Some(KickedByServer(reason)) = (&v_kick_evt)
+        .iter()
+        .next()
+    {
+        tracing::debug!("You have been kicked from the server: {reason}");
+        storages.add_unique(ExitRequested);
     }
 }
 
