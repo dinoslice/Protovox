@@ -1,6 +1,6 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::ChunkManager;
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
@@ -165,10 +165,19 @@ fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: Uni
     }
 }
 
-// TODO: fix borrowing of storages
-fn chunk_manager_update_and_request(mut all_storages: AllStoragesViewMut) {
-    if let Some(reqs) = all_storages.run(chunk_manager_update) {
-        all_storages.bulk_add_entity(reqs.into_iter());
+fn chunk_manager_update_and_request(
+    mut entities: EntitiesViewMut,
+    mut vm_chunk_gen_req_evt: ViewMut<ChunkGenRequestEvent>,
+    
+    delta_time: UniqueView<LastDeltaTime>,
+    chunk_mgr: UniqueViewMut<ChunkManager>,
+    vm_transform: View<Transform>,
+    vm_local_player: View<LocalPlayer>,
+    g_ctx: UniqueView<GraphicsContext>,
+    chunk_gen_event: ViewMut<ChunkGenEvent>,
+) {
+    if let Some(reqs) = chunk_manager_update(delta_time, chunk_mgr, vm_transform, vm_local_player, g_ctx, chunk_gen_event) {
+        entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
     }
 }
 
