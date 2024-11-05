@@ -1,3 +1,4 @@
+use std::time::Instant;
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, Workload};
@@ -11,6 +12,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::input::InputManager;
+use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
 use crate::networking::keep_alive::init_keep_alive;
@@ -83,6 +85,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
         ChunkLocation::from(WorldLocation(transform.position))
     ));
     storages.add_unique(WorldGenerator::new(50));
+    storages.add_unique(LastWorldInteraction(Instant::now()));
 }
 
 pub fn initialize_application_systems(storages: AllStoragesView) {

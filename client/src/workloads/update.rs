@@ -1,6 +1,6 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::ChunkManager;
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, EntitiesViewMut};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, AllStoragesViewMut, ViewMut, IntoIter, View, EntitiesViewMut, Unique, AllStoragesView};
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
@@ -12,6 +12,7 @@ use crate::environment::is_hosted;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
+use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
@@ -74,6 +75,7 @@ fn place_break_blocks(
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
     input: UniqueView<InputManager>,
+    mut last_world_interaction: UniqueViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     v_entity: View<Entity>,
@@ -88,17 +90,27 @@ fn place_break_blocks(
         return
     };
 
-    if input.just_pressed().get_action(Action::PlaceBlock) {
+    let mut should_place = input.just_pressed().get_action(Action::PlaceBlock);
+    let mut should_break = input.just_pressed().get_action(Action::BreakBlock);
+
+    if last_world_interaction.cooldown_passed() {
+        should_place |= input.pressed().get_action(Action::PlaceBlock);
+        should_break |= input.pressed().get_action(Action::BreakBlock);
+    }
+
+    if should_place {
         if let Some(prev_air) = prev_air {
             let min = prev_air.0.map(f32::floor);
             let max = min.map(|n| n + 1.0);
             
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
                 chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
+                last_world_interaction.reset_cooldown();
             }
         }
-    } else if input.just_pressed().get_action(Action::BreakBlock) {
+    } else if should_break {
         chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
+        last_world_interaction.reset_cooldown();
     }
 }
 
