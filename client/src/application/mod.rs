@@ -9,12 +9,14 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering;
-use crate::workloads::{startup, update};
+use crate::workloads::{shutdown, startup, update};
+use crate::application::exit::{request_exit, ExitRequested};
 
 mod capture_state;
 mod input;
 mod resize;
 pub mod delta_time;
+pub mod exit;
 
 pub use capture_state::CaptureState;
 
@@ -34,6 +36,7 @@ pub fn run() {
     world.add_workload(startup);
     world.add_workload(update);
     world.add_workload(rendering::render);
+    world.add_workload(shutdown);
 
     world.add_unique(GraphicsContext::new(window));
     world.run_workload(startup)
@@ -74,8 +77,15 @@ pub fn run() {
                                 err => error!("{err:?}"),
                             }
                         }
+
+                        if world.get_unique::<&ExitRequested>().is_ok() {
+                            // TODO: for now, immediately exit upon receiving ExitRequested
+                            world.run_workload(shutdown)
+                                .expect("TODO: panic message");
+                            control_flow.exit();
+                        }
                     }
-                    WindowEvent::CloseRequested => control_flow.exit(),
+                    WindowEvent::CloseRequested => world.run(request_exit),
                     WindowEvent::Resized(physical_size) => world.run_with_data(resize::resize, *physical_size),
 
                     WindowEvent::Focused(focused) => world.run_with_data(capture_state::set_from_focus, *focused),
