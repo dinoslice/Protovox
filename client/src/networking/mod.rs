@@ -24,25 +24,29 @@ pub mod server_connection;
 pub fn update_networking() -> Workload {
     (
         // SERVER
-        server_process_network_events, // internally, run_if(is_hosted)
         (
-            server_broadcast_chunks,
-            server_process_client_connection_req,
-            server_update_client_transform,
-            server_request_client_settings,
-            server_process_render_dist_update,
-            server_handle_client_chunk_reqs,
-            server_send_keep_alive,
-        ).into_workload().run_if(is_hosted),
+            server_process_network_events,
+            (
+                server_broadcast_chunks,
+                server_process_client_connection_req,
+                server_update_client_transform,
+                server_request_client_settings,
+                server_process_render_dist_update,
+                server_handle_client_chunk_reqs,
+                server_send_keep_alive,
+            ).into_workload()
+        ).into_sequential_workload().run_if(is_hosted),
         
         // CLIENT
-        client_process_network_events_multiplayer, // internally, run_if(is_multiplayer_client)
         (
-            client_acknowledge_connection_success,
-            client_update_position,
-            client_request_chunks_from_server,
-            client_send_settings,
-        ).into_workload().run_if(is_multiplayer_client),
+            client_process_network_events_multiplayer,
+            (
+                client_acknowledge_connection_success,
+                client_update_position,
+                client_request_chunks_from_server,
+                client_send_settings, 
+            ).into_workload(),
+        ).into_sequential_workload().run_if(is_multiplayer_client),
     ).into_workload()
 }
 

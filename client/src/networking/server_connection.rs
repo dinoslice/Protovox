@@ -54,10 +54,6 @@ impl ServerConnection {
 }
 
 pub fn client_process_network_events_multiplayer(mut storages: AllStoragesViewMut) {
-    if !storages.run(is_multiplayer_client) {
-        return;
-    }
-
     let addr = storages
         .borrow::<UniqueView<ServerConnection>>()
         .expect("server conn reborrow")

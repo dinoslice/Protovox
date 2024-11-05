@@ -46,11 +46,6 @@ impl ServerHandler {
 }
 
 pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
-    // TODO: temp fix bc of run_if crash
-    if !storages.run(is_hosted) {
-        return;
-    }
-
     // TODO: fix insane battle with borrow checker
     loop {
         let server_handler = storages
