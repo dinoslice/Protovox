@@ -62,7 +62,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(
                 aspect,
-                45.0f32.to_radians(),
+                70.0f32.to_radians(),
                 0.01,
                 1000.0
             ),
