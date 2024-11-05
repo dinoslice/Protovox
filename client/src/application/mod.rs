@@ -10,11 +10,13 @@ use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering;
 use crate::workloads::{startup, update};
+use crate::application::exit::{request_exit, ExitRequested};
 
 mod capture_state;
 mod input;
 mod resize;
 pub mod delta_time;
+pub mod exit;
 
 pub use capture_state::CaptureState;
 
@@ -56,6 +58,11 @@ pub fn run() {
             => if !world.run(capture_state::is_captured) || !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
+                        if world.get_unique::<&ExitRequested>().is_ok() {
+                            // TODO: for now, immediately exit upon receiving ExitRequested
+                            control_flow.exit();
+                        }
+                        
                         world.run_with_data(delta_time::update_delta_time, last_render_time);
                         last_render_time = Instant::now();
 
@@ -75,7 +82,7 @@ pub fn run() {
                             }
                         }
                     }
-                    WindowEvent::CloseRequested => control_flow.exit(),
+                    WindowEvent::CloseRequested => world.run(request_exit),
                     WindowEvent::Resized(physical_size) => world.run_with_data(resize::resize, *physical_size),
 
                     WindowEvent::Focused(focused) => world.run_with_data(capture_state::set_from_focus, *focused),
