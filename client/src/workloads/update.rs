@@ -97,20 +97,23 @@ fn place_break_blocks(
         should_place |= input.pressed().get_action(Action::PlaceBlock);
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
-
-    if should_place {
+    
+    if should_place && should_break {
+        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Cobblestone);
+        last_world_interaction.reset_cooldown();
+    } else if should_break {
+        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
+        last_world_interaction.reset_cooldown();
+    } else if should_place {
         if let Some(prev_air) = prev_air {
             let min = prev_air.0.map(f32::floor);
             let max = min.map(|n| n + 1.0);
-            
+
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
                 chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
                 last_world_interaction.reset_cooldown();
             }
         }
-    } else if should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
-        last_world_interaction.reset_cooldown();
     }
 }
 
