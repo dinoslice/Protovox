@@ -35,7 +35,7 @@ pub fn is_captured(capture: UniqueView<CaptureState>) -> bool {
 
 pub fn toggle_captured(g_ctx: UniqueView<GraphicsContext>, mut capture_state: UniqueViewMut<CaptureState>, mut input: UniqueViewMut<InputManager>) {
     match capture_state.toggle(&g_ctx.window) {
-        Some(false) => input.action_map.reset_all(),
+        Some(false) => input.reset_all(),
         None => error!("Unable to set capture/release mouse cursor."),
         _ => {}
     }
@@ -45,6 +45,6 @@ pub fn set_from_focus(focused: bool, g_ctx: UniqueView<GraphicsContext>, mut cap
     if capture_state.set(&g_ctx.window, focused).is_none() {
         error!("Unable to set capture/release mouse cursor.")
     } else if !focused { // only reset action map if released cursor
-        input_manager.action_map.reset_all();
+        input_manager.reset_all();
     }
 }

@@ -31,6 +31,7 @@ laminar = "0.5.0"
 bimap = "0.6.3"
 clap = { version = "4.5.17", features = ["derive"] }
 rgb = "0.8.50"
+thiserror = "1.0.63"
 
 [lints]
 workspace = true

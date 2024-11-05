@@ -9,6 +9,7 @@ use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
+use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
@@ -19,6 +20,7 @@ use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
     (
+        update_input_manager,
         process_input,
         process_physics,
         reset_mouse_manager_state,
@@ -43,6 +45,10 @@ pub fn process_input() -> Workload {
     ).into_workload()
 }
 
+fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
+    input.process();
+}
+
 fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
     let (_, transform, camera, looking_at_block) = (&v_local_player, &v_transform, &v_camera, &mut vm_looking_at_block)
         .iter()
@@ -57,7 +63,7 @@ fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer
         transform.pitch.sin(),
         transform.yaw.sin() * transform.pitch.cos(),
     );
-    
+
     looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);
 }
 
@@ -66,6 +72,7 @@ fn place_break_blocks(
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
     input: UniqueView<InputManager>,
+    mut last_world_interaction: UniqueViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     v_entity: View<Entity>,
@@ -80,17 +87,30 @@ fn place_break_blocks(
         return
     };
 
-    if input.action_map.get_action(Action::PlaceBlock) {
+    let mut should_place = input.just_pressed().get_action(Action::PlaceBlock);
+    let mut should_break = input.just_pressed().get_action(Action::BreakBlock);
+
+    if last_world_interaction.cooldown_passed() {
+        should_place |= input.pressed().get_action(Action::PlaceBlock);
+        should_break |= input.pressed().get_action(Action::BreakBlock);
+    }
+
+    if should_place && should_break {
+        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Cobblestone);
+        last_world_interaction.reset_cooldown();
+    } else if should_break {
+        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
+        last_world_interaction.reset_cooldown();
+    } else if should_place {
         if let Some(prev_air) = prev_air {
             let min = prev_air.0.map(f32::floor);
             let max = min.map(|n| n + 1.0);
-            
+
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
                 chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
+                last_world_interaction.reset_cooldown();
             }
         }
-    } else if input.action_map.get_action(Action::BreakBlock) {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
     }
 }
 
