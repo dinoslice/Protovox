@@ -1,13 +1,15 @@
 use std::time::Duration;
 use glm::IVec3;
 use hashbrown::HashMap;
-use shipyard::Unique;
+use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use wgpu::util::DeviceExt;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
+use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::ClientChunk;
+use crate::components::{LocalPlayer, Transform};
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
@@ -248,6 +250,38 @@ impl ChunkManager {
     pub fn baked_chunks(&self) -> &HashMap<ChunkLocation, SizedBuffer> {
         &self.bakery
     }
+}
+
+pub fn chunk_manager_update_and_request(
+    mut entities: EntitiesViewMut,
+    mut vm_chunk_gen_req_evt: ViewMut<ChunkGenRequestEvent>,
+
+    delta_time: UniqueView<LastDeltaTime>,
+    chunk_mgr: UniqueViewMut<ChunkManager>,
+    vm_transform: View<Transform>,
+    vm_local_player: View<LocalPlayer>,
+    g_ctx: UniqueView<GraphicsContext>,
+    chunk_gen_event: ViewMut<ChunkGenEvent>,
+) {
+    if let Some(reqs) = chunk_manager_update(delta_time, chunk_mgr, vm_transform, vm_local_player, g_ctx, chunk_gen_event) {
+        entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
+    }
+}
+
+fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, vm_transform: View<Transform>, vm_local_player: View<LocalPlayer>, g_ctx: UniqueView<GraphicsContext>, mut chunk_gen_event: ViewMut<ChunkGenEvent>) -> Option<Vec<ChunkGenRequestEvent>> {
+    let transform = (&vm_local_player, &vm_transform)
+        .iter()
+        .next()
+        .expect("TODO: local player with transform didn't exist")
+        .1;
+
+    let current_chunk = ChunkLocation::from(WorldLocation(transform.position));
+
+    let recv = chunk_gen_event.drain().collect();
+
+    let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
+
+    (!reqs.is_empty()).then_some(reqs)
 }
 
 // TODO: make this not use i32

@@ -1,10 +1,7 @@
 use glm::Vec3;
-use crate::chunks::chunk_manager::ChunkManager;
+use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
-use game::chunk::location::ChunkLocation;
-use game::location::WorldLocation;
-use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::chunks::raycast::RaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
@@ -18,7 +15,6 @@ use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_mov
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
-use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
@@ -163,38 +159,6 @@ fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: Uni
     for req in reqs.drain() {
         world_generator.spawn_generate_task(req.0);
     }
-}
-
-fn chunk_manager_update_and_request(
-    mut entities: EntitiesViewMut,
-    mut vm_chunk_gen_req_evt: ViewMut<ChunkGenRequestEvent>,
-    
-    delta_time: UniqueView<LastDeltaTime>,
-    chunk_mgr: UniqueViewMut<ChunkManager>,
-    vm_transform: View<Transform>,
-    vm_local_player: View<LocalPlayer>,
-    g_ctx: UniqueView<GraphicsContext>,
-    chunk_gen_event: ViewMut<ChunkGenEvent>,
-) {
-    if let Some(reqs) = chunk_manager_update(delta_time, chunk_mgr, vm_transform, vm_local_player, g_ctx, chunk_gen_event) {
-        entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
-    }
-}
-
-fn chunk_manager_update(delta_time: UniqueView<LastDeltaTime>, mut chunk_mgr: UniqueViewMut<ChunkManager>, vm_transform: View<Transform>, vm_local_player: View<LocalPlayer>, g_ctx: UniqueView<GraphicsContext>, mut chunk_gen_event: ViewMut<ChunkGenEvent>) -> Option<Vec<ChunkGenRequestEvent>> {
-    let transform = (&vm_local_player, &vm_transform)
-        .iter()
-        .next()
-        .expect("TODO: local player with transform didn't exist")
-        .1;
-
-    let current_chunk = ChunkLocation::from(WorldLocation(transform.position));
-
-    let recv = chunk_gen_event.drain().collect();
-
-    let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
-
-    (!reqs.is_empty()).then_some(reqs)
 }
 
 fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
