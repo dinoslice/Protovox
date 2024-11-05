@@ -59,13 +59,6 @@ pub fn run() {
             => if !world.run(capture_state::is_captured) || !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
-                        if world.get_unique::<&ExitRequested>().is_ok() {
-                            // TODO: for now, immediately exit upon receiving ExitRequested
-                            world.run_workload(shutdown)
-                                .expect("TODO: panic message");
-                            control_flow.exit();
-                        }
-                        
                         world.run_with_data(delta_time::update_delta_time, last_render_time);
                         last_render_time = Instant::now();
 
@@ -83,6 +76,13 @@ pub fn run() {
                                 SurfaceError::OutOfMemory => panic!("System is out of memory!"),
                                 err => error!("{err:?}"),
                             }
+                        }
+
+                        if world.get_unique::<&ExitRequested>().is_ok() {
+                            // TODO: for now, immediately exit upon receiving ExitRequested
+                            world.run_workload(shutdown)
+                                .expect("TODO: panic message");
+                            control_flow.exit();
                         }
                     }
                     WindowEvent::CloseRequested => world.run(request_exit),
