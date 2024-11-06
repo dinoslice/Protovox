@@ -79,7 +79,7 @@ fn place_break_blocks(
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
 ) {
-    let Some(BlockRaycastResult { prev_air, hit_block: hit_position, .. }) = (&v_local_player, &v_looking_at_block)
+    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = (&v_local_player, &v_looking_at_block)
         .iter()
         .next()
         .and_then(|(_, look_at)| look_at.0.as_ref())
@@ -96,10 +96,10 @@ fn place_break_blocks(
     }
 
     if should_place && should_break {
-        chunk_mgr.modify_block(hit_position, Block::Cobblestone);
+        chunk_mgr.modify_block(hit_block, Block::Cobblestone);
         last_world_interaction.reset_cooldown();
     } else if should_break {
-        chunk_mgr.modify_block(hit_position, Block::Air);
+        chunk_mgr.modify_block(hit_block, Block::Air);
         last_world_interaction.reset_cooldown();
     } else if should_place {
         if let Some(prev_air) = prev_air {
