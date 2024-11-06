@@ -21,7 +21,7 @@ impl From<WorldLocation> for ChunkLocation {
 
 impl From<&BlockLocation> for ChunkLocation {
     fn from(loc: &BlockLocation) -> Self {
-        Self(loc.0.component_div(&chunk::CHUNK_SIZE.cast()))
+        Self(loc.0.map_with_location(|r, _, n| n.div_euclid(chunk::CHUNK_SIZE[r] as _)))
     }
 }
 

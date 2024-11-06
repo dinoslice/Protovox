@@ -1,8 +1,6 @@
 use glm::Vec3;
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
 use game::block::Block;
-use game::chunk::location::ChunkLocation;
-use game::chunk::pos::ChunkPos;
 use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -23,7 +21,7 @@ pub fn move_with_collision(
         let half_hitbox = hitbox.0 * 0.5;
 
         // Helper function to check if the given position collides with a block in the world
-        let mut check_collision = |pos: Vec3| -> bool {
+        let check_collision = |pos: Vec3| -> bool {
             let min_extent = pos - half_hitbox;
             let max_extent = pos + half_hitbox;
 
@@ -34,13 +32,10 @@ pub fn move_with_collision(
                 for y in min_floor.y..=max_floor.y {
                     for z in min_floor.z..=max_floor.z {
                         let world_loc = WorldLocation(Vec3::new(x as f32, y as f32, z as f32));
-                        let chunk_loc = ChunkLocation::from(&world_loc);
-
-                        if let Some(chunk) = world.get_chunk_mut(&chunk_loc) {
-                            let chunk_pos = ChunkPos::from(&world_loc);
-
-                            if chunk.data.get_block(chunk_pos) != Block::Air {
-                                return true; // Collision detected
+                        
+                        if let Some(&block) = world.get_block_ref(&world_loc.into()) {
+                            if block != Block::Air {
+                                return true;
                             }
                         }
                     }
