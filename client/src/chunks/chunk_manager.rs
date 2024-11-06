@@ -58,8 +58,8 @@ impl ChunkManager {
             .product()
     }
 
-    pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
-        self.get_index_from_chunk_location_checked(chunk_loc).is_some()
+    pub fn is_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
+        self.get_index_checked(chunk_loc).is_some()
     }
     
     pub fn drop_all_recently_requested(&mut self) {
@@ -86,7 +86,7 @@ impl ChunkManager {
 
         // TODO: we know old center and new center, so calculate new vec positions
         for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
-            match self.get_index_from_chunk_location_checked(&chunk.data.location) {
+            match self.get_index_checked(&chunk.data.location) {
                 Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
                 None => {
                     let loc = &chunk.data.location;
@@ -103,7 +103,7 @@ impl ChunkManager {
 
             self.recently_requested_gen.remove(&data.location);
 
-            let Some(index) = self.get_index_from_chunk_location_checked(&data.location) else {
+            let Some(index) = self.get_index_checked(&data.location) else {
                 continue;
             };
 
@@ -159,7 +159,7 @@ impl ChunkManager {
         requests
     }
     
-    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
+    pub fn get_index_checked(&self, location: &ChunkLocation) -> Option<usize> {
         let offset = location.0 - self.center.0;
 
         let render_dist_i32 = self.render_distance.0.cast();
@@ -188,25 +188,21 @@ impl ChunkManager {
         ChunkLocation(chunk_loc)
     }
 
-    pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
-        loc.0 - self.center.0
-    }
-
     // TODO: error differentiating between invalid loc & not loaded chunk
-    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
+    pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
+        let offset = self.get_index_checked(location)?;
 
         self.loaded_chunks.get(offset)?.as_ref()
     }
 
-    pub fn get_chunk_ref_from_location_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
+    pub fn get_chunk_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
+        let offset = self.get_index_checked(location)?;
 
         self.loaded_chunks.get_mut(offset)?.as_mut()
     }
 
     pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
-        let chunk = self.get_chunk_ref_from_location(&block_loc.into())?;
+        let chunk = self.get_chunk_ref(&block_loc.into())?;
 
         let chunk_pos = ChunkPos::from(block_loc);
 
@@ -217,7 +213,7 @@ impl ChunkManager {
     }
 
     pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
-        let chunk = self.get_chunk_ref_from_location_mut(&block_loc.into())?;
+        let chunk = self.get_chunk_mut(&block_loc.into())?;
 
         let chunk_pos = ChunkPos::from(block_loc);
 
@@ -235,7 +231,7 @@ impl ChunkManager {
         if prev != new {
             *block_mut = new;
 
-            self.get_chunk_ref_from_location_mut(&block_loc.into())?.dirty = true;
+            self.get_chunk_mut(&block_loc.into())?.dirty = true;
         }
         
         Some(prev)

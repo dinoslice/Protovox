@@ -156,7 +156,7 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
         };
 
         for ClientChunkRequest(loc) in events.0.drain(..) {
-            match chunk_mgr.get_chunk_ref_from_location(&loc) {
+            match chunk_mgr.get_chunk_ref(&loc) {
                 Some(cc) => {
                     use std::mem;
 

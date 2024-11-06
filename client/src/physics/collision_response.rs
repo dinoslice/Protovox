@@ -36,7 +36,7 @@ pub fn move_with_collision(
                         let world_loc = WorldLocation(Vec3::new(x as f32, y as f32, z as f32));
                         let chunk_loc = ChunkLocation::from(&world_loc);
 
-                        if let Some(chunk) = world.get_chunk_ref_from_location_mut(&chunk_loc) {
+                        if let Some(chunk) = world.get_chunk_mut(&chunk_loc) {
                             let chunk_pos = ChunkPos::from(&world_loc);
 
                             if chunk.data.get_block(chunk_pos) != Block::Air {
