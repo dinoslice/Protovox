@@ -112,8 +112,7 @@ fn place_break_blocks(
         update_block(hit_block.clone(), Block::Air);
     } else if should_place {
         if let Some(prev_air) = prev_air {
-            let min = prev_air.0.map(|n| n as _);
-            let max = min.map(|n| n + 1.0);
+            let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
                 update_block(prev_air.clone(), Block::Cobblestone);
