@@ -6,7 +6,7 @@ use wgpu::util::DeviceExt;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
-use game::location::WorldLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::ClientChunk;
 use crate::components::{LocalPlayer, Transform};
@@ -205,10 +205,10 @@ impl ChunkManager {
         self.loaded_chunks.get_mut(offset)?.as_mut()
     }
 
-    pub fn get_block_ref_from_world_loc(&self, world_loc: &WorldLocation) -> Option<&Block> {
-        let chunk = self.get_chunk_ref_from_location(&world_loc.into())?;
+    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+        let chunk = self.get_chunk_ref_from_location(&block_loc.into())?;
 
-        let chunk_pos = ChunkPos::from(world_loc);
+        let chunk_pos = ChunkPos::from(block_loc);
 
         chunk
             .data
@@ -216,10 +216,10 @@ impl ChunkManager {
             .get(chunk_pos.0 as usize)
     }
 
-    pub fn get_block_ref_from_world_loc_mut(&mut self, world_loc: &WorldLocation) -> Option<&mut Block> {
-        let chunk = self.get_chunk_ref_from_location_mut(&world_loc.into())?;
+    pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
+        let chunk = self.get_chunk_ref_from_location_mut(&block_loc.into())?;
 
-        let chunk_pos = ChunkPos::from(world_loc);
+        let chunk_pos = ChunkPos::from(block_loc);
 
         chunk
             .data
@@ -227,13 +227,13 @@ impl ChunkManager {
             .get_mut(chunk_pos.0 as usize)
     }
     
-    pub fn modify_block_from_world_loc(&mut self, world_loc: &WorldLocation, block: Block) -> Option<()> {
-        *self.get_block_ref_from_world_loc_mut(world_loc)? = block;
-        self.set_dirty_if_exists(world_loc)
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, block: Block) -> Option<()> {
+        *self.get_block_mut(block_loc)? = block;
+        self.set_dirty_if_exists(block_loc)
     }
 
-    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) -> Option<()> {
-        self.get_chunk_ref_from_location_mut(&location.into())?.dirty = true;
+    pub fn set_dirty_if_exists(&mut self, loc: &BlockLocation) -> Option<()> {
+        self.get_chunk_ref_from_location_mut(&loc.into())?.dirty = true;
         
         Some(())
     }

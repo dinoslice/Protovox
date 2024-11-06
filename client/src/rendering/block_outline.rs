@@ -29,7 +29,7 @@ pub fn update_block_outline_buffer(
         return
     };
 
-    let chunk_pos = ChunkPos::from(&raycast.hit_position);
+    let chunk_pos = ChunkPos::from(&raycast.hit_block);
 
     const BLOCK_OUTLINE_TEXTURE_ID: TextureId = 5;
 

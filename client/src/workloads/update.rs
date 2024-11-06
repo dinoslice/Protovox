@@ -3,7 +3,7 @@ use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_reques
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
 use crate::camera::Camera;
-use crate::chunks::raycast::RaycastResult;
+use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
@@ -79,7 +79,7 @@ fn place_break_blocks(
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
 ) {
-    let Some(RaycastResult { prev_air, hit_position, .. }) = (&v_local_player, &v_looking_at_block)
+    let Some(BlockRaycastResult { prev_air, hit_block: hit_position, .. }) = (&v_local_player, &v_looking_at_block)
         .iter()
         .next()
         .and_then(|(_, look_at)| look_at.0.as_ref())
@@ -96,18 +96,18 @@ fn place_break_blocks(
     }
 
     if should_place && should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Cobblestone);
+        chunk_mgr.modify_block(hit_position, Block::Cobblestone);
         last_world_interaction.reset_cooldown();
     } else if should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
+        chunk_mgr.modify_block(hit_position, Block::Air);
         last_world_interaction.reset_cooldown();
     } else if should_place {
         if let Some(prev_air) = prev_air {
-            let min = prev_air.0.map(f32::floor);
+            let min = prev_air.0.map(|n| n as _);
             let max = min.map(|n| n + 1.0);
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
+                chunk_mgr.modify_block(prev_air, Block::Cobblestone);
                 last_world_interaction.reset_cooldown();
             }
         }

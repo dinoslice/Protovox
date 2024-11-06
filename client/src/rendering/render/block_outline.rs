@@ -32,7 +32,7 @@ pub fn render_block_outline(
         return
     };
     
-    let chunk_loc = ChunkLocation::from(&raycast.hit_position);
+    let chunk_loc = ChunkLocation::from(&raycast.hit_block);
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("block_outline_render_pass"),
