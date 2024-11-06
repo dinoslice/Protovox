@@ -12,6 +12,8 @@ pub enum PacketType {
     ChunkGenRequestEvent,
     ChunkGenEvent,
 
+    BlockUpdateEvent,
+
     RenderDistanceRequestEvent,
     RenderDistanceUpdateEvent,
 
