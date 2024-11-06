@@ -2,11 +2,12 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
+use game::location::BlockLocation;
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -78,6 +79,9 @@ fn place_break_blocks(
     v_entity: View<Entity>,
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
+    
+    mut entities: EntitiesViewMut,
+    mut vm_block_update_evts: ViewMut<BlockUpdateEvent>,
 ) {
     let Some(BlockRaycastResult { prev_air, hit_block, .. }) = (&v_local_player, &v_looking_at_block)
         .iter()
@@ -95,20 +99,24 @@ fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
 
+    let mut update_block = |pos: BlockLocation, block: Block| {
+        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
+        last_world_interaction.reset_cooldown();
+
+        entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
+    };
+
     if should_place && should_break {
-        chunk_mgr.modify_block(hit_block, Block::Cobblestone);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), Block::Cobblestone);
     } else if should_break {
-        chunk_mgr.modify_block(hit_block, Block::Air);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), Block::Air);
     } else if should_place {
         if let Some(prev_air) = prev_air {
             let min = prev_air.0.map(|n| n as _);
             let max = min.map(|n| n + 1.0);
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                chunk_mgr.modify_block(prev_air, Block::Cobblestone);
-                last_world_interaction.reset_cooldown();
+                update_block(prev_air.clone(), Block::Cobblestone);
             }
         }
     }
