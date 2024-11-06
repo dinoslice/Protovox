@@ -227,15 +227,18 @@ impl ChunkManager {
             .get_mut(chunk_pos.0 as usize)
     }
     
-    pub fn modify_block(&mut self, block_loc: &BlockLocation, block: Block) -> Option<()> {
-        *self.get_block_mut(block_loc)? = block;
-        self.set_dirty_if_exists(block_loc)
-    }
-
-    pub fn set_dirty_if_exists(&mut self, loc: &BlockLocation) -> Option<()> {
-        self.get_chunk_ref_from_location_mut(&loc.into())?.dirty = true;
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
+        let block_mut = self.get_block_mut(block_loc)?;
         
-        Some(())
+        let prev = *block_mut;
+        
+        if prev != new {
+            *block_mut = new;
+
+            self.get_chunk_ref_from_location_mut(&block_loc.into())?.dirty = true;
+        }
+        
+        Some(prev)
     }
 
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
