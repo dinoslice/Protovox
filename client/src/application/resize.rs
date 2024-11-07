@@ -17,7 +17,7 @@ pub fn resize(new_size: winit::dpi::PhysicalSize<u32>, mut g_ctx: UniqueViewMut<
         let new_depth_texture = Texture::create_depth_texture(&g_ctx.device, &g_ctx.config, "depth texture");
         *depth_texture = DepthTexture(new_depth_texture);
     } else {
-        tracing::warn!("Ignoring resize with non-positive width or height");
+        tracing::warn!("Ignoring resize with non-positive width or height ({new_size:?})");
     }
 }
 
