@@ -15,10 +15,10 @@ pub fn init_keep_alive(storages: AllStoragesView) {
 pub fn server_send_keep_alive(mut last_keep_alive: UniqueViewMut<LastKeepAlive>, server_handler: UniqueView<ServerHandler>) {
     let tx = &server_handler.tx;
 
-    if Instant::now().duration_since(last_keep_alive.0) > Duration::from_secs(5) {
-        for (addr, _) in &server_handler.clients {
+    if last_keep_alive.0.elapsed() > Duration::from_secs(5) {
+        for &addr in server_handler.clients.left_values() {
             let keep_alive = Packet::unreliable(
-                *addr,
+                addr,
                 KeepAlive
                     .serialize_packet()
                     .expect("Packet Serialization Error")
