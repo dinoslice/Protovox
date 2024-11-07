@@ -1,9 +1,10 @@
 use egui::Context;
 use egui_wgpu::{Renderer, ScreenDescriptor};
 use egui_winit::State;
-use shipyard::Unique;
+use shipyard::{AllStoragesView, Unique, UniqueView};
 use winit::event::WindowEvent;
 use winit::window::Window;
+use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
 pub struct EguiRenderer {
@@ -99,4 +100,9 @@ impl EguiRenderer {
             self.renderer.free_texture(x)
         }
     }
+}
+
+
+pub fn initialize_egui_renderer(g_ctx: UniqueView<GraphicsContext>, all_storages: AllStoragesView) {
+    all_storages.add_unique(EguiRenderer::new(&g_ctx.device, g_ctx.config.format, None, 1, &g_ctx.window))
 }
