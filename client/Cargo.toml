@@ -32,6 +32,9 @@ bimap = "0.6.3"
 clap = { version = "4.5.17", features = ["derive"] }
 rgb = "0.8.50"
 thiserror = "1.0.63"
+egui-wgpu = { version = "0.28.1",features = ["winit"] }
+egui-winit = { version = "0.28.1", features = ["arboard", "links", "wayland", "x11"], default-features = false }
+egui = "0.28.1"
 
 [lints]
 workspace = true

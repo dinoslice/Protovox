@@ -18,6 +18,9 @@ pub mod sized_buffer;
 pub mod gizmos;
 mod block_outline;
 mod world;
+mod egui;
+
+pub use egui::EguiRenderer;
 
 pub use render::render;
 
