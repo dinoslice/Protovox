@@ -39,10 +39,16 @@ pub fn update_networking_server() -> Workload {
 
 pub fn update_networking_client() -> Workload {
     (
+        // PRE-PACKET RECV NETWORKING
+        (
+            client_send_block_updates
+        ).into_workload(),
+        
         client_process_network_events_multiplayer,
+        
+        // POST-PACKET RECV NETWORKING
         (
             client_handle_kicked_by_server,
-            client_send_block_updates,
             client_acknowledge_connection_success,
             client_update_position,
             client_request_chunks_from_server,
