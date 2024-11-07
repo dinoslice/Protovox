@@ -186,6 +186,8 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
         ConnectionRequest =>,
 
         ClientChunkRequest => bus,
+        
+        BlockUpdateEvent => bus,
 
         RenderDistanceUpdateEvent =>,
 

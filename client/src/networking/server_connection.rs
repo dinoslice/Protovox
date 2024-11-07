@@ -130,6 +130,8 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
 
         RenderDistanceRequestEvent => false,
         ClientSettingsRequestEvent => false,
+        
+        BlockUpdateEvent => false,
 
         ConnectionSuccess => false,
         

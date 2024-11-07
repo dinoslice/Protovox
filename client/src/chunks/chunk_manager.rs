@@ -6,7 +6,7 @@ use wgpu::util::DeviceExt;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
-use game::location::WorldLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::ClientChunk;
 use crate::components::{LocalPlayer, Transform};
@@ -58,8 +58,8 @@ impl ChunkManager {
             .product()
     }
 
-    pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
-        self.get_index_from_chunk_location_checked(chunk_loc).is_some()
+    pub fn is_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
+        self.get_index_checked(chunk_loc).is_some()
     }
     
     pub fn drop_all_recently_requested(&mut self) {
@@ -86,7 +86,7 @@ impl ChunkManager {
 
         // TODO: we know old center and new center, so calculate new vec positions
         for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
-            match self.get_index_from_chunk_location_checked(&chunk.data.location) {
+            match self.get_index_checked(&chunk.data.location) {
                 Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
                 None => {
                     let loc = &chunk.data.location;
@@ -103,7 +103,7 @@ impl ChunkManager {
 
             self.recently_requested_gen.remove(&data.location);
 
-            let Some(index) = self.get_index_from_chunk_location_checked(&data.location) else {
+            let Some(index) = self.get_index_checked(&data.location) else {
                 continue;
             };
 
@@ -159,7 +159,7 @@ impl ChunkManager {
         requests
     }
     
-    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
+    pub fn get_index_checked(&self, location: &ChunkLocation) -> Option<usize> {
         let offset = location.0 - self.center.0;
 
         let render_dist_i32 = self.render_distance.0.cast();
@@ -188,27 +188,23 @@ impl ChunkManager {
         ChunkLocation(chunk_loc)
     }
 
-    pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
-        loc.0 - self.center.0
-    }
-
     // TODO: error differentiating between invalid loc & not loaded chunk
-    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
+    pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
+        let offset = self.get_index_checked(location)?;
 
         self.loaded_chunks.get(offset)?.as_ref()
     }
 
-    pub fn get_chunk_ref_from_location_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
+    pub fn get_chunk_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
+        let offset = self.get_index_checked(location)?;
 
         self.loaded_chunks.get_mut(offset)?.as_mut()
     }
 
-    pub fn get_block_ref_from_world_loc(&self, world_loc: &WorldLocation) -> Option<&Block> {
-        let chunk = self.get_chunk_ref_from_location(&world_loc.into())?;
+    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+        let chunk = self.get_chunk_ref(&block_loc.into())?;
 
-        let chunk_pos = ChunkPos::from(world_loc);
+        let chunk_pos = ChunkPos::from(block_loc);
 
         chunk
             .data
@@ -216,10 +212,10 @@ impl ChunkManager {
             .get(chunk_pos.0 as usize)
     }
 
-    pub fn get_block_ref_from_world_loc_mut(&mut self, world_loc: &WorldLocation) -> Option<&mut Block> {
-        let chunk = self.get_chunk_ref_from_location_mut(&world_loc.into())?;
+    pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
+        let chunk = self.get_chunk_mut(&block_loc.into())?;
 
-        let chunk_pos = ChunkPos::from(world_loc);
+        let chunk_pos = ChunkPos::from(block_loc);
 
         chunk
             .data
@@ -227,15 +223,18 @@ impl ChunkManager {
             .get_mut(chunk_pos.0 as usize)
     }
     
-    pub fn modify_block_from_world_loc(&mut self, world_loc: &WorldLocation, block: Block) -> Option<()> {
-        *self.get_block_ref_from_world_loc_mut(world_loc)? = block;
-        self.set_dirty_if_exists(world_loc)
-    }
-
-    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) -> Option<()> {
-        self.get_chunk_ref_from_location_mut(&location.into())?.dirty = true;
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
+        let block_mut = self.get_block_mut(block_loc)?;
         
-        Some(())
+        let prev = *block_mut;
+        
+        if prev != new {
+            *block_mut = new;
+
+            self.get_chunk_mut(&block_loc.into())?.dirty = true;
+        }
+        
+        Some(prev)
     }
 
     pub fn loaded_locations(&self) -> Vec<ChunkLocation> {

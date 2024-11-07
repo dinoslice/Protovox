@@ -2,11 +2,13 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
 use game::block::Block;
+use game::location::BlockLocation;
 use crate::camera::Camera;
-use crate::chunks::raycast::RaycastResult;
+use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::event_bus::EventBus;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -29,6 +31,8 @@ pub fn update() -> Workload {
         get_generated_chunks.run_if(is_hosted),
         chunk_manager_update_and_request,
         generate_chunks.run_if(is_hosted),
+        server_apply_block_updates.run_if(is_hosted),
+        client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
         spawn_multiplayer_player,
         raycast,
@@ -43,6 +47,26 @@ pub fn process_input() -> Workload {
         process_movement,
         adjust_fly_speed,
     ).into_workload()
+}
+
+fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
+    for mut bus in vm_block_update_evt_bus.drain() {
+        for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
+            if world.modify_block(&loc, new_block).is_none() {
+                tracing::error!("Location from block update wasn't loaded");
+            }
+        }
+    }
+    
+    vm_block_update_evt.drain();
+}
+
+fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
+    for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
+        if world.modify_block(&loc, new_block).is_none() {
+            tracing::error!("Location from block update wasn't loaded");
+        }
+    }
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
@@ -78,8 +102,11 @@ fn place_break_blocks(
     v_entity: View<Entity>,
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
+    
+    mut entities: EntitiesViewMut,
+    mut vm_block_update_evts: ViewMut<BlockUpdateEvent>,
 ) {
-    let Some(RaycastResult { prev_air, hit_position, .. }) = (&v_local_player, &v_looking_at_block)
+    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = (&v_local_player, &v_looking_at_block)
         .iter()
         .next()
         .and_then(|(_, look_at)| look_at.0.as_ref())
@@ -95,20 +122,23 @@ fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
 
+    let mut update_block = |pos: BlockLocation, block: Block| {
+        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
+        last_world_interaction.reset_cooldown();
+
+        entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
+    };
+
     if should_place && should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Cobblestone);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), Block::Cobblestone);
     } else if should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), Block::Air);
     } else if should_place {
         if let Some(prev_air) = prev_air {
-            let min = prev_air.0.map(f32::floor);
-            let max = min.map(|n| n + 1.0);
+            let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
-                last_world_interaction.reset_cooldown();
+                update_block(prev_air.clone(), Block::Cobblestone);
             }
         }
     }
@@ -147,7 +177,7 @@ fn spawn_multiplayer_player(
                 GravityAffected,
                 IsOnGround::default(),
                 Transform {
-                    position: Vec3::new(0.5, 20.0, 0.5),
+                    position: Vec3::new(0.5, 60.0, 0.5),
                     .. Default::default()
                 },
                 Velocity::default(),

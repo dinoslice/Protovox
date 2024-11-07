@@ -1,18 +1,18 @@
 use glm::Vec3;
 use game::block::Block;
-use game::location::WorldLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::chunks::chunk_manager::ChunkManager;
 
 #[derive(Debug, Clone)]
-pub struct RaycastResult {
-    pub hit_position: WorldLocation,
-    pub prev_air: Option<WorldLocation>,
+pub struct BlockRaycastResult {
+    pub hit_block: BlockLocation,
+    pub prev_air: Option<BlockLocation>,
     pub distance: f32,
 }
 
 impl ChunkManager {
     // TODO: eventually don't return a floating point type?
-    pub fn raycast(&self, origin: &Vec3, direction: &Vec3, max_dist: f32, step: f32) -> Option<RaycastResult> {
+    pub fn raycast(&self, origin: &Vec3, direction: &Vec3, max_dist: f32, step: f32) -> Option<BlockRaycastResult> {
         let delta = direction.normalize() * step;
 
         let mut curr = *origin;
@@ -21,20 +21,20 @@ impl ChunkManager {
         let mut prev_air = None;
 
         while traversed < max_dist {
-            let world_loc = WorldLocation(curr);
+            let block_loc = WorldLocation(curr).into();
 
             // TODO: should I early return if the chunk doesn't exist? or should you be able to raycast through it?
-            let block = self.get_block_ref_from_world_loc(&world_loc)?;
+            let block = self.get_block_ref(&block_loc)?;
 
             if *block != Block::Air {
-                return Some(RaycastResult {
-                    hit_position: world_loc,
+                return Some(BlockRaycastResult {
+                    hit_block: block_loc,
                     prev_air,
                     distance: traversed,
                 })
             } else {
                 traversed += step;
-                prev_air = Some(world_loc);
+                prev_air = Some(block_loc);
                 curr += delta;
             }
         }
