@@ -4,6 +4,8 @@ use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use crate::application::capture_state::CaptureState;
 use crate::input::InputManager;
+use crate::rendering::EguiRenderer;
+use crate::rendering::graphics_context::GraphicsContext;
 
 pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut input: UniqueViewMut<InputManager>) {
     if capture.is_captured() {
@@ -11,7 +13,12 @@ pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut in
     }
 }
 
-pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>) -> bool {
+pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>, mut egui_renderer: UniqueViewMut<EguiRenderer>, g_ctx: UniqueView<GraphicsContext>, capture: UniqueView<CaptureState>) -> bool {
+    if !capture.is_captured() {
+        egui_renderer.handle_input(&g_ctx.window, event);
+        return false;
+    }
+    
     match event {
         WindowEvent::KeyboardInput {
             event: KeyEvent {
