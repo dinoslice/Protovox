@@ -8,6 +8,7 @@ use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::event_bus::EventBus;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -30,6 +31,8 @@ pub fn update() -> Workload {
         get_generated_chunks.run_if(is_hosted),
         chunk_manager_update_and_request,
         generate_chunks.run_if(is_hosted),
+        server_apply_block_updates.run_if(is_hosted),
+        client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
         spawn_multiplayer_player,
         raycast,
@@ -44,6 +47,26 @@ pub fn process_input() -> Workload {
         process_movement,
         adjust_fly_speed,
     ).into_workload()
+}
+
+fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
+    for mut bus in vm_block_update_evt_bus.drain() {
+        for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
+            if world.modify_block(&loc, new_block).is_none() {
+                tracing::error!("Location from block update wasn't loaded");
+            }
+        }
+    }
+    
+    vm_block_update_evt.drain();
+}
+
+fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
+    for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
+        if world.modify_block(&loc, new_block).is_none() {
+            tracing::error!("Location from block update wasn't loaded");
+        }
+    }
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
@@ -154,7 +177,7 @@ fn spawn_multiplayer_player(
                 GravityAffected,
                 IsOnGround::default(),
                 Transform {
-                    position: Vec3::new(0.5, 20.0, 0.5),
+                    position: Vec3::new(0.5, 60.0, 0.5),
                     .. Default::default()
                 },
                 Velocity::default(),
