@@ -31,6 +31,7 @@ pub fn startup() -> Workload {
         initialize_application_systems,
         initialize_networking.after_all(args::parse_env),
         init_keep_alive,//.run_if(is_hosted),
+        set_window_title,
     ).into_sequential_workload()
 }
 
@@ -107,3 +108,6 @@ fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView
     }
 }
 
+fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {
+    g_ctx.window.set_title(&format!("voxel game: {}", *env))
+}
