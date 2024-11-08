@@ -50,32 +50,28 @@ impl EguiRenderer {
         let _ = self.state.on_window_event(window, event);
     }
 
-    pub fn draw(
-        &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        encoder: &mut wgpu::CommandEncoder,
-        window: &Window,
-        window_surface_view: &wgpu::TextureView,
-        screen_descriptor: ScreenDescriptor,
-        run_ui: impl FnOnce(&Context),
-    ) {
+    pub fn draw(&mut self, g_ctx: &GraphicsContext, encoder: &mut wgpu::CommandEncoder, window_surface_view: &wgpu::TextureView, run_ui: impl FnOnce(&Context)) {
+        let screen_descriptor = ScreenDescriptor {
+            size_in_pixels: [g_ctx.config.width, g_ctx.config.height],
+            pixels_per_point: g_ctx.window.scale_factor() as _,
+        };
+        
         self.context().set_pixels_per_point(screen_descriptor.pixels_per_point);
 
-        let raw_input = self.state.take_egui_input(window);
+        let raw_input = self.state.take_egui_input(&g_ctx.window);
         
         let full_output = self.context().run(raw_input, run_ui);
 
-        self.state.handle_platform_output(window, full_output.platform_output);
+        self.state.handle_platform_output(&g_ctx.window, full_output.platform_output);
 
         let tris = self.context()
             .tessellate(full_output.shapes, self.context().pixels_per_point());
         
         for (id, image_delta) in &full_output.textures_delta.set {
-            self.renderer.update_texture(device, queue, *id, image_delta);
+            self.renderer.update_texture(&g_ctx.device, &g_ctx.queue, *id, image_delta);
         }
         
-        self.renderer.update_buffers(device, queue, encoder, &tris, &screen_descriptor);
+        self.renderer.update_buffers(&g_ctx.device, &g_ctx.queue, encoder, &tris, &screen_descriptor);
         
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
