@@ -98,7 +98,7 @@ pub fn initialize_application_systems(storages: AllStoragesView) {
 
 fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
     if storages.run(is_hosted) {
-        storages.add_unique(ServerHandler::new());
+        storages.add_unique(ServerHandler::new(None));
     } else if storages.run(is_multiplayer_client) {
         let Environment::MultiplayerClient(addr) = *env else {
             unreachable!();

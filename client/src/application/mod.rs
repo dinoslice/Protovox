@@ -56,7 +56,7 @@ pub fn run() {
                 .map_or(false, |g_ctx|
                     g_ctx.window.id() == window_id
                 )
-            => if !world.run(capture_state::is_captured) || !world.run_with_data(input::input, event) {
+            => if !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         world.run_with_data(delta_time::update_delta_time, last_render_time);

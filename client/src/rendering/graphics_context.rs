@@ -2,7 +2,6 @@ use std::sync::Arc;
 use pollster::FutureExt;
 use shipyard::Unique;
 use tracing::debug;
-use wgpu::MemoryHints;
 use winit::window::Window;
 use game::chunk::location::ChunkLocation;
 
@@ -55,7 +54,6 @@ impl GraphicsContext {
                     .. Default::default()
                 }, // limit properties of the gpu to support different architectures
                 label: None,
-                memory_hints: MemoryHints::default(),
             },
             None // trace path for api call tracing
         ).block_on().expect("failed to request device");

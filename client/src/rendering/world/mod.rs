@@ -45,7 +45,7 @@ pub fn initialize_world_render_state(
         layout: Some(&render_pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: Some("vs_main"),
+            entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
                 Vertex::buffer_desc(), FaceData::buffer_desc()
@@ -53,7 +53,7 @@ pub fn initialize_world_render_state(
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: Some("fs_main"),
+            entry_point: "fs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: g_ctx.config.format,
@@ -83,7 +83,6 @@ pub fn initialize_world_render_state(
             alpha_to_coverage_enabled: false, // for anti-aliasing
         },
         multiview: None, // for rendering to array textures
-        cache: None,
     });
 
     let base_face = initialize_base_face(&g_ctx);

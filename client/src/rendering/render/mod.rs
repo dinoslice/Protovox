@@ -6,7 +6,7 @@ use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 mod world;
 mod gizmos;
 mod block_outline;
-
+mod egui;
 
 pub fn render() -> Workload {
     (
@@ -21,6 +21,7 @@ pub fn render() -> Workload {
             world::render_world,
             gizmos::render_line_gizmos,
             block_outline::render_block_outline,
+            egui::render_egui,
             submit_rendered_frame,
         ).into_sequential_workload()
     ).into_sequential_workload()

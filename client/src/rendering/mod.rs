@@ -18,6 +18,9 @@ pub mod sized_buffer;
 pub mod gizmos;
 mod block_outline;
 mod world;
+mod egui;
+
+pub use egui::EguiRenderer;
 
 pub use render::render;
 
@@ -30,6 +33,7 @@ pub fn initialize() -> Workload {
         ).into_workload(),
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
+        egui::initialize_egui_renderer,
         gizmos::initialize,
     ).into_sequential_workload()
 }

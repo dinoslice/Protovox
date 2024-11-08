@@ -44,13 +44,13 @@ pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, g
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: Some("vs_main"),
+            entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             buffers: &[GizmoVertex::buffer_desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: Some("fs_main"),
+            entry_point: "fs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: g_ctx.config.format,
@@ -76,7 +76,6 @@ pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, g
         }),
         multisample: wgpu::MultisampleState::default(),
         multiview: None,
-        cache: None,
     });
 
     storages.add_unique(GizmosLineRenderState {
