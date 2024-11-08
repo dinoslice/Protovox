@@ -34,7 +34,7 @@ pub fn render_egui(
 
     egui_renderer.draw(&g_ctx, encoder, tex_view, |ctx| {
         egui::Window::new("Entities")
-            .default_open(false)
+            .default_open(true)
             .show(ctx, |ui| {
                 ui.heading("LocalPlayer");
                 ui.label(pos_fmt(&local_pos));
