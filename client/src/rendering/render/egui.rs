@@ -1,5 +1,6 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use crate::components::{Entity, LocalPlayer, Transform};
+use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::RenderContext;
@@ -13,6 +14,8 @@ pub fn render_egui(
     v_local_player: View<LocalPlayer>,
     v_entity: View<Entity>,
     v_transform: View<Transform>,
+
+    opt_server_handler: Option<UniqueView<ServerHandler>>,
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
@@ -44,5 +47,13 @@ pub fn render_egui(
                     }
                 }
             });
+
+        if let Some(server_handler) = opt_server_handler {
+            egui::Window::new("ServerHandler")
+                .default_open(true)
+                .show(ctx, |ui| {
+                    ui.label(format!("Address: {}", server_handler.local_addr));
+                });
+        }
     });
 }
