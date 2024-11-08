@@ -14,12 +14,12 @@ use crate::events::event_bus::EventBus;
 pub struct ServerHandler {
     pub tx: Sender<laminar::Packet>,
     pub rx: Receiver<SocketEvent>,
+    pub local_addr: SocketAddr,
     pub clients: BiHashMap<SocketAddr, EntityId>,
 }
 
 impl ServerHandler {
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(host_addr: Option<SocketAddr>) -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
@@ -27,19 +27,26 @@ impl ServerHandler {
             idle_connection_timeout: Duration::from_secs(6),
             .. Default::default()
         };
-
-        let mut socket = Socket::bind_any_with_config(config)
+        
+        let mut socket = match host_addr {
+            None => Socket::bind_any_with_config(config),
+            Some(addr) => Socket::bind_with_config(addr, config),
+        }
             .expect("unable to bind to address");
-
-        tracing::debug!("Bound server to socket {:?}", socket.local_addr());
+        
+        let local_addr = socket.local_addr()
+            .expect("failed to get local_addr?");
+        
+        tracing::debug!("Bound server to socket {local_addr:?}");
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
-
+        
         let _polling = thread::spawn(move || socket.start_polling());
 
         Self {
             tx,
             rx,
+            local_addr,
             clients: BiHashMap::default(),
         }
     }
