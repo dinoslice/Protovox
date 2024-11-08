@@ -164,11 +164,11 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
     });
 }
 
-fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, chunk_mgr: UniqueView<ChunkManager>) {
     if vm_client_settings_req.drain().next().is_some() {
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
-            RenderDistanceUpdateEvent(RenderDistance::default()) // TODO: handle a different way
+            RenderDistanceUpdateEvent(chunk_mgr.render_distance().clone()) // TODO: handle a different way
                 .serialize_packet()
                 .expect("packet serialization failed")
         );

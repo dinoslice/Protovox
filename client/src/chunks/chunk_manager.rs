@@ -57,6 +57,10 @@ impl ChunkManager {
             .map(|n| (2 * n + 1) as usize)
             .product()
     }
+    
+    pub fn render_distance(&self) -> &RenderDistance {
+        &self.render_distance
+    }
 
     pub fn is_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
         self.get_index_checked(chunk_loc).is_some()
