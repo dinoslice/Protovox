@@ -69,13 +69,13 @@ pub fn render_egui(
                             .text_styles
                             .get_mut(&egui::TextStyle::Body)
                             .expect("style to exist")
-                            .size = 15.0;
-                        
+                            .size = 17.5;
+
                         let hotbar_text = match held_block.0 {
                             Block::Air => "None".into(),
                             b => format!("{b:?}"),
                         };
-                        
+
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                             ui.label(hotbar_text);
                         });
