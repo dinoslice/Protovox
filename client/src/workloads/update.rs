@@ -120,8 +120,7 @@ fn place_break_blocks(
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
     
-    mut entities: EntitiesViewMut,
-    mut vm_block_update_evts: ViewMut<BlockUpdateEvent>,
+    (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
     let (_, look_at, held) = (&v_local_player, &v_looking_at_block, &v_held_block).iter()
         .next()
