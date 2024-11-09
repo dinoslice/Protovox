@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::chunk;
 use crate::chunk::location::ChunkLocation;
 use shipyard::Component;
+use crate::chunk::pos::ChunkPos;
 
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
@@ -45,6 +46,14 @@ impl From<ChunkLocation> for BlockLocation {
 impl From<WorldLocation> for BlockLocation {
     fn from(loc: WorldLocation) -> Self {
         (&loc).into()
+    }
+}
+
+impl std::ops::Add<ChunkPos> for WorldLocation {
+    type Output = WorldLocation;
+
+    fn add(self, rhs: ChunkPos) -> Self::Output {
+        Self(self.0 + Vec3::new(rhs.x() as _, rhs.y() as _, rhs.z() as _))
     }
 }
 
