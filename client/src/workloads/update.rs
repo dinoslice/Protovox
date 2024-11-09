@@ -111,6 +111,7 @@ fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
+    v_held_block: View<HeldBlock>,
     input: UniqueView<InputManager>,
     mut last_world_interaction: UniqueViewMut<LastWorldInteraction>,
 
@@ -122,12 +123,12 @@ fn place_break_blocks(
     mut entities: EntitiesViewMut,
     mut vm_block_update_evts: ViewMut<BlockUpdateEvent>,
 ) {
-    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = (&v_local_player, &v_looking_at_block)
-        .iter()
+    let (_, look_at, held) = (&v_local_player, &v_looking_at_block, &v_held_block).iter()
         .next()
-        .and_then(|(_, look_at)| look_at.0.as_ref())
-    else {
-        return
+        .expect("local player didn't have LookingAtBlock & HeldBlock");
+    
+    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = &look_at.0 else {
+        return;
     };
 
     let mut should_place = input.just_pressed().get_action(Action::PlaceBlock);
@@ -137,6 +138,8 @@ fn place_break_blocks(
         should_place |= input.pressed().get_action(Action::PlaceBlock);
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
+    
+    should_place &= held.0.placeable();
 
     let mut update_block = |pos: BlockLocation, block: Block| {
         chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
@@ -146,7 +149,7 @@ fn place_break_blocks(
     };
 
     if should_place && should_break {
-        update_block(hit_block.clone(), Block::Cobblestone);
+        update_block(hit_block.clone(), held.0);
     } else if should_break {
         update_block(hit_block.clone(), Block::Air);
     } else if should_place {
@@ -154,7 +157,7 @@ fn place_break_blocks(
             let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                update_block(prev_air.clone(), Block::Cobblestone);
+                update_block(prev_air.clone(), held.0);
             }
         }
     }
