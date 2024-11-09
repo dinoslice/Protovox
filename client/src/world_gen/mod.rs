@@ -1,3 +1,5 @@
+mod spline;
+
 use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
