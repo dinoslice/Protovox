@@ -73,7 +73,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
-    storages.add_component(id, HeldBlock(Block::Air));
+    storages.add_component(id, HeldBlock(Block::Cobblestone));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
