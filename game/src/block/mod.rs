@@ -44,5 +44,13 @@ impl Block {
             Block::Cobblestone => COBBLE_TEXTURE,
         }
     }
-
+    
+    pub fn placeable(&self) -> bool {
+        match self {
+            Block::Air => false,
+            Block::Grass => true,
+            Block::Dirt => true,
+            Block::Cobblestone => true,
+        }
+    }
 }
