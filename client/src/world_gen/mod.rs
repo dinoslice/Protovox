@@ -1,4 +1,5 @@
 mod spline;
+pub mod fractal_noise;
 
 use std::sync::Arc;
 
