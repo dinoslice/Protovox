@@ -1,6 +1,7 @@
 use glm::Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
+use game::block::Block;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct LocalPlayer;
@@ -53,3 +54,6 @@ pub struct Hitbox(pub Vec3);
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
 pub struct IsOnGround(pub bool);
+
+#[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
+pub struct HeldBlock(pub Block);
