@@ -1,11 +1,12 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
+use strum::EnumCount;
 use game::block::Block;
 use game::location::BlockLocation;
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
-use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
@@ -14,7 +15,7 @@ use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
-use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
+use crate::physics::movement::{apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
@@ -45,8 +46,23 @@ pub fn process_input() -> Workload {
     (
         apply_camera_input,
         process_movement,
-        adjust_fly_speed,
+        // adjust_fly_speed,
+        scroll_hotbar,
     ).into_workload()
+}
+
+fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
+    let scroll = input.mouse_manager.scroll.floor() as i32;
+    
+    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
+        .next()
+        .expect("local player should have held block");
+
+    let curr_block = held.0 as u16 as i32;
+    
+    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
+    
+    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
 }
 
 fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
