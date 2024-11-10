@@ -20,22 +20,6 @@ pub enum Action {
     BreakBlock,
 }
 
-impl Action {
-    pub fn mapped_from_key(key: &KeyCode) -> Option<Self> {
-        use KeyCode as KC;
-
-        match key {
-            KC::KeyW => Some(Self::MoveForward),
-            KC::KeyS => Some(Self::MoveBackward),
-            KC::KeyA => Some(Self::MoveLeft),
-            KC::KeyD => Some(Self::MoveRight),
-            KC::Space => Some(Self::Jump),
-            KC::ShiftLeft => Some(Self::Sneak),
-            _ => None,
-        }
-    }
-}
-
 impl ActionMap {
     pub fn process_input(&mut self, input: impl TryInto<Action>, is_pressed: bool) -> bool {
         match input.try_into() {
