@@ -12,6 +12,7 @@ use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
+use crate::gamemode::Gamemode;
 use crate::input::InputManager;
 use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -74,6 +75,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
     storages.add_component(id, HeldBlock(Block::Cobblestone));
+    storages.add_component(id, Gamemode::Survival);
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
