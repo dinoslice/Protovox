@@ -4,38 +4,63 @@ use shipyard::{IntoIter, UniqueView, View, ViewMut};
 use na::SVector;
 use crate::application::delta_time::LastDeltaTime;
 use crate::components::{IsOnGround, LocalPlayer, PlayerSpeed, Transform, Velocity};
+use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 
-pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>, v_is_on_ground: View<IsOnGround>) {
+pub fn process_movement(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, v_player_speed: View<PlayerSpeed>, v_is_on_ground: View<IsOnGround>, v_gamemode: View<Gamemode>) {
     let dt_secs = delta_time.0.as_secs_f32();
 
-    let (_, transform, velocity, player_speed, is_on_ground) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed, &v_is_on_ground)
+    let (_, transform, velocity, player_speed, is_on_ground, gamemode) = (&v_local_player, &mut vm_transform, &mut vm_velocity, &v_player_speed, &v_is_on_ground, &v_gamemode)
         .iter()
         .next()
         .expect("TODO: local player didn't have transform, velocity, player speed");
 
-    let input_vec = Vec2::new(
-        input.pressed().get_axis(Action::MoveForward, Action::MoveBackward) as f32,
-        input.pressed().get_axis(Action::MoveRight, Action::MoveLeft) as f32,
-    );
+    match gamemode {
+        Gamemode::Survival => {
+            let input_vec = Vec2::new(
+                input.pressed().get_axis(Action::MoveForward, Action::MoveBackward) as f32,
+                input.pressed().get_axis(Action::MoveRight, Action::MoveLeft) as f32,
+            );
+            
+            let xz = match input_vec.try_normalize(f32::EPSILON) {
+                Some(norm_input) => {
+                    let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw);
 
-    let xz = match input_vec.try_normalize(f32::EPSILON) {
-        Some(norm_input) => {
-            let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw);
+                    move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel * dt_secs)
+                }
+                None => move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs),
+            };
 
-            move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel * dt_secs)
+            let jump = if input.pressed().get_action(Action::Jump) && is_on_ground.0 {
+                player_speed.jump_vel
+            } else {
+                0.0
+            };
+
+            velocity.0 = Vec3::new(xz.x, velocity.0.y + jump, xz.y);
         }
-        None => move_towards(&velocity.0.xz(), &Vec2::zeros(), player_speed.friction * dt_secs),
-    };
+        Gamemode::Spectator => {
+            let input_vec = Vec3::new(
+                input.pressed().get_axis(Action::MoveForward, Action::MoveBackward) as f32,
+                input.pressed().get_axis(Action::Jump, Action::Sneak) as f32,
+                input.pressed().get_axis(Action::MoveRight, Action::MoveLeft) as f32,
+            );
+            
+            let xyz = match input_vec.try_normalize(f32::EPSILON) {
+                Some(norm_input) => {
+                    let plane_dir = glm::rotate_vec2(&norm_input.xz(), transform.yaw);
+                    
+                    let target = Vec3::new(plane_dir[0], norm_input.y, plane_dir[1]);
 
-    let jump = if input.pressed().get_action(Action::Jump) && is_on_ground.0 {
-        player_speed.jump_vel
-    } else {
-        0.0
-    };
+                    move_towards(&velocity.0, &(target * player_speed.max_vel), player_speed.accel * dt_secs)
+                }
+                None => move_towards(&velocity.0, &Vec3::zeros(), player_speed.friction * dt_secs),
+            };
 
-    velocity.0 = Vec3::new(xz.x, velocity.0.y + jump, xz.y);
+            velocity.0 = xyz;
+        }
+    }
 }
 
 pub fn apply_camera_input(input: UniqueView<InputManager>, delta_time: UniqueView<LastDeltaTime>, v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>) {
