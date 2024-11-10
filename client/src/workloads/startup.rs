@@ -10,8 +10,9 @@ use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
 use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
+use crate::gamemode::Gamemode;
 use crate::input::InputManager;
 use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -53,13 +54,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
             .. Default::default()
         },
         Velocity::default(),
-        PlayerSpeed::from_observed(
-            4.32,
-            1.25,
-            9.8,
-            0.2,
-            0.18
-        ),
+        PlayerSpeed::default(),
         Camera {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(
@@ -69,11 +64,13 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
                 1000.0
             ),
         },
-        Hitbox(Vec3::new(0.6, 2.0, 0.6))
+        Hitbox::default_player(),
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
     storages.add_component(id, HeldBlock(Block::Cobblestone));
+    storages.add_component(id, Gamemode::Survival);
+    storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {

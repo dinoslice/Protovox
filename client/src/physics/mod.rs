@@ -1,6 +1,6 @@
 use shipyard::{IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{Entity, GravityAffected, IsOnGround, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, Transform, Velocity};
 
 pub mod movement;
 mod collision_response;
@@ -9,8 +9,22 @@ pub mod collision;
 pub fn process_physics() -> Workload {
     (
         collision_response::move_with_collision,
+        move_non_colliding_entities,
         apply_gravity,
     ).into_sequential_workload()
+}
+
+fn move_non_colliding_entities(
+    mut vm_transform: ViewMut<Transform>,
+    vm_entity: View<Entity>,
+    v_velocity: View<Velocity>,
+    v_hitbox: View<Hitbox>,
+    
+    delta_time: UniqueView<LastDeltaTime>,
+) {
+    for (transform, velocity, _, _) in (&mut vm_transform, &v_velocity, &vm_entity, !&v_hitbox).iter() {
+        transform.position += velocity.0 * delta_time.0.as_secs_f32();
+    }
 }
 
 fn apply_gravity(

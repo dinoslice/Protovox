@@ -1,6 +1,7 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::block::Block;
-use crate::components::{Entity, HeldBlock, LocalPlayer, Transform};
+use crate::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
+use crate::gamemode::Gamemode;
 use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -15,15 +16,17 @@ pub fn render_egui(
     v_local_player: View<LocalPlayer>,
     v_entity: View<Entity>,
     v_transform: View<Transform>,
+    v_velocity: View<Velocity>,
     v_held_block: View<HeldBlock>,
+    (v_gamemode, v_spectator_speed): (View<Gamemode>, View<SpectatorSpeed>),
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
-    let pos_fmt = |v: &glm::Vec3| format!("Position: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
+    let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
     
-    let (_, local_transform, held_block) = (&v_local_player, &v_transform, &v_held_block)
+    let (_, local_transform, velocity, held_block, gamemode, spec_speed) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed)
         .iter()
         .next()
         .expect("LocalPlayer didn't have transform & held block");
@@ -37,13 +40,14 @@ pub fn render_egui(
             .default_open(true)
             .show(ctx, |ui| {
                 ui.heading("LocalPlayer");
-                ui.label(pos_fmt(&local_transform.position));
+                ui.label(vec3_fmt("Position", &local_transform.position));
+                ui.label(vec3_fmt("Velocity", &velocity.0));
                 
                 if other_pos.peek().is_some() {
                     ui.heading("Entities");
                     
                     for pos in other_pos {
-                        ui.label(pos_fmt(pos));
+                        ui.label(vec3_fmt("Position", pos));
                     }
                 }
             });
@@ -71,13 +75,20 @@ pub fn render_egui(
                             .expect("style to exist")
                             .size = 17.5;
 
-                        let hotbar_text = match held_block.0 {
-                            Block::Air => "None".into(),
-                            b => format!("{b:?}"),
-                        };
+                        
 
-                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                            ui.label(hotbar_text);
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
+                            Gamemode::Survival => {
+                                let hotbar_text = match held_block.0 {
+                                    Block::Air => "None".into(),
+                                    b => format!("{b:?}"),
+                                };
+                                
+                                ui.label(hotbar_text);
+                            }
+                            Gamemode::Spectator => {
+                                ui.label(format!("Speed: {:.2}", spec_speed.curr_speed));
+                            }
                         });
                     });
             });
