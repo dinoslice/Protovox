@@ -61,6 +61,36 @@ impl Default for PlayerSpeed {
     }
 }
 
+#[derive(Clone, Component, Debug)]
+pub struct SpectatorSpeed {
+    pub curr_speed: f32,
+    pub maximum_speed: f32,
+
+    pub accel_time: f32,
+    pub friction_time: f32,
+}
+
+impl Default for SpectatorSpeed {
+    fn default() -> Self {
+        Self { // TODO: replace with better values
+            curr_speed: 4.32,
+            maximum_speed: 96.0,
+            accel_time: 0.2,
+            friction_time: 0.18,
+        }
+    }
+}
+
+impl SpectatorSpeed {
+    pub fn accel(&self) -> f32 {
+        self.curr_speed / self.accel_time
+    }
+    
+    pub fn friction(&self) -> f32 {
+        self.curr_speed / self.friction_time
+    }
+}
+
 #[derive(Clone, Component, Debug, Default)]
 pub struct Hitbox(pub Vec3);
 
