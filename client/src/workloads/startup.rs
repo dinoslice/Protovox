@@ -64,7 +64,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
                 1000.0
             ),
         },
-        Hitbox(Vec3::new(0.6, 2.0, 0.6))
+        Hitbox::default_player(),
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components

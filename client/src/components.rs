@@ -94,6 +94,12 @@ impl SpectatorSpeed {
 #[derive(Clone, Component, Debug, Default)]
 pub struct Hitbox(pub Vec3);
 
+impl Hitbox {
+    pub fn default_player() -> Self {
+        Self(Vec3::new(0.6, 2.0, 0.6))
+    }
+}
+
 #[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
 pub struct IsOnGround(pub bool);
 
