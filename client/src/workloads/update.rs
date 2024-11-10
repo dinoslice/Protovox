@@ -10,13 +10,13 @@ use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, 
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
-use crate::gamemode::Gamemode;
+use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
-use crate::physics::movement::{apply_camera_input, process_movement};
+use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
@@ -37,8 +37,8 @@ pub fn update() -> Workload {
         client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
         spawn_multiplayer_player,
-        raycast,
-        place_break_blocks,
+        raycast.skip_if(local_player_is_gamemode_spectator),
+        place_break_blocks.skip_if(local_player_is_gamemode_spectator),
         gizmos::update,
     ).into_sequential_workload()
 }
@@ -48,14 +48,15 @@ pub fn process_input() -> Workload {
         apply_camera_input,
         process_movement,
         toggle_gamemode,
-        // adjust_fly_speed,
-        scroll_hotbar,
+        adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
+        scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
     ).into_workload()
 }
 
 fn toggle_gamemode(
     input: UniqueView<InputManager>,
     v_local_player: View<LocalPlayer>,
+    mut vm_looking_at_block: ViewMut<LookingAtBlock>,
     mut vm_gamemode: ViewMut<Gamemode>,
     mut vm_velocity: ViewMut<Velocity>,
     mut vm_hitbox: ViewMut<Hitbox>,
@@ -66,7 +67,7 @@ fn toggle_gamemode(
         return;
     }
     
-    let (id, (_, gamemode, velocity)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity).iter().with_id()
+    let (id, (_, gamemode, velocity, look_at)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block).iter().with_id()
         .next()
         .expect("local player should have gamemode and velocity");
     
@@ -74,6 +75,7 @@ fn toggle_gamemode(
         Gamemode::Survival => {
             *gamemode = Gamemode::Spectator;
             *velocity = Velocity::default();
+            look_at.0 = None;
             
             vm_gravity_affected.remove(id);
             vm_hitbox.remove(id);
