@@ -74,7 +74,7 @@ impl Default for SpectatorSpeed {
     fn default() -> Self {
         Self { // TODO: replace with better values
             curr_speed: 4.32,
-            maximum_speed: 96.0,
+            maximum_speed: 256.0,
             accel_time: 0.2,
             friction_time: 0.18,
         }
