@@ -54,7 +54,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
             .. Default::default()
         },
         Velocity::default(),
-        PlayerSpeed::default_survival(),
+        PlayerSpeed::default(),
         Camera {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(

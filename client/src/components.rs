@@ -25,7 +25,7 @@ pub struct Transform {
 #[derive(Clone, Component, Debug, Default)]
 pub struct Velocity(pub Vec3);
 
-#[derive(Clone, Component, Debug, Default)]
+#[derive(Clone, Component, Debug)]
 pub struct PlayerSpeed {
     pub max_vel: f32,
     pub jump_vel: f32,
@@ -34,16 +34,6 @@ pub struct PlayerSpeed {
 }
 
 impl PlayerSpeed {
-    pub fn default_survival() -> Self {
-        Self::from_observed(
-            4.32,
-            1.25,
-            9.8,
-            0.2,
-            0.18
-        )
-    }
-    
     pub fn from_observed(max_vel: f32, jump_height: f32, gravity: f32, accel_time: f32, friction_time: f32) -> Self {
         assert!(max_vel >= 0.0, "max_vel must be non negative");
         assert!(gravity >= 0.0, "gravity must be non negative");
@@ -56,6 +46,18 @@ impl PlayerSpeed {
         let friction = max_vel / friction_time;
 
         Self { max_vel, jump_vel, accel, friction }
+    }
+}
+
+impl Default for PlayerSpeed {
+    fn default() -> Self {
+        Self::from_observed(
+            4.32,
+            1.25,
+            9.8,
+            0.2,
+            0.18
+        )
     }
 }
 
