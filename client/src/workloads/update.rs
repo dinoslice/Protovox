@@ -1,6 +1,6 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove};
 use strum::EnumCount;
 use game::block::Block;
 use game::location::BlockLocation;
@@ -10,6 +10,7 @@ use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, 
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
+use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
@@ -46,9 +47,44 @@ pub fn process_input() -> Workload {
     (
         apply_camera_input,
         process_movement,
+        toggle_gamemode,
         // adjust_fly_speed,
         scroll_hotbar,
     ).into_workload()
+}
+
+fn toggle_gamemode(
+    input: UniqueView<InputManager>,
+    v_local_player: View<LocalPlayer>,
+    mut vm_gamemode: ViewMut<Gamemode>,
+    mut vm_velocity: ViewMut<Velocity>,
+    mut vm_hitbox: ViewMut<Hitbox>,
+    mut vm_gravity_affected: ViewMut<GravityAffected>,
+    entities: EntitiesView,
+) {
+    if !input.just_pressed().get_action(Action::ToggleGamemode) {
+        return;
+    }
+    
+    let (id, (_, gamemode, velocity)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity).iter().with_id()
+        .next()
+        .expect("local player should have gamemode and velocity");
+    
+    match gamemode {
+        Gamemode::Survival => {
+            *gamemode = Gamemode::Spectator;
+            *velocity = Velocity::default();
+            
+            vm_gravity_affected.remove(id);
+            vm_hitbox.remove(id);
+        },
+        Gamemode::Spectator => {
+            *gamemode = Gamemode::Survival;
+            
+            entities.add_component(id, &mut vm_hitbox, Hitbox::default_player());
+            entities.add_component(id, &mut vm_gravity_affected, GravityAffected);
+        },
+    };
 }
 
 fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {

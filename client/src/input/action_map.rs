@@ -18,6 +18,7 @@ pub enum Action {
     Sneak,
     PlaceBlock,
     BreakBlock,
+    ToggleGamemode,
 }
 
 impl Action {
@@ -81,6 +82,7 @@ impl TryFrom<&KeyCode> for Action {
             KC::KeyD => Ok(Self::MoveRight),
             KC::Space => Ok(Self::Jump),
             KC::ShiftLeft => Ok(Self::Sneak),
+            KC::F4 => Ok(Self::ToggleGamemode),
             _ => Err(UnmappedAction),
         }
     }
