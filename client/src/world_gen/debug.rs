@@ -14,6 +14,27 @@ fn denorm_v(x: &Vec2) -> Vec2 {
 #[derive(Debug, Unique, Default)]
 pub struct SplineEditor {
     points: Vec<Vec2>,
+    editing: Option<PointEditing>
+}
+
+#[derive(Debug)]
+struct PointEditing {
+    pub to_replace: Vec2,
+    pub editing: Vec2,
+}
+
+impl PointEditing {
+    pub fn new(point: Vec2) -> Self {
+        let editing = Vec2 {
+            y: -point.y,
+            .. point
+        };
+        
+        Self {
+            to_replace: point,
+            editing,
+        }
+    }
 }
 
 impl SplineEditor {
@@ -109,7 +130,7 @@ impl SplineEditor {
                     if response.hovered() {
                         ui.ctx().set_cursor_icon(CursorIcon::Grab);
                     }
-                    if response.dragged() {
+                    if response.dragged() && self.editing.is_none() {
                         ui.ctx().set_cursor_icon(CursorIcon::Grabbing);
                         if let Some(pos) = response.interact_pointer_pos() {
                             let pos = (pos.to_vec2() - grid_rect.min.to_vec2()) / grid_size;
@@ -119,6 +140,11 @@ impl SplineEditor {
                     }
 
                     ui.painter().circle_filled(screen_pos, 5.0, Color32::LIGHT_BLUE);
+
+                    // If clicked on a point, select it for editing
+                    if ui.input(|i| i.key_pressed(Key::E)) && response.hovered() {
+                        self.editing = Some(PointEditing::new(*point));
+                    }
 
                     !(ui.input(|i| i.key_pressed(Key::Delete)) && response.hovered())
                 });
@@ -155,6 +181,50 @@ impl SplineEditor {
                 }
             }
         });
+        
+        let SplineEditor { points, editing: opt_editing } = self;
+
+        // Show the popup for editing the selected point
+        if let Some(PointEditing { to_replace, editing }) = opt_editing {
+            let mut close_window = false;
+            
+            Window::new("Edit Point")
+                .resizable(false)
+                .show(ui.ctx(), |ui| {
+                    ui.label("Edit the point's coordinates");
+
+                    ui.horizontal(|ui| {
+                        ui.label("X:");
+                        ui.add(egui::DragValue::new(&mut editing.x).range(-1.0..=1.0));
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Y:");
+                        ui.add(egui::DragValue::new(&mut editing.y).range(-1.0..=1.0));
+                    });
+
+                    if ui.button("Save").clicked() {
+                        let Some(p) = points.iter_mut().find(|p| **p == *to_replace) else {
+                            unreachable!("oops")
+                        };
+                        
+                        *p = Vec2 {
+                            y: -editing.y,
+                            .. *editing
+                        };
+
+                        close_window = true;
+                    }
+
+                    if ui.button("Cancel").clicked() {
+                        close_window = true;
+                    }
+                });
+            
+            if close_window {
+                *opt_editing = None;
+            }
+        }
 
         ui.allocate_rect(ui.max_rect(), Sense::hover())
     }
