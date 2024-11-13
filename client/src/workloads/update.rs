@@ -74,7 +74,6 @@ fn toggle_gamemode(
     match gamemode {
         Gamemode::Survival => {
             *gamemode = Gamemode::Spectator;
-            *velocity = Velocity::default();
             look_at.0 = None;
             
             vm_gravity_affected.remove(id);
@@ -87,6 +86,8 @@ fn toggle_gamemode(
             entities.add_component(id, &mut vm_gravity_affected, GravityAffected);
         },
     };
+
+    *velocity = Velocity::default();
 }
 
 fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
