@@ -6,7 +6,7 @@ use game::block::Block;
 use game::location::BlockLocation;
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
-use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
@@ -58,6 +58,7 @@ fn toggle_gamemode(
     v_local_player: View<LocalPlayer>,
     mut vm_looking_at_block: ViewMut<LookingAtBlock>,
     mut vm_gamemode: ViewMut<Gamemode>,
+    mut vm_spec_speed: ViewMut<SpectatorSpeed>,
     mut vm_velocity: ViewMut<Velocity>,
     mut vm_hitbox: ViewMut<Hitbox>,
     mut vm_gravity_affected: ViewMut<GravityAffected>,
@@ -67,13 +68,14 @@ fn toggle_gamemode(
         return;
     }
     
-    let (id, (_, gamemode, velocity, look_at)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block).iter().with_id()
+    let (id, (_, gamemode, velocity, look_at, spec_speed)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block, &mut vm_spec_speed).iter().with_id()
         .next()
         .expect("local player should have gamemode and velocity");
     
     match gamemode {
         Gamemode::Survival => {
             *gamemode = Gamemode::Spectator;
+            spec_speed.curr_speed = SpectatorSpeed::default().curr_speed;
             look_at.0 = None;
             
             vm_gravity_affected.remove(id);
