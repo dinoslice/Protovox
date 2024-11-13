@@ -96,7 +96,7 @@ pub fn adjust_spectator_fly_speed(input: UniqueView<InputManager>, v_local_playe
         .next()
         .expect("TODO: local player didn't have player speed to modify");
 
-    const SCROLL_SCALE: f32 = 0.32;
+    const SCROLL_SCALE: f32 = 0.25;
     const SCROLL_THRESHOLD: f32 = 0.2;
 
     spectator_speed.curr_speed = match input.mouse_manager.scroll.partial_cmp(&0.0).unwrap_or(Ordering::Equal) {
