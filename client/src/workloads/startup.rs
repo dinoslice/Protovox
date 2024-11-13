@@ -20,6 +20,7 @@ use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::world_gen::debug::SplineEditor;
 use crate::world_gen::WorldGenerator;
 
 pub fn startup() -> Workload {
@@ -94,6 +95,7 @@ pub fn initialize_application_systems(storages: AllStoragesView) {
     storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
+    storages.add_unique(SplineEditor::default());
 }
 
 fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {

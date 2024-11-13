@@ -1,3 +1,4 @@
+use egui::Vec2;
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::location::WorldLocation;
 use crate::components::{Entity, LocalPlayer, Transform};
@@ -5,6 +6,7 @@ use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::RenderContext;
+use crate::world_gen::debug::SplineEditor;
 use crate::world_gen::WorldGenerator;
 
 pub fn render_egui(
@@ -18,8 +20,10 @@ pub fn render_egui(
     v_transform: View<Transform>,
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
-    
-    world_gen: Option<UniqueView<WorldGenerator>>
+
+    world_gen: Option<UniqueView<WorldGenerator>>,
+
+    mut spline: UniqueViewMut<SplineEditor>
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
@@ -51,6 +55,10 @@ pub fn render_egui(
                     }
                 }
             });
+        
+        egui::Window::new("Spline Editor")
+            .resizable(true)
+            .show(ctx, |ui| spline.ui(ui));
 
         if let Some(server_handler) = opt_server_handler {
             egui::Window::new("ServerHandler")
