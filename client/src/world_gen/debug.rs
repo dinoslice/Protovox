@@ -1,6 +1,4 @@
-use egui::{
-    pos2, vec2, Color32, CursorIcon, FontId, Key, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Window,
-};
+use egui::{lerp, pos2, vec2, Color32, CursorIcon, FontId, Key, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Window};
 use shipyard::Unique;
 
 fn norm_v(x: &Vec2) -> Vec2 {
@@ -106,16 +104,31 @@ impl SplineEditor {
                 if self.points.len() > 1 {
                     let mut sorted = self.points.clone();
                     sorted.sort_by(|a, b| a.x.partial_cmp(&b.x).expect("not nan"));
-                    
+
+                    let mut eased_points = Vec::new();
+
                     for w in sorted.windows(2) {
-                        let start = grid_rect.min + grid_size * denorm_v(&w[0]);
-                        let end = grid_rect.min + grid_size * denorm_v(&w[1]);
-                        
-                        ui.painter().line_segment(
-                            [start, end],
-                            Stroke::new(2.0, Color32::from_rgb(255, 165, 0))
-                        );
+                        let start = denorm_v(&w[0]);
+                        let end = denorm_v(&w[1]);
+
+                        let res = 20;
+
+                        for i in 0..res {
+                            let t = i as f32 / (res - 1) as f32;
+
+                            let interpolated_point = Vec2 {
+                                x: lerp(start.x..=end.x, t),
+                                y: lerp(start.y..=end.y, easing_sine(t)),
+                            };
+
+                            eased_points.push(grid_rect.min + grid_size * interpolated_point);
+                        }
                     }
+
+                    let line = sorted.iter().map(|v| grid_rect.min + grid_size * denorm_v(v)).collect();
+                    ui.painter().add(Shape::line(line, Stroke::new(1.0, Color32::GOLD)));
+
+                    ui.painter().add(Shape::line(eased_points, Stroke::new(2.0, Color32::GREEN)));
                 }
 
                 // Handle dragging and adding points
@@ -228,4 +241,15 @@ impl SplineEditor {
 
         ui.allocate_rect(ui.max_rect(), Sense::hover())
     }
+}
+
+fn easing_sine(t: f32) -> f32 {
+    use std::f32::consts::PI;
+
+    -(t * PI).cos() * 0.5 + 0.5
+}
+
+fn easing_parametric(t: f32) -> f32 {
+    let sqr = t * t;
+    sqr / (2.0 * (sqr - t) + 1.0)
 }
