@@ -5,14 +5,10 @@ use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModifica
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;
-use crate::application::CaptureState;
-use crate::application::delta_time::LastDeltaTime;
 use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
-use crate::input::InputManager;
-use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
@@ -29,7 +25,6 @@ pub fn startup() -> Workload {
         rendering::initialize,
         initialize_local_player,
         initialize_gameplay_systems.after_all(initialize_local_player),
-        initialize_application_systems,
         initialize_networking.after_all(args::parse_env),
         init_keep_alive,//.run_if(is_hosted),
         set_window_title,
@@ -89,12 +84,6 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     ));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(LastWorldInteraction(Instant::now()));
-}
-
-pub fn initialize_application_systems(storages: AllStoragesView) {
-    storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
-    storages.add_unique(CaptureState::default());
-    storages.add_unique(LastDeltaTime::default());
     storages.add_unique(SplineEditor::default());
 }
 

@@ -22,7 +22,6 @@ use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
     (
-        update_input_manager,
         process_input,
         process_physics,
         reset_mouse_manager_state,
@@ -67,10 +66,6 @@ fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_blo
             tracing::error!("Location from block update wasn't loaded");
         }
     }
-}
-
-fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
-    input.process();
 }
 
 fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
