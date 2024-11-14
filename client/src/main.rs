@@ -49,5 +49,5 @@ fn init_tracing() -> io::Result<()> {
 fn main() {
     init_tracing().expect("tracing initialized");
 
-    application::run();
+    application::run_game();
 }

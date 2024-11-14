@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::time::Instant;
-use shipyard::{UniqueView, World};
+use shipyard::{AsLabel, IntoWorkload, UniqueView, Workload, WorkloadModificator, World};
 use tracing::error;
 use wgpu::SurfaceError;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
@@ -9,7 +9,6 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering;
-use crate::workloads::{shutdown, startup, update};
 use crate::application::exit::{request_exit, ExitRequested};
 
 mod capture_state;
@@ -20,7 +19,37 @@ pub mod exit;
 
 pub use capture_state::CaptureState;
 
-pub fn run() {
+pub fn run_game() {
+    use crate::workloads::*;
+
+    run(startup, update, rendering::render, shutdown);
+}
+
+pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> Workload, shutdown: fn() -> Workload) {
+    // initialize world and workloads
+    let world = World::new();
+
+    startup
+        .rename("startup")
+        .add_to_world(&world)
+        .expect("failed to add startup workload");
+
+    update
+        .rename("update")
+        .add_to_world(&world)
+        .expect("failed to add update workload");
+
+    render
+        .rename("render")
+        .add_to_world(&world)
+        .expect("failed to add render workload");
+
+    shutdown
+        .rename("shutdown")
+        .add_to_world(&world)
+        .expect("failed to add shutdown workload");
+
+    // create window and event loop
     let event_loop = EventLoopBuilder::new().build()
         .expect("event loop built successfully");
 
@@ -30,16 +59,9 @@ pub fn run() {
         .expect("window built successfully");
 
     let window = Arc::new(window);
-
-    let world = World::new();
-
-    world.add_workload(startup);
-    world.add_workload(update);
-    world.add_workload(rendering::render);
-    world.add_workload(shutdown);
-
     world.add_unique(GraphicsContext::new(window));
-    world.run_workload(startup)
+
+    world.run_workload("startup")
         .expect("TODO: panic message");
 
     let mut last_render_time = Instant::now();
@@ -62,10 +84,10 @@ pub fn run() {
                         world.run_with_data(delta_time::update_delta_time, last_render_time);
                         last_render_time = Instant::now();
 
-                        world.run_workload(update)
-                            .expect("TODO: panic message");
+                        world.run_workload("update")
+                            .expect("TODO: failed to run update workload");
 
-                        if let Err(err) = world.run_workload(rendering::render) {
+                        if let Err(err) = world.run_workload("render") {
                             match err
                                 .custom_error()
                                 .expect("TODO: workload error")
@@ -80,8 +102,8 @@ pub fn run() {
 
                         if world.get_unique::<&ExitRequested>().is_ok() {
                             // TODO: for now, immediately exit upon receiving ExitRequested
-                            world.run_workload(shutdown)
-                                .expect("TODO: panic message");
+                            world.run_workload("shutdown")
+                                .expect("TODO: failed to run shutdown workload");
                             control_flow.exit();
                         }
                     }
