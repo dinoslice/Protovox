@@ -10,12 +10,14 @@ use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering;
 use crate::application::exit::{request_exit, ExitRequested};
+use crate::application::core_workloads::{startup_core, update_core};
 
 mod capture_state;
 mod input;
 mod resize;
 pub mod delta_time;
 pub mod exit;
+mod core_workloads;
 
 pub use capture_state::CaptureState;
 
@@ -49,6 +51,9 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
         .add_to_world(&world)
         .expect("failed to add shutdown workload");
 
+    world.add_workload(startup_core);
+    world.add_workload(update_core);
+
     // create window and event loop
     let event_loop = EventLoopBuilder::new().build()
         .expect("event loop built successfully");
@@ -60,6 +65,9 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
 
     let window = Arc::new(window);
     world.add_unique(GraphicsContext::new(window));
+
+    world.run_workload(startup_core)
+        .expect("TODO: panic message");
 
     world.run_workload("startup")
         .expect("TODO: panic message");
@@ -83,6 +91,9 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
                         world.run_with_data(delta_time::update_delta_time, last_render_time);
                         last_render_time = Instant::now();
+
+                        world.run_workload(update_core)
+                            .expect("TODO: panic message");
 
                         world.run_workload("update")
                             .expect("TODO: failed to run update workload");
