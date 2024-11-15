@@ -1,10 +1,20 @@
 use shipyard::{IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use crate::application::delta_time::LastDeltaTime;
 use crate::components::{Entity, GravityAffected, IsOnGround, Transform, Velocity};
+use movement::{adjust_fly_speed, apply_camera_input, process_movement};
 
 pub mod movement;
 mod collision_response;
 pub mod collision;
+
+pub fn process_input() -> Workload {
+    (
+        apply_camera_input,
+        process_movement,
+        adjust_fly_speed,
+    ).into_workload()
+}
+
 
 pub fn process_physics() -> Workload {
     (

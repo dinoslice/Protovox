@@ -15,7 +15,7 @@ use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
-use crate::physics::{collision, process_physics};
+use crate::physics::{collision, process_input, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::world_gen::WorldGenerator;
@@ -38,14 +38,6 @@ pub fn update() -> Workload {
         place_break_blocks,
         gizmos::update,
     ).into_sequential_workload()
-}
-
-pub fn process_input() -> Workload {
-    (
-        apply_camera_input,
-        process_movement,
-        adjust_fly_speed,
-    ).into_workload()
 }
 
 fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
