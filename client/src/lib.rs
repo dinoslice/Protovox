@@ -8,7 +8,7 @@ mod input;
 mod camera;
 mod workloads;
 mod events;
-mod world_gen;
+pub mod world_gen;
 
 pub mod chunks;
 pub mod networking;
@@ -19,3 +19,4 @@ pub mod components;
 pub mod physics;
 pub mod looking_at_block;
 pub mod last_world_interaction;
+mod world_gen_debugger;

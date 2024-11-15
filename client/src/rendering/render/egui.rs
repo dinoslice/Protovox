@@ -1,4 +1,3 @@
-use egui::Vec2;
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::location::WorldLocation;
 use crate::components::{Entity, LocalPlayer, Transform};
@@ -6,8 +5,8 @@ use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::RenderContext;
-use crate::world_gen::debug::SplineEditor;
 use crate::world_gen::WorldGenerator;
+use crate::world_gen_debugger::spline_editor::SplineEditor;
 
 pub fn render_egui(
     mut ctx: UniqueViewMut<RenderContext>,

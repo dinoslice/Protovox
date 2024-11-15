@@ -1,7 +1,6 @@
 mod spline;
 pub mod biomes;
 pub mod fractal_noise;
-pub mod debug;
 
 use std::sync::Arc;
 

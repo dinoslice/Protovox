@@ -16,8 +16,8 @@ use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::world_gen::debug::SplineEditor;
 use crate::world_gen::WorldGenerator;
+use crate::world_gen_debugger::spline_editor::SplineEditor;
 
 pub fn startup() -> Workload {
     (
