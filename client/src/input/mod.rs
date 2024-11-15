@@ -1,4 +1,4 @@
-use shipyard::Unique;
+use shipyard::{Unique, UniqueViewMut};
 use crate::input::action_map::{Action, ActionMap};
 use crate::input::mouse_manager::MouseManager;
 
@@ -61,4 +61,8 @@ impl InputManager {
         self.queue.clear();
         self.mouse_manager.reset_scroll_rotate();
     }
+}
+
+pub fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
+    input_manager.mouse_manager.reset_scroll_rotate();
 }

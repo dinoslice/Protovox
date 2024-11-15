@@ -10,7 +10,7 @@ use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
 use crate::input::action_map::Action;
-use crate::input::InputManager;
+use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
@@ -196,10 +196,6 @@ fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: Uni
     for req in reqs.drain() {
         world_generator.spawn_generate_task(req.0);
     }
-}
-
-fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
-    input_manager.mouse_manager.reset_scroll_rotate();
 }
 
 fn debug_draw_hitbox_gizmos(
