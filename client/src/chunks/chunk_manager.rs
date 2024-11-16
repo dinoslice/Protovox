@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use std::time::Duration;
 use glm::IVec3;
 use hashbrown::HashMap;
@@ -71,11 +72,6 @@ impl ChunkManager {
     }
 
     pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
-        // TODO: skip if no chunks changed
-        if let Some(render_distance) = new_render_distance {
-            self.render_distance = render_distance;
-        }
-
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
@@ -83,24 +79,32 @@ impl ChunkManager {
             *t > 0.0
         });
 
-        self.center = new_center;
+        // TODO: skip moving stuff if render distance & center hasn't changed
 
-        let mut new_loaded = Vec::new();
-        new_loaded.resize_with(self.chunk_capacity(), || None);
+        if self.center != new_center || new_render_distance.as_ref().map_or(false, |r| *r != self.render_distance) {
+            if let Some(render_distance) = new_render_distance {
+                self.render_distance = render_distance;
+            }
 
-        // TODO: we know old center and new center, so calculate new vec positions
-        for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
-            match self.get_index_checked(&chunk.data.location) {
-                Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
-                None => {
-                    let loc = &chunk.data.location;
-                    tracing::trace!("Deleting chunk buffer at {loc:?}");
-                    self.bakery.remove(loc);
+            self.center = new_center;
+
+            let mut new_loaded = Vec::new();
+            new_loaded.resize_with(self.chunk_capacity(), || None);
+
+            // TODO: we know old center and new center, so calculate new vec positions
+            for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
+                match self.get_index_checked(&chunk.data.location) {
+                    Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
+                    None => {
+                        let loc = &chunk.data.location;
+                        tracing::trace!("Deleting chunk buffer at {loc:?}");
+                        self.bakery.remove(loc);
+                    }
                 }
             }
-        }
 
-        self.loaded_chunks = new_loaded;
+            self.loaded_chunks = new_loaded;
+        }
 
         for chunk in received_chunks {
             let data = chunk.0;
