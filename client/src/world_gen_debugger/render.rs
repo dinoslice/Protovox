@@ -1,3 +1,5 @@
+use egui::Ui;
+use glm::TVec3;
 use shipyard::{IntoIter, IntoWorkload, IntoWorkloadTrySystem, UniqueView, UniqueViewMut, View, Workload};
 use game::location::WorldLocation;
 use crate::components::{LocalPlayer, Transform};
@@ -5,6 +7,7 @@ use crate::rendering::{camera_uniform_buffer, EguiRenderer};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::{create_new_render_context, gizmos, submit_rendered_frame, world, RenderContext};
 use crate::world_gen::WorldGenerator;
+use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
 
 pub fn render() -> Workload {
@@ -35,7 +38,9 @@ pub fn render_egui(
 
     world_gen: UniqueView<WorldGenerator>,
 
-    mut spline: UniqueViewMut<SplineEditor>
+    mut spline: UniqueViewMut<SplineEditor>,
+
+    mut vis_params: UniqueViewMut<WorldGenVisualizerParams>,
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
@@ -64,6 +69,11 @@ pub fn render_egui(
             .default_open(true)
             .show(ctx, |ui| {
                 ui.label(format!("{:#?}", world_gen.biome_generator.generate_block_data(&WorldLocation(local_pos))));
+            });
+
+        egui::Window::new("Visualization Parameters")
+            .show(ctx, |ui| {
+                ui.add(vis_params.as_mut())
             });
     });
 }
