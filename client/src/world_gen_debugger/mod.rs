@@ -15,10 +15,12 @@ use crate::render_distance::RenderDistance;
 use crate::rendering;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
+use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
 
 pub mod spline_editor;
 pub mod render;
+mod params;
 
 pub fn startup() -> Workload {
     (
@@ -89,12 +91,17 @@ fn initialize_game_systems(storages: AllStoragesView) {
         .expect("TODO: local player with transform should exist")
         .1;
 
-    storages.add_unique(ChunkManager::new(
-        RenderDistance(U16Vec3::new(3,1,3)),
-        ChunkLocation::from(WorldLocation(transform.position))
-    ));
+    let center = ChunkLocation::from(WorldLocation(transform.position));
+
+    storages.add_unique(ChunkManager::new(RenderDistance(U16Vec3::new(3,1,3)), center.clone()));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(SplineEditor::default());
+    storages.add_unique(WorldGenVisualizerParams {
+        generate_center: center,
+        render_distance: RenderDistance(U16Vec3::new(3, 1, 3)),
+        cam_offset: Default::default(),
+        request_reframe: false,
+    });
 }
 
 pub fn chunk_manager_update_and_request(
@@ -103,21 +110,19 @@ pub fn chunk_manager_update_and_request(
 
     delta_time: UniqueView<LastDeltaTime>,
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
-    vm_transform: View<Transform>,
-    vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
+    vis_params: UniqueView<WorldGenVisualizerParams>,
 ) {
-    let (_, transform) = (&vm_local_player, &vm_transform)
-        .iter()
-        .next()
-        .expect("TODO: local player with transform didn't exist");
-
-    let current_chunk = WorldLocation(transform.position).into();
-
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
+    let reqs = chunk_mgr.update_and_resize(
+        vis_params.generate_center.clone(),
+        delta_time.0,
+        recv,
+        Some(vis_params.render_distance.clone()),
+        &g_ctx
+    );
 
     if !reqs.is_empty() {
         tracing::debug!("bulk requesting: {}", reqs.len());
