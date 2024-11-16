@@ -79,9 +79,15 @@ impl TryFrom<TVec3<u8>> for ChunkPos {
     }
 }
 
+impl From<&ChunkPos> for TVec3<u8> {
+    fn from(chunk_pos: &ChunkPos) -> Self {
+        Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+    }
+}
+
 impl From<ChunkPos> for TVec3<u8> {
     fn from(chunk_pos: ChunkPos) -> Self {
-        Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+        (&chunk_pos).into()
     }
 }
 
