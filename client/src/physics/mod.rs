@@ -1,6 +1,6 @@
 use shipyard::{IntoIter, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use crate::application::delta_time::LastDeltaTime;
-use crate::components::{Entity, GravityAffected, IsOnGround, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, Transform, Velocity};
 use movement::{adjust_fly_speed, apply_camera_input, process_movement};
 
 pub mod movement;
@@ -19,8 +19,22 @@ pub fn process_input() -> Workload {
 pub fn process_physics() -> Workload {
     (
         collision_response::move_with_collision,
+        move_non_colliding,
         apply_gravity,
     ).into_sequential_workload()
+}
+
+fn move_non_colliding(
+    v_hitbox: View<Hitbox>,
+    mut vm_transform: ViewMut<Transform>,
+    v_entity: View<Entity>,
+    v_velocity: View<Velocity>,
+
+    delta_time: UniqueView<LastDeltaTime>,
+) {
+    for (transform, velocity, ..) in (&mut vm_transform, &v_velocity, &v_entity, !&v_hitbox).iter() {
+        transform.position += velocity.0 * delta_time.0.as_secs_f32();
+    }
 }
 
 fn apply_gravity(
