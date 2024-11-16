@@ -12,6 +12,7 @@ pub struct WorldGenVisualizerParams {
 
     pub cam_offset: WorldLocation,
     pub lock_position: bool,
+    pub auto_target_camera: bool,
 }
 
 impl egui::Widget for &mut WorldGenVisualizerParams {
@@ -36,7 +37,17 @@ impl egui::Widget for &mut WorldGenVisualizerParams {
             vec_edit_horizontal(ui, &mut self.cam_offset.0, 0.1);
 
             // Modify `request_reframe`
-            ui.checkbox(&mut self.lock_position, "Lock Position");
+            ui.horizontal(|ui| {
+                if ui.checkbox(&mut self.lock_position, "Lock Position").changed() {
+                    if !self.lock_position {
+                        self.auto_target_camera = false;
+                    }
+                }
+
+                if self.lock_position {
+                    ui.checkbox(&mut self.auto_target_camera, "Auto Target Camera");
+                }
+            })
         }).response
     }
 }

@@ -104,6 +104,7 @@ fn initialize_game_systems(storages: AllStoragesView) {
         render_distance: RenderDistance(U16Vec3::new(3, 1, 3)),
         cam_offset: Default::default(),
         lock_position: false,
+        auto_target_camera: false,
     });
 }
 
@@ -120,6 +121,15 @@ fn set_locked_position(v_local_player: View<LocalPlayer>, mut vm_transform: View
 
     transform.position = WorldLocation::from(&center).0 + vis_params.cam_offset.0;
     velocity.0 = Vec3::zeros();
+
+    if vis_params.auto_target_camera {
+        let dir = (WorldLocation::from(&vis_params.generate_center).0 - transform.position)
+            .try_normalize(f32::EPSILON)
+            .unwrap_or_default();
+
+        transform.yaw = f32::atan2(dir.x, dir.z);
+        // transform.pitch = f32::asin(-dir.y);
+    }
 }
 
 pub fn chunk_manager_update_and_request(
