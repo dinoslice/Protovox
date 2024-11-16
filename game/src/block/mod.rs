@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use strum::{EnumCount, FromRepr};
 use crate::block::face_type::FaceType;
 
 pub mod face_type;
 
-#[repr(u16)]
-#[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize)]
+#[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
+#[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize, EnumCount, FromRepr)]
 pub enum Block {
     #[default]
     Air = 0,
@@ -43,5 +44,13 @@ impl Block {
             Block::Cobblestone => COBBLE_TEXTURE,
         }
     }
-
+    
+    pub fn placeable(&self) -> bool {
+        match self {
+            Block::Air => false,
+            Block::Grass => true,
+            Block::Dirt => true,
+            Block::Cobblestone => true,
+        }
+    }
 }

@@ -1,6 +1,7 @@
 use glm::Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
+use game::block::Block;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct LocalPlayer;
@@ -24,7 +25,7 @@ pub struct Transform {
 #[derive(Clone, Component, Debug, Default)]
 pub struct Velocity(pub Vec3);
 
-#[derive(Clone, Component, Debug, Default)]
+#[derive(Clone, Component, Debug)]
 pub struct PlayerSpeed {
     pub max_vel: f32,
     pub jump_vel: f32,
@@ -48,8 +49,59 @@ impl PlayerSpeed {
     }
 }
 
+impl Default for PlayerSpeed {
+    fn default() -> Self {
+        Self::from_observed(
+            4.32,
+            1.25,
+            9.8,
+            0.2,
+            0.18
+        )
+    }
+}
+
+#[derive(Clone, Component, Debug)]
+pub struct SpectatorSpeed {
+    pub curr_speed: f32,
+    pub maximum_speed: f32,
+
+    pub accel_time: f32,
+    pub friction_time: f32,
+}
+
+impl Default for SpectatorSpeed {
+    fn default() -> Self {
+        Self {
+            curr_speed: 5.5,
+            maximum_speed: 384.0,
+            accel_time: 0.2,
+            friction_time: 0.1,
+        }
+    }
+}
+
+impl SpectatorSpeed {
+    pub fn accel(&self) -> f32 {
+        self.curr_speed / self.accel_time
+    }
+    
+    pub fn friction(&self) -> f32 {
+        self.curr_speed / self.friction_time
+    }
+}
+
 #[derive(Clone, Component, Debug, Default)]
 pub struct Hitbox(pub Vec3);
 
+impl Hitbox {
+    pub fn default_player() -> Self {
+        Self(Vec3::new(0.6, 2.0, 0.6))
+    }
+}
+
 #[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
 pub struct IsOnGround(pub bool);
+
+#[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
+pub struct HeldBlock(pub Block);

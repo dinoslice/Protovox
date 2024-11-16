@@ -1,6 +1,8 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
+use game::block::Block;
 use game::location::WorldLocation;
-use crate::components::{Entity, LocalPlayer, Transform};
+use crate::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
+use crate::gamemode::Gamemode;
 use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -14,9 +16,10 @@ pub fn render_egui(
     mut egui_renderer: UniqueViewMut<EguiRenderer>,
 
     // for player debug info
-    v_local_player: View<LocalPlayer>,
-    v_entity: View<Entity>,
-    v_transform: View<Transform>,
+    (v_local_player, v_entity): (View<LocalPlayer>, View<Entity>),
+    (v_transform, v_velocity): (View<Transform>, View<Velocity>),
+    v_held_block: View<HeldBlock>,
+    (v_gamemode, v_spectator_speed): (View<Gamemode>, View<SpectatorSpeed>),
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
 
@@ -26,14 +29,12 @@ pub fn render_egui(
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
-    let pos_fmt = |v: &glm::Vec3| format!("Position: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
+    let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
     
-    let local_pos = (&v_local_player, &v_transform)
+    let (_, local_transform, velocity, held_block, gamemode, spec_speed) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed)
         .iter()
         .next()
-        .expect("LocalPlayer didn't have transform")
-        .1
-        .position;
+        .expect("LocalPlayer didn't have transform & held block");
 
     let mut other_pos = (!&v_local_player, &v_entity, &v_transform).iter()
         .map(|e| &e.2.position)
@@ -44,17 +45,18 @@ pub fn render_egui(
             .default_open(true)
             .show(ctx, |ui| {
                 ui.heading("LocalPlayer");
-                ui.label(pos_fmt(&local_pos));
+                ui.label(vec3_fmt("Position", &local_transform.position));
+                ui.label(vec3_fmt("Velocity", &velocity.0));
                 
                 if other_pos.peek().is_some() {
                     ui.heading("Entities");
                     
                     for pos in other_pos {
-                        ui.label(pos_fmt(pos));
+                        ui.label(vec3_fmt("Position", pos));
                     }
                 }
             });
-        
+
         egui::Window::new("Spline Editor")
             .resizable(true)
             .show(ctx, |ui| spline.ui(ui));
@@ -66,13 +68,46 @@ pub fn render_egui(
                     ui.label(format!("Address: {}", server_handler.local_addr));
                 });
         }
-        
+
         if let Some(world_gen) = world_gen {
             egui::Window::new("BlockData")
                 .default_open(true)
                 .show(ctx, |ui| {
-                    ui.label(format!("{:#?}", world_gen.biome_generator.generate_block_data(&WorldLocation(local_pos))));
+                    ui.label(format!("{:#?}", world_gen.biome_generator.generate_block_data(&WorldLocation(local_transform.position))));
                 });
         }
+
+        egui::Area::new("hotbar_box".into())
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, 0.0))
+            .show(ctx, |ui| {
+                egui::Frame::none()
+                    .fill(ui.visuals().window_fill())
+                    .rounding(5.0)
+                    .outer_margin(egui::Margin::same(5.0))
+                    .inner_margin(egui::Margin::same(5.0))
+                    .show(ui, |ui| {
+                        ui.style_mut()
+                            .text_styles
+                            .get_mut(&egui::TextStyle::Body)
+                            .expect("style to exist")
+                            .size = 17.5;
+
+
+
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
+                            Gamemode::Survival => {
+                                let hotbar_text = match held_block.0 {
+                                    Block::Air => "None".into(),
+                                    b => format!("{b:?}"),
+                                };
+
+                                ui.label(hotbar_text);
+                            }
+                            Gamemode::Spectator => {
+                                ui.label(format!("Speed: {:.2}", spec_speed.curr_speed));
+                            }
+                        });
+                    });
+            });
     });
 }

@@ -8,14 +8,17 @@ use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
+use crate::gamemode::Gamemode;
 use crate::input::reset_mouse_manager_state;
 use crate::looking_at_block::LookingAtBlock;
-use crate::physics::{process_input, process_physics};
+use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
+use crate::physics::process_physics;
 use crate::render_distance::RenderDistance;
 use crate::rendering;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::workloads::process_input;
 use crate::world_gen::WorldGenerator;
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
@@ -34,7 +37,12 @@ pub fn startup() -> Workload {
 
 pub fn update() -> Workload {
     (
-        process_input,
+        (
+            apply_camera_input,
+            process_movement,
+            adjust_spectator_fly_speed,
+        ).into_workload(),
+
         process_physics.skip_if(locked_position),
         reset_mouse_manager_state,
         get_generated_chunks,
@@ -57,7 +65,7 @@ fn init_debug_player(mut storages: AllStoragesViewMut) {
         .expect("unable to borrow graphics context")
         .aspect();
 
-    let _id = storages.add_entity((
+    let id = storages.add_entity((
         LocalPlayer,
         Player,
         Entity,
@@ -67,13 +75,8 @@ fn init_debug_player(mut storages: AllStoragesViewMut) {
         },
         IsOnGround::default(),
         Velocity::default(),
-        PlayerSpeed::from_observed(
-            4.32,
-            1.25,
-            9.8,
-            0.2,
-            0.18
-        ),
+        PlayerSpeed::default(),
+        SpectatorSpeed::default(),
         Camera {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(
@@ -85,6 +88,8 @@ fn init_debug_player(mut storages: AllStoragesViewMut) {
         },
         LookingAtBlock(None),
     ));
+
+    storages.add_component(id, Gamemode::Spectator);
 }
 
 fn initialize_game_systems(storages: AllStoragesView) {

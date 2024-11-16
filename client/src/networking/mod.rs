@@ -69,9 +69,7 @@ fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_
         );
         
         if tx.try_send(packet).is_err() {
-            tracing::error!("Failed to send block update to server");
-        } else {
-            tracing::debug!("sent {evt:?} to server");
+            tracing::error!("Failed to send {evt:?} to server");
         }
     }
 }
@@ -95,10 +93,6 @@ fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, v_b
         
         for (bus_id, bus) in (&v_block_update_evt_bus).iter().with_id() {
             if bus_id == id {
-                if !bus.0.is_empty() {
-                    tracing::debug!("skipping sending updates to {addr:?} bc it's theirs");
-                }
-                
                 continue;
             }
             
@@ -164,11 +158,11 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
     });
 }
 
-fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, chunk_mgr: UniqueView<ChunkManager>) {
     if vm_client_settings_req.drain().next().is_some() {
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
-            RenderDistanceUpdateEvent(RenderDistance::default()) // TODO: handle a different way
+            RenderDistanceUpdateEvent(chunk_mgr.render_distance().clone()) // TODO: handle a different way
                 .serialize_packet()
                 .expect("packet serialization failed")
         );

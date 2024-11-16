@@ -2,7 +2,7 @@ use glm::U16Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
 
-#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Eq, PartialEq)]
 pub struct RenderDistance(pub U16Vec3);
 
 impl Default for RenderDistance {

@@ -18,22 +18,7 @@ pub enum Action {
     Sneak,
     PlaceBlock,
     BreakBlock,
-}
-
-impl Action {
-    pub fn mapped_from_key(key: &KeyCode) -> Option<Self> {
-        use KeyCode as KC;
-
-        match key {
-            KC::KeyW => Some(Self::MoveForward),
-            KC::KeyS => Some(Self::MoveBackward),
-            KC::KeyA => Some(Self::MoveLeft),
-            KC::KeyD => Some(Self::MoveRight),
-            KC::Space => Some(Self::Jump),
-            KC::ShiftLeft => Some(Self::Sneak),
-            _ => None,
-        }
-    }
+    ToggleGamemode,
 }
 
 impl ActionMap {
@@ -81,6 +66,7 @@ impl TryFrom<&KeyCode> for Action {
             KC::KeyD => Ok(Self::MoveRight),
             KC::Space => Ok(Self::Jump),
             KC::ShiftLeft => Ok(Self::Sneak),
+            KC::F4 => Ok(Self::ToggleGamemode),
             _ => Err(UnmappedAction),
         }
     }
