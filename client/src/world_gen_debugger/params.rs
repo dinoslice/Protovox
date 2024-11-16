@@ -13,6 +13,8 @@ pub struct WorldGenVisualizerParams {
     pub cam_offset: WorldLocation,
     pub lock_position: bool,
     pub auto_target_camera: bool,
+
+    pub req_guess: bool,
 }
 
 impl egui::Widget for &mut WorldGenVisualizerParams {
@@ -33,7 +35,14 @@ impl egui::Widget for &mut WorldGenVisualizerParams {
                 ui.add(egui::DragValue::new(&mut self.render_distance.0.y));
             });
 
-            ui.label("Camera Offset:");
+            ui.horizontal(|ui| {
+                ui.label("Camera Offset:");
+
+                if ui.button("Guess").clicked() {
+                    self.req_guess = true;
+                }
+            });
+
             vec_edit_horizontal(ui, &mut self.cam_offset.0, 0.1);
 
             // Modify `request_reframe`

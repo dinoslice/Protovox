@@ -40,6 +40,7 @@ pub fn update() -> Workload {
         get_generated_chunks,
         chunk_manager_update_and_request,
         generate_chunks,
+        guess_position,
         set_locked_position.run_if(locked_position)
     ).into_sequential_workload()
 }
@@ -105,7 +106,26 @@ fn initialize_game_systems(storages: AllStoragesView) {
         cam_offset: Default::default(),
         lock_position: false,
         auto_target_camera: false,
+        req_guess: false,
     });
+}
+
+fn guess_position(mut vis_params: UniqueViewMut<WorldGenVisualizerParams>) {
+    if !vis_params.req_guess {
+        return;
+    }
+
+    vis_params.req_guess = false;
+
+    let offset = vis_params.render_distance.0.cast() + Vec3::from_element(1.0);
+
+    let cam_offset = offset.component_mul(&CHUNK_SIZE.cast());
+
+    vis_params.cam_offset.0.x = cam_offset.x;
+    vis_params.cam_offset.0.z = cam_offset.z;
+
+    vis_params.lock_position = true;
+    vis_params.auto_target_camera = true;
 }
 
 fn set_locked_position(v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, vis_params: UniqueView<WorldGenVisualizerParams>) {
