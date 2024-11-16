@@ -11,7 +11,7 @@ pub struct WorldGenVisualizerParams {
     pub render_distance: RenderDistance,
 
     pub cam_offset: WorldLocation,
-    pub request_reframe: bool,
+    pub lock_position: bool,
 }
 
 impl egui::Widget for &mut WorldGenVisualizerParams {
@@ -36,7 +36,7 @@ impl egui::Widget for &mut WorldGenVisualizerParams {
             vec_edit_horizontal(ui, &mut self.cam_offset.0, 0.1);
 
             // Modify `request_reframe`
-            ui.checkbox(&mut self.request_reframe, "Request Reframe");
+            ui.checkbox(&mut self.lock_position, "Lock Position");
         }).response
     }
 }

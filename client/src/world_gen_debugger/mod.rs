@@ -1,8 +1,10 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoIter, IntoWorkload, UniqueView, UniqueViewMut, View, ViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoIter, IntoWorkload, SystemModificator, WorkloadModificator, UniqueView, UniqueViewMut, View, ViewMut, Workload};
+use game::chunk::CHUNK_SIZE;
 use game::chunk::location::ChunkLocation;
-use game::location::WorldLocation;
+use game::chunk::pos::ChunkPos;
+use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -33,11 +35,12 @@ pub fn startup() -> Workload {
 pub fn update() -> Workload {
     (
         process_input,
-        process_physics,
+        process_physics.skip_if(locked_position),
         reset_mouse_manager_state,
         get_generated_chunks,
         chunk_manager_update_and_request,
         generate_chunks,
+        set_locked_position.run_if(locked_position)
     ).into_sequential_workload()
 }
 
@@ -100,8 +103,23 @@ fn initialize_game_systems(storages: AllStoragesView) {
         generate_center: center,
         render_distance: RenderDistance(U16Vec3::new(3, 1, 3)),
         cam_offset: Default::default(),
-        request_reframe: false,
+        lock_position: false,
     });
+}
+
+fn set_locked_position(v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, vis_params: UniqueView<WorldGenVisualizerParams>) {
+    let (transform, velocity, ..) = (&mut vm_transform, &mut vm_velocity, &v_local_player).iter()
+        .next()
+        .expect("local player should have transform");
+
+    let mut target_chunk = vis_params.generate_center.clone();
+
+    target_chunk.0.y += vis_params.render_distance.0.y as i32;
+
+    let center = BlockLocation::from_chunk_parts(&target_chunk, &ChunkPos::center());
+
+    transform.position = WorldLocation::from(&center).0 + vis_params.cam_offset.0;
+    velocity.0 = Vec3::zeros();
 }
 
 pub fn chunk_manager_update_and_request(
@@ -144,4 +162,8 @@ fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: Uni
     for req in reqs.drain() {
         world_generator.spawn_generate_task(req.0);
     }
+}
+
+fn locked_position(vis_params: UniqueView<WorldGenVisualizerParams>) -> bool {
+    vis_params.lock_position
 }
