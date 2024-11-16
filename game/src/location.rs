@@ -21,6 +21,12 @@ impl From<&BlockLocation> for WorldLocation {
     }
 }
 
+impl From<BlockLocation> for WorldLocation {
+    fn from(loc: BlockLocation) -> Self {
+        (&loc).into()
+    }
+}
+
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
 pub struct BlockLocation(pub IVec3);
