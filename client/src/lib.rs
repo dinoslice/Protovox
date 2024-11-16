@@ -19,4 +19,4 @@ pub mod components;
 pub mod physics;
 pub mod looking_at_block;
 pub mod last_world_interaction;
-mod world_gen_debugger;
+pub mod world_gen_debugger;

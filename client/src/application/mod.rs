@@ -27,6 +27,12 @@ pub fn run_game() {
     run(startup, update, rendering::render, shutdown);
 }
 
+pub fn run_world_gen_visualizer() {
+    use crate::world_gen_debugger::*;
+
+    run(startup, update, render::render, shutdown);
+}
+
 pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> Workload, shutdown: fn() -> Workload) {
     // initialize world and workloads
     let world = World::new();
