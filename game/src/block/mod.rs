@@ -12,6 +12,7 @@ pub enum Block {
     Grass,
     Dirt,
     Cobblestone,
+    Debug
 }
 
 #[repr(u8)]
@@ -33,6 +34,10 @@ impl Block {
         const GRASS_TOP_TEXTURE: TextureId = 3;
         const GRASS_SIDE_TEXTURE: TextureId = 4;
 
+        const DEBUG_RED: TextureId = 6;
+        const DEBUG_GREEN: TextureId = 7;
+        const DEBUG_BLUE: TextureId = 8;
+
         match self {
             Block::Air => AIR_TEXTURE,
             Block::Grass => match face_type {
@@ -42,6 +47,11 @@ impl Block {
             }
             Block::Dirt => DIRT_TEXTURE,
             Block::Cobblestone => COBBLE_TEXTURE,
+            Block::Debug => match face_type {
+                FaceType::Left | FaceType::Right => DEBUG_RED,
+                FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
+                FaceType::Front | FaceType::Back => DEBUG_GREEN,
+            }
         }
     }
     
@@ -51,6 +61,7 @@ impl Block {
             Block::Grass => true,
             Block::Dirt => true,
             Block::Cobblestone => true,
+            Block::Debug => true,
         }
     }
 }
