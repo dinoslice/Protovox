@@ -1,5 +1,7 @@
 use egui::{lerp, pos2, vec2, Color32, CursorIcon, FontId, Key, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Window};
 use shipyard::Unique;
+use splines::{Easing, Spline};
+use splines::easings::InOutSine;
 
 fn norm_v(x: &Vec2) -> Vec2 {
     *x * 2.0 - Vec2::splat(1.0)
@@ -11,7 +13,7 @@ fn denorm_v(x: &Vec2) -> Vec2 {
 
 #[derive(Debug, Unique, Default)]
 pub struct SplineEditor {
-    points: Vec<Vec2>,
+    pub points: Vec<Vec2>,
     editing: Option<PointEditing>
 }
 
@@ -118,7 +120,7 @@ impl SplineEditor {
 
                             let interpolated_point = Vec2 {
                                 x: lerp(start.x..=end.x, t),
-                                y: lerp(start.y..=end.y, easing_sine(t)),
+                                y: lerp(start.y..=end.y, InOutSine::ease(t)),
                             };
 
                             eased_points.push(grid_rect.min + grid_size * interpolated_point);
@@ -240,6 +242,11 @@ impl SplineEditor {
         }
 
         ui.allocate_rect(ui.max_rect(), Sense::hover())
+    }
+
+    pub fn make_spline<E: Easing>(&self) -> Spline<E> {
+        let points = self.points.iter().map(|v| glm::Vec2::new(v.x, v.y));
+        Spline::new(points).expect("valid spline")
     }
 }
 
