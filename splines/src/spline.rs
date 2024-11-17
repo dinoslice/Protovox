@@ -11,7 +11,17 @@ pub struct Spline<E: Easing> {
     _easing: PhantomData<E>
 }
 
+impl<E: Easing> Default for Spline<E> {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 impl<E: Easing> Spline<E> {
+    pub fn empty() -> Self {
+        Self::new_unchecked(Vec::default())
+    }
+
     fn new_unchecked(points: Vec<Vec2>) -> Self {
         Self { points, _easing: PhantomData }
     }
