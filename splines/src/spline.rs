@@ -22,19 +22,19 @@ impl<E: Easing> Spline<E> {
         Self::new_unchecked(Vec::default())
     }
 
-    fn new_unchecked(points: Vec<Vec2>) -> Self {
-        Self { points, _easing: PhantomData }
+    fn new_unchecked(points: impl IntoIterator<Item = Vec2>) -> Self {
+        Self { points: points.into_iter().collect(), _easing: PhantomData }
     }
 
     pub fn new(points: impl IntoIterator<Item = Vec2>) -> Option<Self> {
-        let mut points = points.into_iter().collect::<Vec<_>>();
+        let mut spline = Self::new_unchecked(points);
 
-        points.sort_unstable_by(|a, b| a.x.partial_cmp(&b.x).expect("no NAN values allowed"));
+        spline.sort().expect("no NAN values!");
 
-        points // TODO: instead of not allowing duplicate x values, maybe choose the center?
+        spline.points // TODO: instead of not allowing duplicate x values, maybe choose the center?
             .windows(2)
             .all(|w| w[0].x != w[1].x)
-            .then_some(Self::new_unchecked(points))
+            .then_some(spline)
     }
 
     pub fn sample(&self, x: f32) -> f32 {
@@ -69,5 +69,42 @@ impl<E: Easing> Spline<E> {
 
     pub fn with_easing<T: Easing>(self) -> Spline<T> {
         Spline::new_unchecked(self.points)
+    }
+
+    pub fn points(&self) -> &Vec<Vec2> {
+        &self.points
+    }
+
+    pub fn add(&mut self, point: Vec2) {
+        self.mutate(|points| points.push(point));
+    }
+
+    pub fn mutate(&mut self, mut func: impl FnMut(&mut Vec<Vec2>)) {
+        func(&mut self.points);
+        self.sort().expect("no NAN values!");
+    }
+
+    pub fn remove_all(&mut self, predicate: impl FnMut(&Vec2) -> bool) -> Vec<Vec2> {
+        let points = std::mem::take(&mut self.points);
+
+        let (ret, keep) = points.into_iter().partition(predicate);
+
+        self.points = keep;
+
+        ret
+    }
+
+    pub fn remove_first(&mut self, predicate: impl FnMut(&Vec2) -> bool) -> Option<Vec2> {
+        self.points.iter().position(predicate).map(|pos| self.points.remove(pos))
+    }
+
+    fn sort(&mut self) -> Option<()> {
+        if self.points().iter().any(|p| p.x.is_nan()) {
+            return None;
+        }
+
+        self.points.sort_unstable_by(|a, b| a.x.partial_cmp(&b.x).expect("no NAN values allowed"));
+
+        Some(())
     }
 }
