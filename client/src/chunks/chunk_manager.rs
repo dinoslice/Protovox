@@ -31,10 +31,11 @@ pub struct ChunkManager {
     bakery: HashMap<ChunkLocation, SizedBuffer>,
 
     recently_requested_gen: HashMap<ChunkLocation, f32>,
+    max_bakes_per_frame: usize,
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: RenderDistance, center: ChunkLocation) -> Self {
+    pub fn new(render_distance: RenderDistance, center: ChunkLocation, max_bakes_per_frame: usize) -> Self {
         let size = render_distance.0.iter()
             .map(|n| (2 * n + 1) as usize)
             .product();
@@ -50,6 +51,7 @@ impl ChunkManager {
             center,
             recently_requested_gen: HashMap::default(),
             bakery: HashMap::default(),
+            max_bakes_per_frame,
         }
     }
 
@@ -130,6 +132,7 @@ impl ChunkManager {
                     cc.dirty.then_some(cc)
                 )
             )
+            .take(self.max_bakes_per_frame)
         {
             let baked = ChunkMesh::from_chunk(&chunk.data).faces;
 
