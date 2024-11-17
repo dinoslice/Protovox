@@ -8,7 +8,7 @@ authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 
 [workspace]
 resolver = "2"
-members = ["client", "game", "packet", "packet_derive"]
+members = ["client", "game", "packet", "packet_derive", "splines"]
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
