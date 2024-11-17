@@ -2835,6 +2835,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "splines"
+version = "0.1.0"
+dependencies = [
+ "nalgebra-glm",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

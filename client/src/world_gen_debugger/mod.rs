@@ -102,7 +102,7 @@ fn initialize_game_systems(storages: AllStoragesView) {
 
     let center = ChunkLocation::from(WorldLocation(transform.position));
 
-    storages.add_unique(ChunkManager::new(RenderDistance(U16Vec3::new(3,1,3)), center.clone()));
+    storages.add_unique(ChunkManager::new(RenderDistance(U16Vec3::new(3,1,3)), center.clone(), 6));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(SplineEditor::default());
     storages.add_unique(WorldGenVisualizerParams {

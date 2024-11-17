@@ -81,7 +81,8 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 
     storages.add_unique(ChunkManager::new(
         RenderDistance(U16Vec3::new(3,1,3)),
-        ChunkLocation::from(WorldLocation(transform.position))
+        ChunkLocation::from(WorldLocation(transform.position)),
+        6
     ));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(LastWorldInteraction(Instant::now()));
