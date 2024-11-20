@@ -1,14 +1,16 @@
-use egui::Ui;
+use egui::{ComboBox, Ui};
 use glm::TVec3;
-use shipyard::{IntoIter, IntoWorkload, IntoWorkloadTrySystem, UniqueView, UniqueViewMut, View, Workload};
+use shipyard::{IntoIter, IntoWorkload, IntoWorkloadTrySystem, Unique, UniqueView, UniqueViewMut, View, Workload};
 use game::location::WorldLocation;
 use crate::components::{LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::rendering::{camera_uniform_buffer, EguiRenderer};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::{create_new_render_context, gizmos, submit_rendered_frame, world, RenderContext};
-use crate::world_gen::WorldGenerator;
+use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::{SineSpline, WorldGenerator};
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
+use crate::world_gen_debugger::SplineType;
 
 pub fn render() -> Workload {
     (
@@ -27,6 +29,23 @@ pub fn render() -> Workload {
     ).into_sequential_workload()
 }
 
+#[derive(Unique)]
+pub struct EguiState {
+    pub spline_target_combo_box: SplineType,
+    pub req_update: Option<(SplineType, SineSpline)>,
+    pub req_load: Option<SplineType>,
+}
+
+impl Default for EguiState {
+    fn default() -> Self {
+        Self {
+            spline_target_combo_box: SplineType::Continentalness,
+            req_update: None,
+            req_load: None,
+        }
+    }
+}
+
 pub fn render_egui(
     mut ctx: UniqueViewMut<RenderContext>,
     g_ctx: UniqueView<GraphicsContext>,
@@ -40,9 +59,9 @@ pub fn render_egui(
 
     world_gen: UniqueView<WorldGenerator>,
 
-    mut spline: UniqueViewMut<SplineEditor>,
+    (mut spline_editor, mut egui_state): (UniqueViewMut<SplineEditor>, UniqueViewMut<EguiState>),
 
-    mut vis_params: UniqueViewMut<WorldGenVisualizerParams>,
+    (mut vis_params, mut wg_params): (UniqueViewMut<WorldGenVisualizerParams>, UniqueViewMut<WorldGenDebugParams>),
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
@@ -64,7 +83,31 @@ pub fn render_egui(
 
         egui::Window::new("Spline Editor")
             .resizable(true)
-            .show(ctx, |ui| spline.ui(ui));
+            .show(ctx, |ui| {
+                ui.add(spline_editor.as_mut());
+            });
+
+        egui::Window::new("Load/Save Spline")
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ComboBox::from_label("Spline")
+                        .selected_text(format!("{:?}", egui_state.spline_target_combo_box))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut egui_state.spline_target_combo_box, SplineType::Continentalness, format!("{:?}", SplineType::Continentalness));
+                            ui.selectable_value(&mut egui_state.spline_target_combo_box, SplineType::Erosion, format!("{:?}", SplineType::Erosion));
+                            ui.selectable_value(&mut egui_state.spline_target_combo_box, SplineType::PeaksValleys, format!("{:?}", SplineType::PeaksValleys));
+                        });
+
+                    if ui.button("Load").clicked() {
+                        egui_state.req_load = Some(egui_state.spline_target_combo_box);
+                    }
+
+                    if ui.button("Update").clicked() {
+                        egui_state.req_update = Some((egui_state.spline_target_combo_box, spline_editor.make_spline()));
+                    }
+                });
+            });
 
         egui::Window::new("BlockData")
             .default_open(true)
@@ -75,6 +118,11 @@ pub fn render_egui(
         egui::Window::new("Visualization Parameters")
             .show(ctx, |ui| {
                 ui.add(vis_params.as_mut())
+            });
+
+        egui::Window::new("World Gen Params")
+            .show(ctx, |ui| {
+               ui.add(wg_params.as_mut())
             });
 
         egui::Area::new("hotbar_box".into())

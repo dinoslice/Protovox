@@ -1,6 +1,6 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoIter, IntoWorkload, SystemModificator, WorkloadModificator, UniqueView, UniqueViewMut, View, ViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoIter, IntoWorkload, SystemModificator, UniqueView, UniqueViewMut, View, ViewMut, Workload, WorkloadModificator};
 use game::chunk::CHUNK_SIZE;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
@@ -19,8 +19,10 @@ use crate::render_distance::RenderDistance;
 use crate::rendering;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::workloads::process_input;
-use crate::world_gen::WorldGenerator;
+use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::{WorldGenSplines, WorldGenerator};
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
+use crate::world_gen_debugger::render::EguiState;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
 
 pub mod spline_editor;
@@ -49,7 +51,9 @@ pub fn update() -> Workload {
         chunk_manager_update_and_request,
         generate_chunks,
         guess_position,
-        set_locked_position.run_if(locked_position)
+        load_save_spline,
+        drop_all_chunks,
+        set_locked_position.run_if(locked_position),
     ).into_sequential_workload()
 }
 
@@ -57,6 +61,13 @@ pub fn shutdown() -> Workload {
     (
         || (),
     ).into_sequential_workload()
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Copy)]
+pub enum SplineType {
+    Continentalness,
+    Erosion,
+    PeaksValleys,
 }
 
 fn init_debug_player(mut storages: AllStoragesViewMut) {
@@ -112,7 +123,34 @@ fn initialize_game_systems(storages: AllStoragesView) {
         lock_position: false,
         auto_target_camera: false,
         req_guess: false,
+        req_drop_all: false,
     });
+
+    storages.add_unique(WorldGenDebugParams::default());
+    storages.add_unique(WorldGenSplines::default());
+    storages.add_unique(EguiState::default());
+}
+
+fn load_save_spline(mut egui_state: UniqueViewMut<EguiState>, mut splines: UniqueViewMut<WorldGenSplines>, mut editor: UniqueViewMut<SplineEditor>) {
+    if let Some(ty) = egui_state.req_load.take() {
+        let points = match ty {
+            SplineType::Continentalness => &splines.continentalness,
+            SplineType::Erosion => &splines.erosion,
+            SplineType::PeaksValleys => &splines.peaks_valleys,
+        };
+
+        editor.points = points.points().iter().map(|n| egui::Vec2 { x: n.x, y: -n.y }).collect();
+    }
+
+    if let Some((ty, spline)) = egui_state.req_update.take() {
+        let s = match ty {
+            SplineType::Continentalness => &mut splines.continentalness,
+            SplineType::Erosion => &mut splines.erosion,
+            SplineType::PeaksValleys => &mut splines.peaks_valleys,
+        };
+
+        *s = spline;
+    }
 }
 
 fn guess_position(mut vis_params: UniqueViewMut<WorldGenVisualizerParams>) {
@@ -131,6 +169,16 @@ fn guess_position(mut vis_params: UniqueViewMut<WorldGenVisualizerParams>) {
 
     vis_params.lock_position = true;
     vis_params.auto_target_camera = true;
+}
+
+fn drop_all_chunks(mut vis_params: UniqueViewMut<WorldGenVisualizerParams>, mut chunk_mgr: UniqueViewMut<ChunkManager>) {
+    if !vis_params.req_drop_all {
+        return;
+    }
+
+    vis_params.req_drop_all = false;
+
+    chunk_mgr.reset();
 }
 
 fn set_locked_position(v_local_player: View<LocalPlayer>, mut vm_transform: ViewMut<Transform>, mut vm_velocity: ViewMut<Velocity>, vis_params: UniqueView<WorldGenVisualizerParams>) {
@@ -193,9 +241,9 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
     }
 }
 
-fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
+fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, params: UniqueView<WorldGenDebugParams>, splines: UniqueView<WorldGenSplines>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0);
+        world_generator.spawn_generate_task(req.0, &splines, &params);
     }
 }
 

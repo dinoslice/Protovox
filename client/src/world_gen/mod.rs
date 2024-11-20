@@ -1,18 +1,25 @@
 mod spline;
 pub mod biomes;
 pub mod fractal_noise;
+pub mod world_gen_params;
 
+use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
 use game::{block::Block, chunk::{data::ChunkData, location::ChunkLocation, pos::ChunkPos, CHUNK_SIZE}};
-use noise::{Perlin, NoiseFn};
+use noise::{NoiseFn, Perlin};
 use rand::Rng;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use shipyard::Unique;
-use game::location::WorldLocation;
+use game::location::BlockLocation;
+use splines::easings::InOutSine;
+use splines::Spline;
 use crate::events::ChunkGenEvent;
 use crate::world_gen::biomes::BiomeGenerator;
+use crate::world_gen::world_gen_params::WorldGenDebugParams;
+
+pub type SineSpline = Spline<InOutSine>;
 
 pub const PERLIN_SCALE: f64 = 100.0;
 
@@ -21,7 +28,14 @@ pub struct WorldGenerator {
     thread_pool: ThreadPool,
     perlin_noise: Arc<Perlin>,
     chunk_output: (Sender<ChunkGenEvent>, Receiver<ChunkGenEvent>),
-    pub biome_generator: Arc<BiomeGenerator>
+    pub biome_generator: Arc<BiomeGenerator>,
+}
+
+#[derive(Unique, Default, Clone)]
+pub struct WorldGenSplines {
+    pub continentalness: SineSpline,
+    pub erosion: SineSpline,
+    pub peaks_valleys: SineSpline,
 }
 
 impl WorldGenerator {
@@ -39,7 +53,7 @@ impl WorldGenerator {
             thread_pool,
             perlin_noise,
             chunk_output,
-            biome_generator
+            biome_generator,
         }
     }
 
@@ -52,40 +66,47 @@ impl WorldGenerator {
         out
     }
 
-    pub fn spawn_generate_task(&self, chunk: ChunkLocation) {
+    pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: &WorldGenSplines, params: &WorldGenDebugParams) {
         let sender = self.chunk_output.0.clone();
         let perlin = self.perlin_noise.clone();
 
         let biome_generator = self.biome_generator.clone();
 
+        let splines = splines.clone();
+        let params = params.clone();
+
         self.thread_pool.spawn(move ||
-            sender.send(Self::generate_chunk(perlin, biome_generator, chunk))
+            sender.send(Self::generate_chunk(perlin, splines, biome_generator, chunk, params))
                 .expect("channel should not have disconnected")
         );
     }
 
-    fn generate_chunk(perlin: Arc<Perlin>, biome_generator: Arc<BiomeGenerator>, chunk: ChunkLocation) -> ChunkGenEvent {
+    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, biome_generator: Arc<BiomeGenerator>, chunk: ChunkLocation, params: WorldGenDebugParams) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
+
+        let chunk_start = BlockLocation::from(&chunk);
 
         for x in 0..CHUNK_SIZE.x {
             for z in 0..CHUNK_SIZE.z {
-                let world_x = (out.location.0.x * CHUNK_SIZE.x as i32) + x as i32;
-                let world_z = (out.location.0.z * CHUNK_SIZE.z as i32) + z as i32;
-                
-                //TODO: go thru each block and squish 3d perlin based on erosion, middle of squish is at altitude
-                let world = WorldLocation::from(&chunk) + ChunkPos::new_unchecked(x, 0, z);
+                let xf = (x as i32 + chunk_start.0.x) as f64;
+                let zf = (z as i32 + chunk_start.0.z) as f64;
 
-                let parameters = biome_generator.generate_block_data(&world);
-                let altitude = parameters.altitude as f64;
-                let erosion = parameters.erosion as f64;
+                // Sample the Perlin noise at world coordinates
+                let continentalness_noise = perlin.get([xf * params.continentalness_scale, zf * params.continentalness_scale]) as f32;
+                let erosion_noise = perlin.get([xf * params.erosion_scale, zf * params.erosion_scale]) as f32;
+                let peaks_and_valleys_noise = perlin.get([xf * params.peaks_valleys_scale, zf * params.peaks_valleys_scale]) as f32;
+
+                let continentalness = splines.continentalness.sample(continentalness_noise);
+                let erosion = splines.erosion.sample(erosion_noise);
+                let peaks_and_valleys = splines.peaks_valleys.sample(peaks_and_valleys_noise);
+
+                let noise_range = -1.0..=1.0;
+
+                let height = remap(noise_range.clone(), params.c_start..=params.c_end, continentalness) + remap(noise_range.clone(), params.e_start..=params.e_end, erosion) * remap(noise_range.clone(), params.pv_start..=params.pv_end, peaks_and_valleys);
 
                 for y in 0..CHUNK_SIZE.y {
-                    let world_y = ((out.location.0.y * CHUNK_SIZE.y as i32) + y as i32) as f64;
-
-                    let v = perlin.get([world_x as f64 / PERLIN_SCALE, world_y / PERLIN_SCALE, world_z as f64 / PERLIN_SCALE]) -
-                        ((0.25 * (world_y - (20.0 + (altitude * (10.0 / ((erosion * erosion) + 1.0)))))).tanh());
-                    if v >= 0.0 {
-                        out.set_block(ChunkPos::new_unchecked(x, y, z), if rand::thread_rng().gen() { Block::Cobblestone } else { Block::Dirt });
+                    if (chunk_start.0.y + y as i32) as f32 <= height {
+                        out.set_block(ChunkPos::new(x, y, z).expect("valid"), Block::Debug);
                     }
                 }
             }
@@ -93,4 +114,13 @@ impl WorldGenerator {
 
         ChunkGenEvent(out)
     }
+}
+
+fn remap(input: RangeInclusive<f32>, output: RangeInclusive<f32>, v: f32) -> f32 {
+    let input_start = *input.start();
+    let input_end = *input.end();
+    let output_start = *output.start();
+    let output_end = *output.end();
+
+    output_start + (v - input_start) * (output_end - output_start) / (input_end - input_start)
 }

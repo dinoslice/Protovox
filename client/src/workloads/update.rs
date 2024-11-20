@@ -20,7 +20,8 @@ use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, p
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
-use crate::world_gen::WorldGenerator;
+use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::{WorldGenSplines, WorldGenerator};
 
 pub fn update() -> Workload {
     (
@@ -261,7 +262,7 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
 
 fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0);
+        world_generator.spawn_generate_task(req.0, &WorldGenSplines::default(), &WorldGenDebugParams::default());
     }
 }
 

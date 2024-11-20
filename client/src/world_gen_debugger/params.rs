@@ -15,6 +15,7 @@ pub struct WorldGenVisualizerParams {
     pub auto_target_camera: bool,
 
     pub req_guess: bool,
+    pub req_drop_all: bool,
 }
 
 impl egui::Widget for &mut WorldGenVisualizerParams {
@@ -56,7 +57,12 @@ impl egui::Widget for &mut WorldGenVisualizerParams {
                 if self.lock_position {
                     ui.checkbox(&mut self.auto_target_camera, "Auto Target Camera");
                 }
-            })
+            });
+
+            if ui.button("Drop all chunks").clicked() {
+                self.req_drop_all = true;
+            }
+
         }).response
     }
 }
