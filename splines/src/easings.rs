@@ -1,6 +1,6 @@
 use crate::Easing;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutSine;
 
 impl Easing for InOutSine {
@@ -11,7 +11,7 @@ impl Easing for InOutSine {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutCubic;
 
 impl Easing for InOutCubic {
@@ -24,7 +24,7 @@ impl Easing for InOutCubic {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutQuint;
 
 impl Easing for InOutQuint {
@@ -37,7 +37,7 @@ impl Easing for InOutQuint {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutCirc;
 
 impl Easing for InOutCirc {
@@ -50,7 +50,7 @@ impl Easing for InOutCirc {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutQuad;
 
 impl Easing for InOutQuad {
@@ -63,7 +63,7 @@ impl Easing for InOutQuad {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutQuart;
 
 impl Easing for InOutQuart {
@@ -76,7 +76,7 @@ impl Easing for InOutQuart {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InOutExpo;
 
 impl Easing for InOutExpo {
