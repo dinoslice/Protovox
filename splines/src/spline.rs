@@ -5,10 +5,10 @@ pub trait Easing {
     fn ease(x: f32) -> f32;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Spline<E: Easing> {
     points: Vec<Vec2>,
-    _easing: PhantomData<E>
+    _easing: PhantomData<E>,
 }
 
 impl<E: Easing> Default for Spline<E> {
