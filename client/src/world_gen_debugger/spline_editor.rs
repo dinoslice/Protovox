@@ -14,7 +14,7 @@ fn denorm_v(x: &Vec2) -> Vec2 {
 #[derive(Debug, Unique, Default)]
 pub struct SplineEditor {
     pub points: Vec<Vec2>,
-    editing: Option<PointEditing>
+    editing: Option<PointEditing>,
 }
 
 #[derive(Debug)]
@@ -38,7 +38,14 @@ impl PointEditing {
 }
 
 impl SplineEditor {
-    pub fn ui(&mut self, ui: &mut Ui) -> Response {
+    pub fn make_spline<E: Easing>(&self) -> Spline<E> {
+        let points = self.points.iter().map(|v| glm::Vec2::new(v.x, -v.y));
+        Spline::new(points).expect("valid spline")
+    }
+}
+
+impl egui::Widget for &mut SplineEditor {
+    fn ui(self, ui: &mut Ui) -> Response {
         let plot_rect = ui.max_rect();
         let lines = 11;
         let margin = 20.0;
@@ -46,9 +53,9 @@ impl SplineEditor {
         // Calculate available grid area and cell dimensions
         let grid_width = plot_rect.width() - 2.0 * margin;
         let grid_height = plot_rect.height() - 2.0 * margin;
-        
+
         let grid_size = vec2(grid_width, grid_height);
-        
+
         let cell_width = grid_width / (lines - 1) as f32;
         let cell_height = grid_height / (lines - 1) as f32;
 
@@ -149,7 +156,7 @@ impl SplineEditor {
                         ui.ctx().set_cursor_icon(CursorIcon::Grabbing);
                         if let Some(pos) = response.interact_pointer_pos() {
                             let pos = (pos.to_vec2() - grid_rect.min.to_vec2()) / grid_size;
-                            
+
                             *point = norm_v(&pos).clamp(Vec2::splat(-1.0), Vec2::splat(1.0));
                         }
                     }
@@ -168,7 +175,7 @@ impl SplineEditor {
                 if ui.input(|i| i.pointer.primary_clicked()) {
                     if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
                         let norm_pos = norm_v(&((pos.to_vec2() - grid_rect.min.to_vec2()) / grid_size));
-                        
+
                         if norm_pos.x.abs() < 1.0 && norm_pos.y.abs() < 1.0 {
                             self.points.push(norm_pos);
                         }
@@ -196,13 +203,13 @@ impl SplineEditor {
                 }
             }
         });
-        
-        let SplineEditor { points, editing: opt_editing } = self;
+
+        let SplineEditor { points, editing: opt_editing, .. } = self;
 
         // Show the popup for editing the selected point
         if let Some(PointEditing { to_replace, editing }) = opt_editing {
             let mut close_window = false;
-            
+
             Window::new("Edit Point")
                 .resizable(false)
                 .show(ui.ctx(), |ui| {
@@ -222,7 +229,7 @@ impl SplineEditor {
                         let Some(p) = points.iter_mut().find(|p| **p == *to_replace) else {
                             unreachable!("oops")
                         };
-                        
+
                         *p = Vec2 {
                             y: -editing.y,
                             .. *editing
@@ -235,7 +242,7 @@ impl SplineEditor {
                         close_window = true;
                     }
                 });
-            
+
             if close_window {
                 *opt_editing = None;
             }
@@ -243,20 +250,4 @@ impl SplineEditor {
 
         ui.allocate_rect(ui.max_rect(), Sense::hover())
     }
-
-    pub fn make_spline<E: Easing>(&self) -> Spline<E> {
-        let points = self.points.iter().map(|v| glm::Vec2::new(v.x, -v.y));
-        Spline::new(points).expect("valid spline")
-    }
-}
-
-fn easing_sine(t: f32) -> f32 {
-    use std::f32::consts::PI;
-
-    -(t * PI).cos() * 0.5 + 0.5
-}
-
-fn easing_parametric(t: f32) -> f32 {
-    let sqr = t * t;
-    sqr / (2.0 * (sqr - t) + 1.0)
 }
