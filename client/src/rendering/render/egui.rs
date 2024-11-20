@@ -59,7 +59,7 @@ pub fn render_egui(
 
         egui::Window::new("Spline Editor")
             .resizable(true)
-            .show(ctx, |ui| spline.ui(ui));
+            .show(ctx, |ui| ui.add(spline.as_mut()));
 
         if let Some(server_handler) = opt_server_handler {
             egui::Window::new("ServerHandler")
