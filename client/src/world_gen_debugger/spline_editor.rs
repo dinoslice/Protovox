@@ -245,7 +245,7 @@ impl SplineEditor {
     }
 
     pub fn make_spline<E: Easing>(&self) -> Spline<E> {
-        let points = self.points.iter().map(|v| glm::Vec2::new(v.x, v.y));
+        let points = self.points.iter().map(|v| glm::Vec2::new(v.x, -v.y));
         Spline::new(points).expect("valid spline")
     }
 }
