@@ -2,6 +2,7 @@ use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::block::Block;
 use crate::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::gamemode::Gamemode;
+use crate::networking::chat::{ChatRecord, CurrentChatInput};
 use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -18,7 +19,7 @@ pub fn render_egui(
     v_transform: View<Transform>,
     v_velocity: View<Velocity>,
     v_held_block: View<HeldBlock>,
-    (v_gamemode, v_spectator_speed): (View<Gamemode>, View<SpectatorSpeed>),
+    (v_gamemode, v_spectator_speed, mut current_chat_msg, mut chat_log): (View<Gamemode>, View<SpectatorSpeed>, UniqueViewMut<CurrentChatInput>, UniqueViewMut<ChatRecord>),
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
 ) {
@@ -59,6 +60,24 @@ pub fn render_egui(
                     ui.label(format!("Address: {}", server_handler.local_addr));
                 });
         }
+
+        egui::Window::new("Chat")
+            .default_open(true)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    for (sender, message) in chat_log.record.iter().rev().take(10).rev() {
+                        ui.label(format!("{}: {}", sender, message));
+                    }
+                });
+                ui.horizontal(|ui| {
+                    let text_edit = ui.text_edit_singleline(&mut current_chat_msg.0);
+                    if (text_edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) || ui.button("Submit Message").clicked() {
+                        text_edit.request_focus();
+                        chat_log.unsent.push(current_chat_msg.0.clone());
+                        current_chat_msg.0.clear();
+                    }
+                })
+            });
 
         egui::Area::new("hotbar_box".into())
             .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, 0.0))

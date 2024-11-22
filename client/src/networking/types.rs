@@ -28,6 +28,7 @@ pub enum PacketType {
     KickedByServer,
     
     KeepAlive,
+    ChatMessage,
 }
 
 impl PacketHeader for PacketType {

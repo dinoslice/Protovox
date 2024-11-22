@@ -203,5 +203,6 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
 
         ClientSettingsUpdateEvent =>,
         ClientTransformUpdate =>,
+        ChatMessage =>,
     });
 }

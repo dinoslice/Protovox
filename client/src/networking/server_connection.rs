@@ -138,5 +138,6 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
         KickedByServer => false,
 
         KeepAlive => false,
+        ChatMessage => false,
     });
 }

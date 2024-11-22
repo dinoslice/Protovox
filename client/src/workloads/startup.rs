@@ -17,6 +17,7 @@ use crate::input::InputManager;
 use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
+use crate::networking::chat;
 use crate::networking::server_connection::ServerConnection;
 use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_handler::ServerHandler;
@@ -106,6 +107,8 @@ fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView
 
         storages.add_unique(ServerConnection::bind(addr))
     }
+    
+    chat::initialize_chat_system(storages);
 }
 
 fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {

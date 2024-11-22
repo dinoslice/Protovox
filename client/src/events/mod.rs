@@ -65,6 +65,10 @@ pub struct KeepAlive;
 #[packet_type(PacketType::KickedByServer)]
 pub struct KickedByServer(pub String);
 
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::ChatMessage)]
+pub struct ChatMessage(pub (String, String));
+
 impl From<ChunkGenRequestEvent> for ClientChunkRequest {
     fn from(evt: ChunkGenRequestEvent) -> Self {
         Self(evt.0)
