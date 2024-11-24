@@ -6,7 +6,7 @@ use crate::components::{LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::rendering::{camera_uniform_buffer, EguiRenderer};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::{create_new_render_context, gizmos, submit_rendered_frame, world, RenderContext};
-use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::params::WorldGenParams;
 use crate::world_gen::{SineSpline, WorldGenerator};
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
@@ -59,7 +59,7 @@ pub fn render_egui(
 
     (mut spline_editor, mut egui_state): (UniqueViewMut<SplineEditor>, UniqueViewMut<EguiState>),
 
-    (mut vis_params, mut wg_params): (UniqueViewMut<WorldGenVisualizerParams>, UniqueViewMut<WorldGenDebugParams>),
+    (mut vis_params, mut wg_params): (UniqueViewMut<WorldGenVisualizerParams>, UniqueViewMut<WorldGenParams>),
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 

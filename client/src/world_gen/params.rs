@@ -2,7 +2,7 @@ use egui::{Response, Ui};
 use shipyard::Unique;
 
 #[derive(Unique, Debug, Clone)]
-pub struct WorldGenDebugParams {
+pub struct WorldGenParams {
     pub continentalness_scale: f64,
     pub erosion_scale: f64,
     pub peaks_valleys_scale: f64,
@@ -17,7 +17,7 @@ pub struct WorldGenDebugParams {
     pub pv_end: f32,
 }
 
-impl Default for WorldGenDebugParams {
+impl Default for WorldGenParams {
     fn default() -> Self {
         Self {
             continentalness_scale: 0.01,
@@ -33,7 +33,7 @@ impl Default for WorldGenDebugParams {
     }
 }
 
-impl egui::Widget for &mut WorldGenDebugParams {
+impl egui::Widget for &mut WorldGenParams {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {

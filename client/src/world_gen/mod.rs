@@ -1,4 +1,4 @@
-pub mod world_gen_params;
+pub mod params;
 
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
@@ -14,7 +14,7 @@ use game::location::BlockLocation;
 use splines::easings::InOutSine;
 use splines::Spline;
 use crate::events::ChunkGenEvent;
-use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::params::WorldGenParams;
 
 pub type SineSpline = Spline<InOutSine>;
 
@@ -60,7 +60,7 @@ impl WorldGenerator {
         out
     }
 
-    pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: &WorldGenSplines, params: &WorldGenDebugParams) {
+    pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: &WorldGenSplines, params: &WorldGenParams) {
         let sender = self.chunk_output.0.clone();
         let perlin = self.perlin_noise.clone();
 
@@ -73,7 +73,7 @@ impl WorldGenerator {
         );
     }
 
-    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, chunk: ChunkLocation, params: WorldGenDebugParams) -> ChunkGenEvent {
+    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, chunk: ChunkLocation, params: WorldGenParams) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
 
         let chunk_start = BlockLocation::from(&chunk);

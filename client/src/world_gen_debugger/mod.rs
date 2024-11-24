@@ -20,7 +20,7 @@ use crate::render_distance::RenderDistance;
 use crate::rendering;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::workloads::process_input;
-use crate::world_gen::world_gen_params::WorldGenDebugParams;
+use crate::world_gen::params::WorldGenParams;
 use crate::world_gen::{WorldGenSplines, WorldGenerator};
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::render::EguiState;
@@ -127,7 +127,7 @@ fn initialize_game_systems(storages: AllStoragesView) {
         req_drop_all: false,
     });
 
-    storages.add_unique(WorldGenDebugParams {
+    storages.add_unique(WorldGenParams {
         continentalness_scale: 0.00125,
         erosion_scale: 0.002,
         peaks_valleys_scale: 0.0125,
@@ -257,7 +257,7 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
     }
 }
 
-fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, params: UniqueView<WorldGenDebugParams>, splines: UniqueView<WorldGenSplines>) {
+fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, params: UniqueView<WorldGenParams>, splines: UniqueView<WorldGenSplines>) {
     for req in reqs.drain() {
         world_generator.spawn_generate_task(req.0, &splines, &params);
     }
