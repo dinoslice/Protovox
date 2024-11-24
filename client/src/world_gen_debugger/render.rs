@@ -57,8 +57,6 @@ pub fn render_egui(
     v_velocity: View<Velocity>,
     v_spectator_speed: View<SpectatorSpeed>,
 
-    world_gen: UniqueView<WorldGenerator>,
-
     (mut spline_editor, mut egui_state): (UniqueViewMut<SplineEditor>, UniqueViewMut<EguiState>),
 
     (mut vis_params, mut wg_params): (UniqueViewMut<WorldGenVisualizerParams>, UniqueViewMut<WorldGenDebugParams>),
@@ -109,12 +107,6 @@ pub fn render_egui(
                 });
             });
 
-        egui::Window::new("BlockData")
-            .default_open(true)
-            .show(ctx, |ui| {
-                ui.label(format!("{:#?}", world_gen.biome_generator.generate_block_data(&WorldLocation(local_transform.position))));
-            });
-
         egui::Window::new("Visualization Parameters")
             .show(ctx, |ui| {
                 ui.add(vis_params.as_mut())
@@ -139,8 +131,6 @@ pub fn render_egui(
                             .get_mut(&egui::TextStyle::Body)
                             .expect("style to exist")
                             .size = 17.5;
-
-
 
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui|
                             ui.label(format!("Speed: {:.2}", spec_speed.curr_speed))

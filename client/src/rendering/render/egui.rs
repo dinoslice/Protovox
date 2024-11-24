@@ -23,8 +23,6 @@ pub fn render_egui(
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
 
-    world_gen: Option<UniqueView<WorldGenerator>>,
-
     mut spline: UniqueViewMut<SplineEditor>
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
@@ -66,14 +64,6 @@ pub fn render_egui(
                 .default_open(true)
                 .show(ctx, |ui| {
                     ui.label(format!("Address: {}", server_handler.local_addr));
-                });
-        }
-
-        if let Some(world_gen) = world_gen {
-            egui::Window::new("BlockData")
-                .default_open(true)
-                .show(ctx, |ui| {
-                    ui.label(format!("{:#?}", world_gen.biome_generator.generate_block_data(&WorldLocation(local_transform.position))));
                 });
         }
 

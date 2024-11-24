@@ -1,6 +1,3 @@
-mod spline;
-pub mod biomes;
-pub mod fractal_noise;
 pub mod world_gen_params;
 
 use std::cmp::Ordering;
@@ -17,7 +14,6 @@ use game::location::BlockLocation;
 use splines::easings::InOutSine;
 use splines::Spline;
 use crate::events::ChunkGenEvent;
-use crate::world_gen::biomes::BiomeGenerator;
 use crate::world_gen::world_gen_params::WorldGenDebugParams;
 
 pub type SineSpline = Spline<InOutSine>;
@@ -29,7 +25,6 @@ pub struct WorldGenerator {
     thread_pool: ThreadPool,
     perlin_noise: Arc<Perlin>,
     chunk_output: (Sender<ChunkGenEvent>, Receiver<ChunkGenEvent>),
-    pub biome_generator: Arc<BiomeGenerator>,
 }
 
 #[derive(Unique, Default, Clone)]
@@ -48,13 +43,11 @@ impl WorldGenerator {
 
         let chunk_output = crossbeam::channel::unbounded::<ChunkGenEvent>();
         let perlin_noise = Arc::new(Perlin::new(seed));
-        let biome_generator = Arc::new(BiomeGenerator::overworld(seed));
 
         Self {
             thread_pool,
             perlin_noise,
             chunk_output,
-            biome_generator,
         }
     }
 
@@ -71,18 +64,16 @@ impl WorldGenerator {
         let sender = self.chunk_output.0.clone();
         let perlin = self.perlin_noise.clone();
 
-        let biome_generator = self.biome_generator.clone();
-
         let splines = splines.clone();
         let params = params.clone();
 
         self.thread_pool.spawn(move ||
-            sender.send(Self::generate_chunk(perlin, splines, biome_generator, chunk, params))
+            sender.send(Self::generate_chunk(perlin, splines, chunk, params))
                 .expect("channel should not have disconnected")
         );
     }
 
-    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, biome_generator: Arc<BiomeGenerator>, chunk: ChunkLocation, params: WorldGenDebugParams) -> ChunkGenEvent {
+    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, chunk: ChunkLocation, params: WorldGenDebugParams) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
 
         let chunk_start = BlockLocation::from(&chunk);
@@ -110,7 +101,7 @@ impl WorldGenerator {
                 for y in 0..CHUNK_SIZE.y {
                     let pos = ChunkPos::new(x, y, z).expect("valid");
 
-                    let block_y = chunk_start.0.y + y as i32;
+                    let block_y = chunk_start.0.y + y as i32; // could use BlockLocation::from_chunk_parts, but this is faster
 
                     match height as i32 - block_y {
                         0 => match block_y.cmp(&water_level) {
