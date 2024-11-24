@@ -127,8 +127,22 @@ fn initialize_game_systems(storages: AllStoragesView) {
         req_drop_all: false,
     });
 
-    storages.add_unique(WorldGenDebugParams::default());
-    storages.add_unique(WorldGenSplines::default());
+    storages.add_unique(WorldGenDebugParams {
+        continentalness_scale: 0.00125,
+        erosion_scale: 0.002,
+        peaks_valleys_scale: 0.0125,
+        c_start: -10.0,
+        c_end: 175.0,
+        e_start: -0.5,
+        e_end: 1.0,
+        pv_start: 0.0,
+        pv_end: 35.0,
+    });
+    storages.add_unique(WorldGenSplines {
+        continentalness: Spline::new([[-1.0, -1.0], [-0.9279977, -0.90286434], [-0.26820922, -0.8263215], [-0.044113815, -0.14479148], [0.763953, -0.08767879], [0.95565224, 0.9540222], [1.0, 1.0]]),
+        erosion: Spline::new([[-1.0, 1.0], [-0.83050734, 0.4721343], [-0.5038637, 0.26844186], [-0.3988908, 0.43217272], [-0.2064119, -0.816993], [0.5861441, -0.90852606], [0.636498, -0.43075633], [0.7577101, -0.44334638], [0.798712, -0.89013314], [1.0, -1.0]]),
+        peaks_valleys: Spline::new([[-1.0, -1.0], [-0.9223045, -0.8987539], [-0.5608352, -0.8535681], [-0.3662839, -0.24826753], [0.23613429, -0.102552295], [0.767043, 0.8733756], [1.0, 1.0]]),
+    });
     storages.add_unique(EguiState::default());
 }
 
