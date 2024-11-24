@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 use glm::Vec2;
 
@@ -106,5 +107,17 @@ impl<E: Easing> Spline<E> {
         self.points.sort_unstable_by(|a, b| a.x.partial_cmp(&b.x).expect("no NAN values allowed"));
 
         Some(())
+    }
+}
+
+impl<E: Easing> fmt::Display for Spline<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = self.points()
+            .iter()
+            .map(|v| format!("[{}, {}]", v.x, v.y))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        writeln!(f, "{str}")
     }
 }
