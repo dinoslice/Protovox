@@ -38,9 +38,12 @@ impl PointEditing {
 }
 
 impl SplineEditor {
+    pub fn load_from_spline<E: Easing>(&mut self, spline: &Spline<E>) {
+        self.points = spline.points().iter().map(|n| Vec2 { x: n.x, y: -n.y }).collect();
+    }
     pub fn make_spline<E: Easing>(&self) -> Spline<E> {
         let points = self.points.iter().map(|v| glm::Vec2::new(v.x, -v.y));
-        Spline::new(points).expect("valid spline")
+        Spline::new(points)
     }
 }
 

@@ -20,22 +20,22 @@ impl<E: Easing> Default for Spline<E> {
 
 impl<E: Easing> Spline<E> {
     pub fn empty() -> Self {
-        Self::new_unchecked(Vec::default())
+        Self::new_unchecked(Vec::<Vec2>::default())
     }
 
-    fn new_unchecked(points: impl IntoIterator<Item = Vec2>) -> Self {
-        Self { points: points.into_iter().collect(), _easing: PhantomData }
+    fn new_unchecked(points: impl IntoIterator<Item = impl Into<Vec2>>) -> Self {
+        Self { points: points.into_iter().map(Into::into).collect(), _easing: PhantomData }
     }
 
-    pub fn new(points: impl IntoIterator<Item = Vec2>) -> Option<Self> {
+    pub fn new(points: impl IntoIterator<Item = impl Into<Vec2>>) -> Self {
         let mut spline = Self::new_unchecked(points);
 
         spline.sort().expect("no NAN values!");
 
-        spline.points // TODO: instead of not allowing duplicate x values, maybe choose the center?
-            .windows(2)
-            .all(|w| w[0].x != w[1].x)
-            .then_some(spline)
+        // TODO: instead of deleting duplicate x values, maybe choose center?
+        spline.points.dedup_by(|a, b| a.x == b.x);
+
+        spline
     }
 
     pub fn sample(&self, x: f32) -> f32 {

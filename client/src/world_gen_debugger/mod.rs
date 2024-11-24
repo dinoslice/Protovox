@@ -5,6 +5,7 @@ use game::chunk::CHUNK_SIZE;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use game::location::{BlockLocation, WorldLocation};
+use splines::Spline;
 use crate::application::delta_time::LastDeltaTime;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -133,13 +134,13 @@ fn initialize_game_systems(storages: AllStoragesView) {
 
 fn load_save_spline(mut egui_state: UniqueViewMut<EguiState>, mut splines: UniqueViewMut<WorldGenSplines>, mut editor: UniqueViewMut<SplineEditor>) {
     if let Some(ty) = egui_state.req_load.take() {
-        let points = match ty {
+        let spline = match ty {
             SplineType::Continentalness => &splines.continentalness,
             SplineType::Erosion => &splines.erosion,
             SplineType::PeaksValleys => &splines.peaks_valleys,
         };
 
-        editor.points = points.points().iter().map(|n| egui::Vec2 { x: n.x, y: -n.y }).collect();
+        editor.load_from_spline(&spline);
     }
 
     if let Some((ty, spline)) = egui_state.req_update.take() {
@@ -150,6 +151,7 @@ fn load_save_spline(mut egui_state: UniqueViewMut<EguiState>, mut splines: Uniqu
         };
 
         *s = spline;
+        tracing::info!("Updated {ty:?}: {}", *s);
     }
 }
 
