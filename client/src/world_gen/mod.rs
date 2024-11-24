@@ -3,6 +3,7 @@ pub mod biomes;
 pub mod fractal_noise;
 pub mod world_gen_params;
 
+use std::cmp::Ordering;
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
@@ -86,6 +87,10 @@ impl WorldGenerator {
 
         let chunk_start = BlockLocation::from(&chunk);
 
+        let noise_range = -1.0..=1.0;
+
+        let water_level = remap(noise_range.clone(), params.c_start..=params.c_end, -0.175) as i32;
+
         for x in 0..CHUNK_SIZE.x {
             for z in 0..CHUNK_SIZE.z {
                 let xf = (x as i32 + chunk_start.0.x) as f64;
@@ -100,13 +105,22 @@ impl WorldGenerator {
                 let erosion = splines.erosion.sample(erosion_noise);
                 let peaks_and_valleys = splines.peaks_valleys.sample(peaks_and_valleys_noise);
 
-                let noise_range = -1.0..=1.0;
-
                 let height = remap(noise_range.clone(), params.c_start..=params.c_end, continentalness) + remap(noise_range.clone(), params.e_start..=params.e_end, erosion) * remap(noise_range.clone(), params.pv_start..=params.pv_end, peaks_and_valleys);
 
                 for y in 0..CHUNK_SIZE.y {
-                    if (chunk_start.0.y + y as i32) as f32 <= height {
-                        out.set_block(ChunkPos::new(x, y, z).expect("valid"), Block::Debug);
+                    let pos = ChunkPos::new(x, y, z).expect("valid");
+
+                    let block_y = chunk_start.0.y + y as i32;
+
+                    match height as i32 - block_y {
+                        0 => match block_y.cmp(&water_level) {
+                            Ordering::Greater | Ordering::Equal => out.set_block(pos, Block::Grass),
+                            Ordering::Less => out.set_block(pos, Block::Dirt),
+                        }
+                        1..4 => out.set_block(pos, Block::Dirt),
+                        4.. => out.set_block(pos, Block::Cobblestone),
+                        _ if block_y <= water_level => out.set_block(pos, Block::Debug), // TODO: make water block
+                        _ => {}, // AIR
                     }
                 }
             }
