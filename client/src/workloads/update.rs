@@ -2,6 +2,7 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove};
 use strum::EnumCount;
+use winit::window::Fullscreen;
 use game::block::Block;
 use game::location::BlockLocation;
 use crate::camera::Camera;
@@ -20,6 +21,7 @@ use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, p
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
+use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
@@ -48,9 +50,21 @@ pub fn process_input() -> Workload {
         apply_camera_input,
         process_movement,
         toggle_gamemode,
+        toggle_fullscreen,
         adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
         scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
     ).into_workload()
+}
+
+fn toggle_fullscreen(input: UniqueView<InputManager>, g_ctx: UniqueViewMut<GraphicsContext>) {
+    if !input.just_pressed().get_action(Action::ToggleFullscreen) {
+        return;
+    }
+
+    match g_ctx.window.fullscreen() {
+        None => g_ctx.window.set_fullscreen(Some(Fullscreen::Borderless(None))),
+        Some(_) => g_ctx.window.set_fullscreen(None)
+    }
 }
 
 fn toggle_gamemode(

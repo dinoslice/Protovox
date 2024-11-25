@@ -19,6 +19,7 @@ pub enum Action {
     PlaceBlock,
     BreakBlock,
     ToggleGamemode,
+    ToggleFullscreen,
 }
 
 impl ActionMap {
@@ -67,6 +68,7 @@ impl TryFrom<&KeyCode> for Action {
             KC::Space => Ok(Self::Jump),
             KC::ShiftLeft => Ok(Self::Sneak),
             KC::F4 => Ok(Self::ToggleGamemode),
+            KC::F11 => Ok(Self::ToggleFullscreen),
             _ => Err(UnmappedAction),
         }
     }
