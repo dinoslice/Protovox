@@ -6,7 +6,6 @@ use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::PacketHeader;
-use crate::environment::is_hosted;
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
 

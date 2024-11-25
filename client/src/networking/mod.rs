@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{AllStoragesView, EntitiesView, IntoIter, IntoWithId, IntoWorkload, SystemModificator, UniqueView, View, ViewMut, Workload, WorkloadModificator};
+use shipyard::{AllStoragesView, EntitiesView, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use game::chunk::data::ChunkData;
 use game::location::WorldLocation;
 use crate::application::exit::ExitRequested;
