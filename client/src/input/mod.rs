@@ -62,3 +62,9 @@ impl InputManager {
         self.mouse_manager.reset_scroll_rotate();
     }
 }
+
+impl Default for InputManager {
+    fn default() -> Self {
+        Self::with_mouse_manager(MouseManager::default())
+    }
+}

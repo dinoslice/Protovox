@@ -14,7 +14,6 @@ use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, 
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
 use crate::input::InputManager;
-use crate::input::mouse_manager::MouseManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
@@ -91,7 +90,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 }
 
 pub fn initialize_application_systems(storages: AllStoragesView) {
-    storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
+    storages.add_unique(InputManager::default());
     storages.add_unique(CaptureState::default());
     storages.add_unique(LastDeltaTime::default());
 }

@@ -38,3 +38,9 @@ impl MouseManager {
         self.scroll = 0.0;
     }
 }
+
+impl Default for MouseManager {
+    fn default() -> Self {
+        Self::new(0.75, 50.0)
+    }
+}
