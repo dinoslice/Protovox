@@ -1,7 +1,6 @@
 use egui::{Response, Ui};
-use shipyard::Unique;
 
-#[derive(Unique, Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WorldGenParams {
     pub continentalness_scale: f64,
     pub erosion_scale: f64,

@@ -262,7 +262,7 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
 
 fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0, &WorldGenSplines::default(), &WorldGenParams::default());
+        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
     }
 }
 

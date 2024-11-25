@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, EntitiesViewMut, IntoIter, IntoWorkload, SystemModificator, UniqueView, UniqueViewMut, View, ViewMut, Workload, WorkloadModificator};
@@ -127,45 +128,34 @@ fn initialize_game_systems(storages: AllStoragesView) {
         req_drop_all: false,
     });
 
-    storages.add_unique(WorldGenParams {
-        continentalness_scale: 0.00125,
-        erosion_scale: 0.002,
-        peaks_valleys_scale: 0.0125,
-        c_start: -10.0,
-        c_end: 175.0,
-        e_start: -0.5,
-        e_end: 1.0,
-        pv_start: 0.0,
-        pv_end: 35.0,
-    });
-    storages.add_unique(WorldGenSplines {
-        continentalness: Spline::new([[-1.0, -1.0], [-0.9279977, -0.90286434], [-0.26820922, -0.8263215], [-0.044113815, -0.14479148], [0.763953, -0.08767879], [0.95565224, 0.9540222], [1.0, 1.0]]),
-        erosion: Spline::new([[-1.0, 1.0], [-0.83050734, 0.4721343], [-0.5038637, 0.26844186], [-0.3988908, 0.43217272], [-0.2064119, -0.816993], [0.5861441, -0.90852606], [0.636498, -0.43075633], [0.7577101, -0.44334638], [0.798712, -0.89013314], [1.0, -1.0]]),
-        peaks_valleys: Spline::new([[-1.0, -1.0], [-0.9223045, -0.8987539], [-0.5608352, -0.8535681], [-0.3662839, -0.24826753], [0.23613429, -0.102552295], [0.767043, 0.8733756], [1.0, 1.0]]),
-    });
     storages.add_unique(EguiState::default());
 }
 
-fn load_save_spline(mut egui_state: UniqueViewMut<EguiState>, mut splines: UniqueViewMut<WorldGenSplines>, mut editor: UniqueViewMut<SplineEditor>) {
+fn load_save_spline(mut egui_state: UniqueViewMut<EguiState>, mut wg: UniqueViewMut<WorldGenerator>, mut editor: UniqueViewMut<SplineEditor>) {
     if let Some(ty) = egui_state.req_load.take() {
         let spline = match ty {
-            SplineType::Continentalness => &splines.continentalness,
-            SplineType::Erosion => &splines.erosion,
-            SplineType::PeaksValleys => &splines.peaks_valleys,
+            SplineType::Continentalness => &wg.splines.continentalness,
+            SplineType::Erosion => &wg.splines.erosion,
+            SplineType::PeaksValleys => &wg.splines.peaks_valleys,
         };
 
         editor.load_from_spline(&spline);
     }
 
     if let Some((ty, spline)) = egui_state.req_update.take() {
+        let mut new = wg.splines.as_ref().clone();
+
         let s = match ty {
-            SplineType::Continentalness => &mut splines.continentalness,
-            SplineType::Erosion => &mut splines.erosion,
-            SplineType::PeaksValleys => &mut splines.peaks_valleys,
+            SplineType::Continentalness => &mut new.continentalness,
+            SplineType::Erosion => &mut new.erosion,
+            SplineType::PeaksValleys => &mut new.peaks_valleys,
         };
 
         *s = spline;
+
         tracing::info!("Updated {ty:?}: {}", *s);
+
+        wg.splines = Arc::new(new);
     }
 }
 
@@ -257,9 +247,9 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
     }
 }
 
-fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, params: UniqueView<WorldGenParams>, splines: UniqueView<WorldGenSplines>) {
+fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0, &splines, &params);
+        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
     }
 }
 

@@ -24,10 +24,12 @@ pub const PERLIN_SCALE: f64 = 100.0;
 pub struct WorldGenerator {
     thread_pool: ThreadPool,
     perlin_noise: Arc<Perlin>,
+    pub params: Arc<WorldGenParams>,
+    pub splines: Arc<WorldGenSplines>,
     chunk_output: (Sender<ChunkGenEvent>, Receiver<ChunkGenEvent>),
 }
 
-#[derive(Unique, Default, Clone)]
+#[derive(Default, Clone)]
 pub struct WorldGenSplines {
     pub continentalness: SineSpline,
     pub erosion: SineSpline,
@@ -44,9 +46,29 @@ impl WorldGenerator {
         let chunk_output = crossbeam::channel::unbounded::<ChunkGenEvent>();
         let perlin_noise = Arc::new(Perlin::new(seed));
 
+        let params = WorldGenParams {
+            continentalness_scale: 0.00125,
+            erosion_scale: 0.002,
+            peaks_valleys_scale: 0.0125,
+            c_start: -10.0,
+            c_end: 175.0,
+            e_start: -0.5,
+            e_end: 1.0,
+            pv_start: 0.0,
+            pv_end: 35.0,
+        };
+
+        let splines = WorldGenSplines {
+            continentalness: Spline::new([[-1.0, -1.0], [-0.9279977, -0.90286434], [-0.26820922, -0.8263215], [-0.044113815, -0.14479148], [0.763953, -0.08767879], [0.95565224, 0.9540222], [1.0, 1.0]]),
+            erosion: Spline::new([[-1.0, 1.0], [-0.83050734, 0.4721343], [-0.5038637, 0.26844186], [-0.3988908, 0.43217272], [-0.2064119, -0.816993], [0.5861441, -0.90852606], [0.636498, -0.43075633], [0.7577101, -0.44334638], [0.798712, -0.89013314], [1.0, -1.0]]),
+            peaks_valleys: Spline::new([[-1.0, -1.0], [-0.9223045, -0.8987539], [-0.5608352, -0.8535681], [-0.3662839, -0.24826753], [0.23613429, -0.102552295], [0.767043, 0.8733756], [1.0, 1.0]]),
+        };
+
         Self {
             thread_pool,
             perlin_noise,
+            params: Arc::new(params),
+            splines: Arc::new(splines),
             chunk_output,
         }
     }
@@ -60,12 +82,9 @@ impl WorldGenerator {
         out
     }
 
-    pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: &WorldGenSplines, params: &WorldGenParams) {
+    pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: Arc<WorldGenSplines>, params: Arc<WorldGenParams>) {
         let sender = self.chunk_output.0.clone();
         let perlin = self.perlin_noise.clone();
-
-        let splines = splines.clone();
-        let params = params.clone();
 
         self.thread_pool.spawn(move ||
             sender.send(Self::generate_chunk(perlin, splines, chunk, params))
@@ -73,7 +92,7 @@ impl WorldGenerator {
         );
     }
 
-    fn generate_chunk(perlin: Arc<Perlin>, splines: WorldGenSplines, chunk: ChunkLocation, params: WorldGenParams) -> ChunkGenEvent {
+    fn generate_chunk(perlin: Arc<Perlin>, splines: Arc<WorldGenSplines>, chunk: ChunkLocation, params: Arc<WorldGenParams>) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
 
         let chunk_start = BlockLocation::from(&chunk);

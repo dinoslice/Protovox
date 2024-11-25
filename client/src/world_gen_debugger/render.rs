@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use egui::{ComboBox, Ui};
 use glm::TVec3;
 use shipyard::{IntoIter, IntoWorkload, IntoWorkloadTrySystem, Unique, UniqueView, UniqueViewMut, View, Workload};
@@ -57,9 +58,9 @@ pub fn render_egui(
     v_velocity: View<Velocity>,
     v_spectator_speed: View<SpectatorSpeed>,
 
-    (mut spline_editor, mut egui_state): (UniqueViewMut<SplineEditor>, UniqueViewMut<EguiState>),
+    mut world_generator: UniqueViewMut<WorldGenerator>,
 
-    (mut vis_params, mut wg_params): (UniqueViewMut<WorldGenVisualizerParams>, UniqueViewMut<WorldGenParams>),
+    (mut spline_editor, mut egui_state, mut vis_params): (UniqueViewMut<SplineEditor>, UniqueViewMut<EguiState>, UniqueViewMut<WorldGenVisualizerParams>),
 ) {
     let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
 
@@ -112,10 +113,17 @@ pub fn render_egui(
                 ui.add(vis_params.as_mut())
             });
 
+        // TODO: fix this inefficient code
+        let mut modify = world_generator.params.as_ref().clone();
+
         egui::Window::new("World Gen Params")
             .show(ctx, |ui| {
-               ui.add(wg_params.as_mut())
+               ui.add(&mut modify)
             });
+
+        if modify != *world_generator.params {
+            world_generator.params = Arc::new(modify);
+        }
 
         egui::Area::new("hotbar_box".into())
             .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, 0.0))
