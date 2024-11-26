@@ -20,6 +20,8 @@ pub mod exit;
 mod core_workloads;
 
 pub use capture_state::CaptureState;
+use crate::input::action_map::Action;
+use crate::input::InputManager;
 
 pub fn run_game() {
     use crate::workloads::*;
@@ -89,6 +91,24 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
             => if !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
+                        if world.borrow::<UniqueView<InputManager>>()
+                            .expect("input manager to exist")
+                            .just_pressed()
+                            .get_action(Action::DumpECSInfo)
+                        {
+
+
+
+                            std::fs::write(
+                                "ecs info.json",
+                                serde_json::to_string(&world.workloads_info()).unwrap(),
+                            )
+                                .unwrap();
+
+                            tracing::info!("dumped ecs info to file");
+                        }
+
+
                         world.run_with_data(delta_time::update_delta_time, last_render_time);
                         last_render_time = Instant::now();
 
