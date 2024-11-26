@@ -1,8 +1,11 @@
-use shipyard::{AllStoragesView, IntoWorkload, UniqueViewMut, Workload};
+use shipyard::{AllStoragesView, IntoWorkload, UniqueView, UniqueViewMut, Workload};
+use winit::window::Fullscreen;
 use crate::application::CaptureState;
 use crate::application::delta_time::LastDeltaTime;
+use crate::input::action_map::Action;
 use crate::input::InputManager;
 use crate::input::mouse_manager::MouseManager;
+use crate::rendering::graphics_context::GraphicsContext;
 
 pub fn startup_core() -> Workload {
     (
@@ -19,9 +22,21 @@ fn initialize_application_systems(storages: AllStoragesView) {
 pub fn update_core() -> Workload {
     (
         update_input_manager,
+        toggle_fullscreen,
     ).into_workload()
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
     input.process();
+}
+
+fn toggle_fullscreen(input: UniqueView<InputManager>, g_ctx: UniqueViewMut<GraphicsContext>) {
+    if !input.just_pressed().get_action(Action::ToggleFullscreen) {
+        return;
+    }
+
+    match g_ctx.window.fullscreen() {
+        None => g_ctx.window.set_fullscreen(Some(Fullscreen::Borderless(None))),
+        Some(_) => g_ctx.window.set_fullscreen(None)
+    }
 }

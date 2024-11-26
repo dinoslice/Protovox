@@ -50,21 +50,9 @@ pub fn process_input() -> Workload {
         apply_camera_input,
         process_movement,
         toggle_gamemode,
-        toggle_fullscreen,
         adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
         scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
     ).into_workload()
-}
-
-fn toggle_fullscreen(input: UniqueView<InputManager>, g_ctx: UniqueViewMut<GraphicsContext>) {
-    if !input.just_pressed().get_action(Action::ToggleFullscreen) {
-        return;
-    }
-
-    match g_ctx.window.fullscreen() {
-        None => g_ctx.window.set_fullscreen(Some(Fullscreen::Borderless(None))),
-        Some(_) => g_ctx.window.set_fullscreen(None)
-    }
 }
 
 fn toggle_gamemode(
