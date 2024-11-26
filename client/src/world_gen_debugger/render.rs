@@ -1,13 +1,10 @@
 use std::sync::Arc;
-use egui::{ComboBox, Ui};
-use glm::TVec3;
+use egui::ComboBox;
 use shipyard::{IntoIter, IntoWorkload, IntoWorkloadTrySystem, Unique, UniqueView, UniqueViewMut, View, Workload};
-use game::location::WorldLocation;
 use crate::components::{LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::rendering::{camera_uniform_buffer, EguiRenderer};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::{create_new_render_context, gizmos, submit_rendered_frame, world, RenderContext};
-use crate::world_gen::params::WorldGenParams;
 use crate::world_gen::{SineSpline, WorldGenerator};
 use crate::world_gen_debugger::params::WorldGenVisualizerParams;
 use crate::world_gen_debugger::spline_editor::SplineEditor;
