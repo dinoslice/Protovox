@@ -11,7 +11,7 @@ use crate::components::{LocalPlayer, Transform};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess, KickedByServer};
 use crate::events::event_bus::EventBus;
 use crate::events::render_distance::RenderDistanceUpdateEvent;
-use crate::networking::chat::{client_handle_chat_messages, send_chat_message};
+use crate::networking::chat::{client_handle_chat_messages, server_send_chat_message, server_handle_chat_messages, client_send_chat_message};
 use crate::networking::keep_alive::server_send_keep_alive;
 use crate::networking::server_connection::{client_process_network_events_multiplayer, ServerConnection};
 use crate::networking::server_handler::{server_process_network_events, ServerHandler};
@@ -29,12 +29,13 @@ pub fn update_networking_server() -> Workload {
         (
             server_broadcast_chunks,
             server_broadcast_block_updates,
-            send_chat_message,
+            server_send_chat_message,
             server_process_client_connection_req,
             server_update_client_transform,
             server_request_client_settings,
             server_process_render_dist_update,
             server_handle_client_chunk_reqs,
+            server_handle_chat_messages,
             server_send_keep_alive,
         ).into_workload()
     ).into_sequential_workload()
@@ -45,6 +46,7 @@ pub fn update_networking_client() -> Workload {
         // PRE-PACKET RECV NETWORKING
         (
             client_send_block_updates,
+            client_send_chat_message,
         ).into_workload(),
         
         client_process_network_events_multiplayer,

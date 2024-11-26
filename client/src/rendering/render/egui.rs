@@ -61,9 +61,15 @@ pub fn render_egui(
                 });
         }
 
-        egui::Window::new("Chat")
-            .default_open(true)
+        egui::Area::new("chat_box".into())
+            .anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(0.0, 0.0))
             .show(ctx, |ui| {
+                let style = ui.style_mut();
+
+                style.visuals.window_fill = egui::Color32::TRANSPARENT;
+                style.visuals.override_text_color = Some(egui::Color32::WHITE);
+                ui.set_width(100.0);
+
                 ui.vertical(|ui| {
                     for (sender, message) in chat_log.record.iter().rev().take(10).rev() {
                         ui.label(format!("{}: {}", sender, message));
