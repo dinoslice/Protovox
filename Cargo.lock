@@ -549,6 +549,7 @@ dependencies = [
  "rgb",
  "serde",
  "shipyard",
+ "splines",
  "strum",
  "thiserror",
  "tinybitset",

@@ -13,10 +13,8 @@ pub fn render_egui(
     mut egui_renderer: UniqueViewMut<EguiRenderer>,
 
     // for player debug info
-    v_local_player: View<LocalPlayer>,
-    v_entity: View<Entity>,
-    v_transform: View<Transform>,
-    v_velocity: View<Velocity>,
+    (v_local_player, v_entity): (View<LocalPlayer>, View<Entity>),
+    (v_transform, v_velocity): (View<Transform>, View<Velocity>),
     v_held_block: View<HeldBlock>,
     (v_gamemode, v_spectator_speed): (View<Gamemode>, View<SpectatorSpeed>),
 

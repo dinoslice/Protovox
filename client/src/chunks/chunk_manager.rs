@@ -54,6 +54,14 @@ impl ChunkManager {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.loaded_chunks.clear();
+        self.loaded_chunks.resize_with(self.chunk_capacity(), || None);
+
+        self.bakery.clear();
+        self.recently_requested_gen.clear();
+    }
+
     pub fn chunk_capacity(&self) -> usize {
         self.render_distance.0.iter()
             .map(|n| (2 * n + 1) as usize)

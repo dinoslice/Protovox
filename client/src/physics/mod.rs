@@ -22,7 +22,7 @@ fn move_non_colliding_entities(
     
     delta_time: UniqueView<LastDeltaTime>,
 ) {
-    for (transform, velocity, _, _) in (&mut vm_transform, &v_velocity, &vm_entity, !&v_hitbox).iter() {
+    for (transform, velocity, ..) in (&mut vm_transform, &v_velocity, &vm_entity, !&v_hitbox).iter() {
         transform.position += velocity.0 * delta_time.0.as_secs_f32();
     }
 }

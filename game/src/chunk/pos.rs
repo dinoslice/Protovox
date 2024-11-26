@@ -57,6 +57,10 @@ impl ChunkPos {
     impl_getters_setters!(x, set_x, set_x_unchecked, 0, CHUNK_SIZE.x - 1);
     impl_getters_setters!(y, set_y, set_y_unchecked, 5, CHUNK_SIZE.y - 1);
     impl_getters_setters!(z, set_z, set_z_unchecked, 11, CHUNK_SIZE.z - 1);
+
+    pub fn center() -> Self {
+        Self::try_from(CHUNK_SIZE / 2).expect("must be valid position")
+    }
 }
 
 impl TryFrom<&TVec3<u8>> for ChunkPos {
@@ -75,9 +79,15 @@ impl TryFrom<TVec3<u8>> for ChunkPos {
     }
 }
 
+impl From<&ChunkPos> for TVec3<u8> {
+    fn from(chunk_pos: &ChunkPos) -> Self {
+        Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+    }
+}
+
 impl From<ChunkPos> for TVec3<u8> {
     fn from(chunk_pos: ChunkPos) -> Self {
-        Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
+        (&chunk_pos).into()
     }
 }
 

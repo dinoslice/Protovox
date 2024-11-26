@@ -13,7 +13,7 @@ use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, Clien
 use crate::events::event_bus::EventBus;
 use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
-use crate::input::InputManager;
+use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
@@ -22,7 +22,8 @@ use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::world_gen::WorldGenerator;
+use crate::world_gen::params::WorldGenParams;
+use crate::world_gen::{WorldGenSplines, WorldGenerator};
 
 pub fn update() -> Workload {
     (
@@ -275,12 +276,8 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
 
 fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0);
+        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
     }
-}
-
-fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
-    input_manager.mouse_manager.reset_scroll_rotate();
 }
 
 fn debug_draw_hitbox_gizmos(

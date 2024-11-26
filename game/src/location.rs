@@ -1,8 +1,9 @@
-use glm::{IVec3, Vec3};
+use glm::{IVec3, TVec3, Vec3};
 use serde::{Deserialize, Serialize};
 use crate::chunk;
 use crate::chunk::location::ChunkLocation;
 use shipyard::Component;
+use crate::chunk::pos::ChunkPos;
 
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
@@ -17,6 +18,12 @@ impl From<&ChunkLocation> for WorldLocation {
 impl From<&BlockLocation> for WorldLocation {
     fn from(loc: &BlockLocation) -> Self {
         Self(loc.0.cast())
+    }
+}
+
+impl From<BlockLocation> for WorldLocation {
+    fn from(loc: BlockLocation) -> Self {
+        (&loc).into()
     }
 }
 
@@ -49,6 +56,12 @@ impl From<WorldLocation> for BlockLocation {
 }
 
 impl BlockLocation {
+    pub fn from_chunk_parts(loc: &ChunkLocation, pos: &ChunkPos) -> Self {
+        let mut this = Self::from(loc);
+        this.0 += TVec3::<u8>::from(pos).cast();
+        this
+    }
+
     pub fn get_aabb_bounds(&self) -> (Vec3, Vec3) {
         let min = self.0.map(|n| n as _);
         let max = min.map(|n| n + 1.0);
