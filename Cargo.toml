@@ -1,14 +1,14 @@
-[package]
+[workspace]
+resolver = "2"
+members = ["client", "game", "packet", "packet_derive", "splines"]
+
+[workspace.package]
 name = "voxel_game"
 version = "0.1.0"
 edition = "2021"
 authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 
-[dependencies]
-
-[workspace]
-resolver = "2"
-members = ["client", "game", "packet", "packet_derive", "splines"]
+[workspace.dependencies]
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
