@@ -6,7 +6,7 @@ use shipyard::{AllStoragesView, EntitiesView, IntoIter, IntoWithId, IntoWorkload
 use game::chunk::data::ChunkData;
 use game::location::WorldLocation;
 use crate::application::exit::ExitRequested;
-use crate::chunks::chunk_manager::{chunk_index_in_render_distance, ChunkManager};
+use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess, KickedByServer};
 use crate::events::event_bus::EventBus;
@@ -263,7 +263,7 @@ fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: Vie
         };
 
         for evt in v_chunk_gen_event.iter() {
-            if chunk_index_in_render_distance(&evt.0.location, &world_loc.into(), render_dist).is_some() {
+            if ChunkManager::in_render_distance_with(&evt.0.location, &world_loc.into(), render_dist) {
                 send_chunk(sender, addr, evt);
             }
         }

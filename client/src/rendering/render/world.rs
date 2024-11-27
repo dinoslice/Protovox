@@ -58,7 +58,7 @@ pub fn render_world(
     let bakery = chunk_manager.baked_chunks();
 
     for chunk_loc in chunk_manager.loaded_locations() {
-        let Some(buffer) = bakery.get(&chunk_loc) else {
+        let Some(buffer) = bakery.get(chunk_loc) else {
             continue;
         };
 
