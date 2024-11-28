@@ -154,12 +154,12 @@ impl ChunkManager {
         requests
     }
 
-    // TODO: this function doesn't need to own the iterator items, currently implemented to fix issue with getting &ChunkLocation
-    pub fn unload_chunks(&mut self, players_info: impl IntoIterator<Item = (ChunkLocation, RenderDistance), IntoIter: Clone>) {
+    // TODO: ideally the iterator would be &ChunkLocation instead of Transform, but this is much easier to get working
+    pub fn unload_chunks<'a>(&mut self, players_info: impl IntoIterator<Item = (&'a Transform, &'a RenderDistance), IntoIter: Clone>) {
         let players_info = players_info.into_iter();
 
         self.loaded.retain(|loc, _| {
-            let ret = players_info.clone().any(|(center, rend)| Self::in_render_distance_with(loc, &center, &rend));
+            let ret = players_info.clone().any(|(transform, rend)| Self::in_render_distance_with(loc, &transform.get_loc(), rend));
 
             if !ret {
                 tracing::trace!("Deleting chunk buffer at {loc:?}");
@@ -259,9 +259,8 @@ pub fn chunk_manager_update_and_request(
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
     }
 
-    // TODO: remove clone!!
+    // TODO: is it possible to eliminate the intermediate vec?
     let player_info_vec = (&v_transform, &v_render_dist).iter()
-        .map(|(xf, rd)| (xf.get_loc(), rd.clone()))
         .collect::<Vec<_>>();
 
     chunk_mgr.unload_chunks(player_info_vec);
