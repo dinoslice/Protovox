@@ -66,19 +66,19 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
     storages.add_component(id, HeldBlock(Block::Cobblestone));
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
+    storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&LocalPlayer, &Transform)>();
+    let iter = &mut storages.iter::<(&Transform, &RenderDistance, &LocalPlayer)>();
 
-    let transform = iter.iter()
+    let (transform, render_dist, ..) = iter.iter()
         .next()
-        .expect("TODO: local player with transform should exist")
-        .1;
+        .expect("TODO: local player with transform should exist");
 
     storages.add_unique(ChunkManager::new(
-        RenderDistance(U16Vec3::new(3,1,3)),
-        ChunkLocation::from(WorldLocation(transform.position)),
+        render_dist.clone(), // TODO: eventually move render distance & center out of chunk manager
+        transform.get_loc(),
         6
     ));
     storages.add_unique(WorldGenerator::new(50));

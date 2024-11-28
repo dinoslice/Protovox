@@ -99,33 +99,18 @@ impl ChunkManager {
             *t > 0.0
         });
 
-        if self.center != new_center || new_render_distance.as_ref().map_or(false, |r| *r != self.render_distance) {
-            if let Some(render_distance) = new_render_distance {
-                self.render_distance = render_distance;
-            }
-
-            self.center = new_center;
-
-            self.loaded.retain(|loc, _| {
-                let ret = Self::in_render_distance_with(loc, &self.center, &self.render_distance); // TODO: replace with method to check if in any render distance
-
-                if !ret {
-                    tracing::trace!("Deleting chunk buffer at {loc:?}");
-                    self.bakery.remove(loc);
-                }
-
-                ret
-            });
+        if let Some(render_distance) = new_render_distance {
+            self.render_distance = render_distance;
         }
+
+        self.center = new_center;
 
         for chunk in received_chunks {
             let data = chunk.0;
 
             self.recently_requested_gen.remove(&data.location);
 
-            if !self.in_render_distance(&data.location) {
-                continue;
-            }
+            // TODO: don't bake or render chunks that aren't in render distance
 
             tracing::trace!("Adding {:?} to chunk manager", data.location);
 
@@ -167,6 +152,22 @@ impl ChunkManager {
         }
 
         requests
+    }
+
+    // TODO: this function doesn't need to own the iterator items, currently implemented to fix issue with getting &ChunkLocation
+    pub fn unload_chunks(&mut self, players_info: impl IntoIterator<Item = (ChunkLocation, RenderDistance), IntoIter: Clone>) {
+        let players_info = players_info.into_iter();
+
+        self.loaded.retain(|loc, _| {
+            let ret = players_info.clone().any(|(center, rend)| Self::in_render_distance_with(loc, &center, &rend));
+
+            if !ret {
+                tracing::trace!("Deleting chunk buffer at {loc:?}");
+                self.bakery.remove(loc);
+            }
+
+            ret
+        });
     }
 
     // TODO: error differentiating between invalid loc & not loaded chunk
@@ -241,21 +242,29 @@ pub fn chunk_manager_update_and_request(
     vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
+
+    v_render_dist: View<RenderDistance>,
+    v_transform: View<Transform>
 ) {
     let (_, transform) = (&vm_local_player, &vm_transform)
         .iter()
         .next()
         .expect("TODO: local player with transform didn't exist");
 
-    let current_chunk = WorldLocation(transform.position).into();
-
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
+    let reqs = chunk_mgr.update_and_resize(transform.get_loc(), delta_time.0, recv, None, &g_ctx);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
     }
+
+    // TODO: remove clone!!
+    let player_info_vec = (&v_transform, &v_render_dist).iter()
+        .map(|(xf, rd)| (xf.get_loc(), rd.clone()))
+        .collect::<Vec<_>>();
+
+    chunk_mgr.unload_chunks(player_info_vec);
 }
 
 #[cfg(test)]
