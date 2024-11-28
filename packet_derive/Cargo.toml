@@ -3,11 +3,9 @@ name = "packet_derive"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
 syn = "2.0"
 quote = "1.0"
-packet = { path = "../packet" }
 
 [lints]
 workspace = true
