@@ -34,7 +34,11 @@ fn init_tracing() -> io::Result<()> {
         .event_format(file_fmt)
         .with_writer(move || log_file.try_clone().expect("failed to clone log file handle"));
 
-    let env_filter = EnvFilter::from_str("debug,wgpu=warn,wgpu_core=warn,wgpu_hal=warn,naga=warn").expect("setting filter failed");
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or(
+            EnvFilter::from_str("warn,client=debug")
+                .expect("failed to set default env filter")
+        );
 
     let subscriber = Registry::default()
         .with(env_filter)

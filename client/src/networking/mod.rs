@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use crossbeam::channel::Sender;
 use laminar::Packet;
 use packet::Packet as _;
-use shipyard::{AllStoragesView, EntitiesView, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload};
+use shipyard::{AllStoragesView, EntitiesView, EntitiesViewMut, IntoIter, IntoWithId, IntoWorkload, Storage, UniqueView, View, ViewMut, Workload};
 use game::chunk::data::ChunkData;
 use game::location::WorldLocation;
 use crate::application::exit::ExitRequested;
@@ -209,7 +209,7 @@ fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransf
     });
 }
 
-fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, entities: EntitiesView, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
     for (id, events) in (&mut reqs).iter().with_id() {
@@ -229,7 +229,8 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
                     send_chunk(sender, addr, gen_evt);
                 }
                 None => {
-                    entities.add_component(id, &mut gen_reqs, ChunkGenRequestEvent(loc));
+                    // TODO: eventually maybe revert this back to add component
+                    entities.add_entity(&mut gen_reqs, ChunkGenRequestEvent(loc));
                 }
             }
         }
@@ -254,16 +255,16 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
     }
 }
 
-fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_world_loc: View<WorldLocation>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
+fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
-    for (id, (render_dist, world_loc)) in (&v_render_dist, &v_world_loc).iter().with_id() {
+    for (id, (render_dist, transform)) in (&v_render_dist, &v_transform).iter().with_id() {
         let Some(&addr) = server_handler.clients.get_by_right(&id) else {
             continue;
         };
 
         for evt in v_chunk_gen_event.iter() {
-            if ChunkManager::in_render_distance_with(&evt.0.location, &world_loc.into(), render_dist) {
+            if ChunkManager::in_render_distance_with(&evt.0.location, &transform.get_loc(), render_dist) {
                 send_chunk(sender, addr, evt);
             }
         }

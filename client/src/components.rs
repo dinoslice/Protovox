@@ -2,6 +2,7 @@ use glm::Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
 use game::block::Block;
+use game::location::WorldLocation;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
 pub struct LocalPlayer;
@@ -20,6 +21,12 @@ pub struct Transform {
     pub position: Vec3,
     pub yaw: f32,
     pub pitch: f32,
+}
+
+impl Transform {
+    pub fn get_loc<T: From<WorldLocation>>(&self) -> T {
+        WorldLocation(self.position).into()
+    }
 }
 
 #[derive(Clone, Component, Debug, Default)]
