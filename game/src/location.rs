@@ -6,7 +6,7 @@ use shipyard::Component;
 use crate::chunk::pos::ChunkPos;
 
 #[repr(transparent)]
-#[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Component, Serialize, Deserialize, PartialEq)]
 pub struct WorldLocation(pub Vec3);
 
 impl From<&ChunkLocation> for WorldLocation {
@@ -28,7 +28,7 @@ impl From<BlockLocation> for WorldLocation {
 }
 
 #[repr(transparent)]
-#[derive(Debug, Default, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Component, Serialize, Deserialize, Eq, PartialEq)]
 pub struct BlockLocation(pub IVec3);
 
 impl From<&ChunkLocation> for BlockLocation {
