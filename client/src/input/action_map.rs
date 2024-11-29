@@ -1,14 +1,13 @@
+use strum::EnumCount;
 use tinybitset::TinyBitSet;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-const N: usize = std::mem::size_of::<Action>() * u8::BITS as usize;
-
 #[derive(Debug, Default)]
-pub struct ActionMap(TinyBitSet<u8, N>); // TODO: replace this with own bitset
+pub struct ActionMap(TinyBitSet<u8, { Action::COUNT.div_ceil(u8::BITS as _) }>);
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, EnumCount)]
 pub enum Action {
     MoveForward,
     MoveBackward,
