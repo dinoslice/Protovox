@@ -9,7 +9,7 @@ use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
-use crate::chunks::client_chunk::ClientChunk;
+use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -86,6 +86,27 @@ impl ChunkManager {
             *t > 0.0
         });
 
+        // TODO: is it expensive to iterate over the hashmap again each frame? maybe only unload & update bake every few frames?
+        for (loc, cc) in &mut self.loaded {
+            let in_rend = Self::in_render_distance_with(loc, center, render_dist);
+
+            match (cc.bake, in_rend) {
+                (BakeState::DontBake, true) => cc.bake = BakeState::NeedsBaking,
+                (BakeState::NeedsBaking, false) => cc.bake = BakeState::DontBake,
+                (BakeState::Baked, false) => {
+                    let had_entry = self.bakery.remove(&cc.data.location).is_some();
+
+                    debug_assert!(had_entry, "if it was baked, it should've been in the bakery");
+
+                    cc.bake = BakeState::DontBake;
+                }
+
+                (BakeState::NeedsBaking, true) => {}
+                (BakeState::Baked, true) => {}
+                (BakeState::DontBake, false) => {}
+            }
+        }
+
         for chunk in received_chunks {
             let data = chunk.0;
 
@@ -95,11 +116,16 @@ impl ChunkManager {
 
             tracing::trace!("Adding {:?} to chunk manager", data.location);
 
-            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk::new_dirty(data));
+            let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
+                true => BakeState::NeedsBaking,
+                false => BakeState::DontBake,
+            };
+
+            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
         }
 
         for (_, chunk) in self.loaded.iter_mut()
-            .filter(|(_, cc)| cc.dirty)
+            .filter(|(_, cc)| cc.bake == BakeState::NeedsBaking)
             .take(self.max_bakes_per_frame)
         {
             let baked = ChunkMesh::from_chunk(&chunk.data).faces;
@@ -120,7 +146,7 @@ impl ChunkManager {
             };
 
             self.bakery.insert(chunk.data.location.clone(), buffer);
-            chunk.dirty = false;
+            chunk.bake = BakeState::Baked;
         }
 
         let requests = Self::renderable_locations_with(center, render_dist)
@@ -143,8 +169,7 @@ impl ChunkManager {
             let ret = players_info.clone().any(|(transform, rend)| Self::in_render_distance_with(loc, &transform.get_loc(), rend));
 
             if !ret {
-                tracing::trace!("Deleting chunk buffer at {loc:?}");
-                self.bakery.remove(loc);
+                debug_assert!(!self.bakery.contains_key(loc), "chunk should've been deleted earlier!");
             }
 
             ret
@@ -188,7 +213,7 @@ impl ChunkManager {
         if prev != new {
             *block_mut = new;
 
-            self.get_chunk_mut(&block_loc.into())?.dirty = true;
+            self.get_chunk_mut(&block_loc.into())?.set_dirty()
         }
         
         Some(prev)
