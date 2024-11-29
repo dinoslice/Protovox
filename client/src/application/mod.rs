@@ -96,14 +96,13 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
                             .just_pressed()
                             .get_action(Action::DumpECSInfo)
                         {
-
-
+                            tracing::debug!("{:#?}", &world.memory_usage());
 
                             std::fs::write(
                                 "ecs info.json",
-                                serde_json::to_string(&world.workloads_info()).unwrap(),
+                                serde_json::to_string(&world.workloads_info()).expect("invalid json"),
                             )
-                                .unwrap();
+                                .expect("path should exist");
 
                             tracing::info!("dumped ecs info to file");
                         }
