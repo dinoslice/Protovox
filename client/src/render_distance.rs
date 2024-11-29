@@ -15,4 +15,8 @@ impl RenderDistance {
     pub fn render_size(&self) -> U16Vec3 {
         self.0.map(|n| 2 * n + 1)
     }
+
+    pub fn total_chunks(&self) -> usize {
+        self.render_size().product() as usize
+    }
 }

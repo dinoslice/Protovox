@@ -4,10 +4,9 @@ use laminar::Packet;
 use packet::Packet as _;
 use shipyard::{AllStoragesView, EntitiesView, EntitiesViewMut, IntoIter, IntoWithId, IntoWorkload, Storage, UniqueView, View, ViewMut, Workload};
 use game::chunk::data::ChunkData;
-use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::application::exit::ExitRequested;
-use crate::chunks::chunk_manager::{chunk_index_in_render_distance, ChunkManager};
+use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess, KickedByServer};
 use crate::events::event_bus::EventBus;
@@ -159,11 +158,17 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
     });
 }
 
-fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, chunk_mgr: UniqueView<ChunkManager>) {
+fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
     if vm_client_settings_req.drain().next().is_some() {
+        let (render_dist, ..) = (&v_render_dist, &v_local_player)
+            .iter()
+            .next()
+            .expect("local player must have render distance");
+
+
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
-            RenderDistanceUpdateEvent(chunk_mgr.render_distance().clone()) // TODO: handle a different way
+            RenderDistanceUpdateEvent(render_dist.clone()) // TODO: handle a different way
                 .serialize_packet()
                 .expect("packet serialization failed")
         );
@@ -265,7 +270,7 @@ fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: Vie
         };
 
         for evt in v_chunk_gen_event.iter() {
-            if chunk_index_in_render_distance(&evt.0.location, &ChunkLocation::from(&WorldLocation(transform.position)), render_dist).is_some() {
+            if ChunkManager::in_render_distance_with(&evt.0.location, &transform.get_loc(), render_dist) {
                 send_chunk(sender, addr, evt);
             }
         }
