@@ -223,8 +223,9 @@ impl ChunkManager {
         let min = self.center.0 - rend_dist;
         let max = self.center.0 + rend_dist;
 
-        itertools::iproduct!(min.x..=max.x, min.y..=max.y, min.z..=max.z)
-            .map(|(x, y, z)| ChunkLocation(IVec3::new(x, y, z)))
+        // possible fix to prioritize xz order
+        itertools::iproduct!(min.x..=max.x, min.z..=max.z, min.y..=max.y)
+            .map(|(x, z, y)| ChunkLocation(IVec3::new(x, y, z)))
     }
 
     pub fn baked_chunks(&self) -> &HashMap<ChunkLocation, SizedBuffer> {
