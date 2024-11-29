@@ -19,6 +19,7 @@ serde = { version = "1.0.209", features = ["derive"] }
 [workspace.lints.clippy]
 unwrap_used = "warn"
 too_many_arguments = "allow"
+print_stdout = "warn"
 
 [profile.dev.package."*"]
 opt-level = 3
