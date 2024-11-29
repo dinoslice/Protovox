@@ -171,7 +171,10 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
                                 Some(data) => match use_bus {
                                     false => { $storages.add_component($id, data); }
                                     true => match storages.borrow::<ViewMut<EventBus<$packet_struct>>>() {
-                                        Ok(mut vm_evt_bus) => vm_evt_bus.get_or_insert_with(id, Default::default).0.push(data),
+                                        Ok(mut vm_evt_bus) => match vm_evt_bus.get_or_insert_with(id, Default::default) {
+                                            Some(mut bus) => bus.0.push(data),
+                                            None => tracing::error!("Tried to insert {ty:?} event to {id:?}, but it was dead"),
+                                        },
                                         Err(_) => tracing::error!("Failed to borrow event bus storage"),
                                     }
                                 }
