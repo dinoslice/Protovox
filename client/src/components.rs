@@ -103,7 +103,7 @@ pub struct Hitbox(pub Vec3);
 
 impl Hitbox {
     pub fn default_player() -> Self {
-        Self(Vec3::new(0.6, 2.0, 0.6))
+        Self(Vec3::new(0.6, 1.8, 0.6))
     }
 }
 
