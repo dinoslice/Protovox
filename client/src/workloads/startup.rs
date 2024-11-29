@@ -1,4 +1,3 @@
-use std::time::Instant;
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, Workload};
@@ -11,10 +10,8 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
-use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
-use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -27,7 +24,6 @@ pub fn startup() -> Workload {
         initialize_local_player,
         initialize_gameplay_systems.after_all(initialize_local_player),
         initialize_networking.after_all(args::parse_env),
-        init_keep_alive,//.run_if(is_hosted),
         set_window_title,
     ).into_sequential_workload()
 }
@@ -78,7 +74,6 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 
     storages.add_unique(ChunkManager::new_with_expected_render_distance(6, render_dist));
     storages.add_unique(WorldGenerator::new(50));
-    storages.add_unique(LastWorldInteraction(Instant::now()));
 }
 
 fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {

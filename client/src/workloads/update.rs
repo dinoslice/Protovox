@@ -1,6 +1,6 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
 use winit::window::Fullscreen;
 use game::block::Block;
@@ -152,7 +152,7 @@ fn place_break_blocks(
     v_looking_at_block: View<LookingAtBlock>,
     v_held_block: View<HeldBlock>,
     input: UniqueView<InputManager>,
-    mut last_world_interaction: UniqueViewMut<LastWorldInteraction>,
+    mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     v_entity: View<Entity>,
