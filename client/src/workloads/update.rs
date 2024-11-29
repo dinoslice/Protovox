@@ -63,6 +63,7 @@ fn toggle_gamemode(
     mut vm_spec_speed: ViewMut<SpectatorSpeed>,
     mut vm_velocity: ViewMut<Velocity>,
     mut vm_hitbox: ViewMut<Hitbox>,
+    mut vm_is_on_ground: ViewMut<IsOnGround>,
     mut vm_gravity_affected: ViewMut<GravityAffected>,
     entities: EntitiesView,
 ) {
@@ -70,7 +71,7 @@ fn toggle_gamemode(
         return;
     }
     
-    let (id, (_, gamemode, velocity, look_at, spec_speed)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block, &mut vm_spec_speed).iter().with_id()
+    let (id, (_, gamemode, velocity, look_at, spec_speed, is_on_ground)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block, &mut vm_spec_speed, &mut vm_is_on_ground).iter().with_id()
         .next()
         .expect("local player should have gamemode and velocity");
     
@@ -85,7 +86,8 @@ fn toggle_gamemode(
         },
         Gamemode::Spectator => {
             *gamemode = Gamemode::Survival;
-            
+
+            is_on_ground.0 = false;
             entities.add_component(id, &mut vm_hitbox, Hitbox::default_player());
             entities.add_component(id, &mut vm_gravity_affected, GravityAffected);
         },

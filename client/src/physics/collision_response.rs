@@ -60,10 +60,15 @@ pub fn move_with_collision(
         let new_position_y = Vec3::new(transform.position.x, transform.position.y + frame_vel.y, transform.position.z);
         if !check_collision(new_position_y).unwrap_or(true) {
             transform.position.y += frame_vel.y;
-            is_on_ground.0 = false;
+
+            if frame_vel.y.abs() > 1e-6 {
+                is_on_ground.0 = false;
+            }
         } else {
-            // TODO: head collision also would trigger this
-            is_on_ground.0 = true;
+            if frame_vel.y <= 0.0 {
+                is_on_ground.0 = true
+            }
+
             vel.0.y = 0.0; // Stop movement in the Y axis due to collision
         }
 
