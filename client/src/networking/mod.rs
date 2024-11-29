@@ -158,11 +158,17 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
     });
 }
 
-fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, chunk_mgr: UniqueView<ChunkManager>) {
+fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
     if vm_client_settings_req.drain().next().is_some() {
+        let (render_dist, ..) = (&v_render_dist, &v_local_player)
+            .iter()
+            .next()
+            .expect("local player must have render distance");
+
+
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
-            RenderDistanceUpdateEvent(chunk_mgr.render_distance().clone()) // TODO: handle a different way
+            RenderDistanceUpdateEvent(render_dist.clone()) // TODO: handle a different way
                 .serialize_packet()
                 .expect("packet serialization failed")
         );

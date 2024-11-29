@@ -70,17 +70,13 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&Transform, &RenderDistance, &LocalPlayer)>();
+    let iter = &mut storages.iter::<(&RenderDistance, &LocalPlayer)>();
 
-    let (transform, render_dist, ..) = iter.iter()
+    let (render_dist, ..) = iter.iter()
         .next()
         .expect("TODO: local player with transform should exist");
 
-    storages.add_unique(ChunkManager::new(
-        render_dist.clone(), // TODO: eventually move render distance & center out of chunk manager
-        transform.get_loc(),
-        6
-    ));
+    storages.add_unique(ChunkManager::new_with_expected_render_distance(6, render_dist));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(LastWorldInteraction(Instant::now()));
 }

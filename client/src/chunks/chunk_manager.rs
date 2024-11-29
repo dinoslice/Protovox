@@ -23,11 +23,7 @@ const REQ_TIMEOUT: f32 = 5.0;
 pub struct ChunkManager {
     loaded: HashMap<ChunkLocation, ClientChunk>, // TODO: check for more optimized hashmaps
 
-    // TODO: remove player specific state from chunk manager (+ bakery)
-    render_distance: RenderDistance,
-    center: ChunkLocation,
-
-    // TODO: one big buffer?
+    // TODO: one big buffer?, maybe remove bakery from chunk mgr?
     bakery: HashMap<ChunkLocation, SizedBuffer>,
 
     recently_requested_gen: HashMap<ChunkLocation, f32>,
@@ -35,20 +31,26 @@ pub struct ChunkManager {
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: RenderDistance, center: ChunkLocation, max_bakes_per_frame: usize) -> Self {
-        let size = render_distance.0.iter()
-            .map(|n| (2 * n + 1) as usize)
-            .product();
-
-        tracing::info!("Initializing ChunkManager with space for {size} chunks");
-
+    pub fn new(max_bakes_per_frame: usize) -> Self {
         Self {
-            loaded: HashMap::with_capacity(size),
-            render_distance,
-            center,
+            loaded: HashMap::default(),
             recently_requested_gen: HashMap::default(),
             bakery: HashMap::default(),
             max_bakes_per_frame,
+        }
+    }
+
+    pub fn new_with_expected_render_distance(max_bakes_per_frame: usize, expected: &RenderDistance) -> Self {
+        let mut chunk_mgr = Self::new(max_bakes_per_frame);
+
+        chunk_mgr.expect_render_distance(expected);
+
+        chunk_mgr
+    }
+
+    pub fn expect_render_distance(&mut self, expected: &RenderDistance) {
+        if let Some(additional) = self.loaded.capacity().checked_sub(expected.total_chunks()) {
+            self.loaded.reserve(additional);
         }
     }
 
@@ -57,21 +59,6 @@ impl ChunkManager {
 
         self.bakery.clear();
         self.recently_requested_gen.clear();
-    }
-
-    pub fn chunk_capacity(&self) -> usize {
-        self.render_distance.0.iter()
-            .map(|n| (2 * n + 1) as usize)
-            .product()
-    }
-    
-    pub fn render_distance(&self) -> &RenderDistance {
-        &self.render_distance
-    }
-
-    #[inline(always)]
-    pub fn in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
-        Self::in_render_distance_with(chunk_loc, &self.center, &self.render_distance)
     }
 
     // TODO: possibly optimize this method?
@@ -91,19 +78,13 @@ impl ChunkManager {
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
             *t -= delta_time_sec;
             *t > 0.0
         });
-
-        if let Some(render_distance) = new_render_distance {
-            self.render_distance = render_distance;
-        }
-
-        self.center = new_center;
 
         for chunk in received_chunks {
             let data = chunk.0;
@@ -142,7 +123,7 @@ impl ChunkManager {
             chunk.dirty = false;
         }
 
-        let requests = self.renderable_locations()
+        let requests = Self::renderable_locations_with(center, render_dist)
             .filter(|loc| !self.loaded.contains_key(loc) && !self.recently_requested_gen.contains_key(loc))
             .map(ChunkGenRequestEvent)
             .collect::<Vec<_>>();
@@ -217,11 +198,11 @@ impl ChunkManager {
         self.loaded.keys().collect()
     }
 
-    pub fn renderable_locations(&self) -> impl Iterator<Item = ChunkLocation> + Clone + fmt::Debug {
-        let rend_dist = self.render_distance.0.cast();
+    pub fn renderable_locations_with(center: &ChunkLocation, render_distance: &RenderDistance) -> impl Iterator<Item = ChunkLocation> + Clone + fmt::Debug {
+        let rend_dist = render_distance.0.cast();
 
-        let min = self.center.0 - rend_dist;
-        let max = self.center.0 + rend_dist;
+        let min = center.0 - rend_dist;
+        let max = center.0 + rend_dist;
 
         // possible fix to prioritize xz order
         itertools::iproduct!(min.x..=max.x, min.z..=max.z, min.y..=max.y)
@@ -239,7 +220,6 @@ pub fn chunk_manager_update_and_request(
 
     delta_time: UniqueView<LastDeltaTime>,
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
-    vm_transform: View<Transform>,
     vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
@@ -247,14 +227,14 @@ pub fn chunk_manager_update_and_request(
     v_render_dist: View<RenderDistance>,
     v_transform: View<Transform>
 ) {
-    let (_, transform) = (&vm_local_player, &vm_transform)
+    let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &vm_local_player)
         .iter()
         .next()
         .expect("TODO: local player with transform didn't exist");
 
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(transform.get_loc(), delta_time.0, recv, None, &g_ctx);
+    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
