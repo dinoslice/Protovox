@@ -12,6 +12,9 @@ pub enum Block {
     Grass,
     Dirt,
     Cobblestone,
+    Stone,
+    Log,
+    Leaf,
     Debug
 }
 
