@@ -1,7 +1,7 @@
 use std::fmt;
 use glm::TVec3;
 use crate::chunk::CHUNK_SIZE;
-use crate::location::WorldLocation;
+use crate::location::{BlockLocation, WorldLocation};
 
 macro_rules! impl_getters_setters {
     ($axis:ident, $set_axis:ident, $set_axis_unchecked:ident, $offset:expr, $max:expr) => {
@@ -57,6 +57,10 @@ impl ChunkPos {
     impl_getters_setters!(x, set_x, set_x_unchecked, 0, CHUNK_SIZE.x - 1);
     impl_getters_setters!(y, set_y, set_y_unchecked, 5, CHUNK_SIZE.y - 1);
     impl_getters_setters!(z, set_z, set_z_unchecked, 11, CHUNK_SIZE.z - 1);
+
+    pub fn center() -> Self {
+        Self::try_from(CHUNK_SIZE / 2).expect("must be valid position")
+    }
 }
 
 impl TryFrom<&TVec3<u8>> for ChunkPos {
@@ -75,13 +79,19 @@ impl TryFrom<TVec3<u8>> for ChunkPos {
     }
 }
 
-impl From<ChunkPos> for TVec3<u8> {
-    fn from(chunk_pos: ChunkPos) -> Self {
+impl From<&ChunkPos> for TVec3<u8> {
+    fn from(chunk_pos: &ChunkPos) -> Self {
         Self::new(chunk_pos.x(), chunk_pos.y(), chunk_pos.z())
     }
 }
 
-impl From<&WorldLocation> for ChunkPos {
+impl From<ChunkPos> for TVec3<u8> {
+    fn from(chunk_pos: ChunkPos) -> Self {
+        (&chunk_pos).into()
+    }
+}
+
+impl From<&WorldLocation> for ChunkPos { // TODO: maybe convert from WorldLocation -> BlockLocation -> ChunkPos?
     fn from(value: &WorldLocation) -> Self {
         use num_traits::cast::ToPrimitive;
         
@@ -93,6 +103,16 @@ impl From<&WorldLocation> for ChunkPos {
                     .to_u8()
                     .expect("rem_euclid should be within range")
             })
+            .try_into()
+            .expect("values in range")
+    }
+}
+
+impl From<&BlockLocation> for ChunkPos {
+    fn from(loc: &BlockLocation) -> Self { // TODO: add tests for this function
+        loc
+            .0
+            .map_with_location(|r, _, n| n.rem_euclid(CHUNK_SIZE[r] as _) as _)
             .try_into()
             .expect("values in range")
     }

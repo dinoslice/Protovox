@@ -1,38 +1,46 @@
 use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
+use strum::EnumCount;
+use winit::window::Fullscreen;
 use game::block::Block;
+use game::location::BlockLocation;
 use crate::camera::Camera;
-use crate::chunks::raycast::RaycastResult;
-use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::chunks::raycast::BlockRaycastResult;
+use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
-use crate::events::{ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
+use crate::events::event_bus::EventBus;
+use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
-use crate::input::InputManager;
+use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
-use crate::physics::movement::{adjust_fly_speed, apply_camera_input, process_movement};
+use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
-use crate::world_gen::WorldGenerator;
+use crate::rendering::graphics_context::GraphicsContext;
+use crate::world_gen::params::WorldGenParams;
+use crate::world_gen::{WorldGenSplines, WorldGenerator};
 
 pub fn update() -> Workload {
     (
-        update_input_manager,
         process_input,
         process_physics,
         reset_mouse_manager_state,
+        get_generated_chunks.run_if(is_hosted),
         networking::update_networking_server.run_if(is_hosted),
         networking::update_networking_client.run_if(is_multiplayer_client),
-        get_generated_chunks.run_if(is_hosted),
         chunk_manager_update_and_request,
         generate_chunks.run_if(is_hosted),
+        server_apply_block_updates.run_if(is_hosted),
+        client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
         spawn_multiplayer_player,
-        raycast,
-        place_break_blocks,
+        raycast.skip_if(local_player_is_gamemode_spectator),
+        place_break_blocks.skip_if(local_player_is_gamemode_spectator),
         gizmos::update,
     ).into_sequential_workload()
 }
@@ -41,12 +49,83 @@ pub fn process_input() -> Workload {
     (
         apply_camera_input,
         process_movement,
-        adjust_fly_speed,
+        toggle_gamemode,
+        adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
+        scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
     ).into_workload()
 }
 
-fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
-    input.process();
+fn toggle_gamemode(
+    input: UniqueView<InputManager>,
+    v_local_player: View<LocalPlayer>,
+    mut vm_looking_at_block: ViewMut<LookingAtBlock>,
+    mut vm_gamemode: ViewMut<Gamemode>,
+    mut vm_spec_speed: ViewMut<SpectatorSpeed>,
+    mut vm_velocity: ViewMut<Velocity>,
+    mut vm_hitbox: ViewMut<Hitbox>,
+    mut vm_gravity_affected: ViewMut<GravityAffected>,
+    entities: EntitiesView,
+) {
+    if !input.just_pressed().get_action(Action::ToggleGamemode) {
+        return;
+    }
+    
+    let (id, (_, gamemode, velocity, look_at, spec_speed)) = (&v_local_player, &mut vm_gamemode, &mut vm_velocity, &mut vm_looking_at_block, &mut vm_spec_speed).iter().with_id()
+        .next()
+        .expect("local player should have gamemode and velocity");
+    
+    match gamemode {
+        Gamemode::Survival => {
+            *gamemode = Gamemode::Spectator;
+            spec_speed.curr_speed = SpectatorSpeed::default().curr_speed;
+            look_at.0 = None;
+            
+            vm_gravity_affected.remove(id);
+            vm_hitbox.remove(id);
+        },
+        Gamemode::Spectator => {
+            *gamemode = Gamemode::Survival;
+            
+            entities.add_component(id, &mut vm_hitbox, Hitbox::default_player());
+            entities.add_component(id, &mut vm_gravity_affected, GravityAffected);
+        },
+    };
+
+    *velocity = Velocity::default();
+}
+
+fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
+    let scroll = input.mouse_manager.scroll.floor() as i32;
+    
+    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
+        .next()
+        .expect("local player should have held block");
+
+    let curr_block = held.0 as u16 as i32;
+    
+    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
+    
+    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
+}
+
+fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
+    for mut bus in vm_block_update_evt_bus.drain() {
+        for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
+            if world.modify_block(&loc, new_block).is_none() {
+                tracing::error!("Location from block update wasn't loaded");
+            }
+        }
+    }
+    
+    vm_block_update_evt.drain();
+}
+
+fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
+    for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
+        if world.modify_block(&loc, new_block).is_none() {
+            tracing::error!("Location from block update wasn't loaded");
+        }
+    }
 }
 
 fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
@@ -71,20 +150,23 @@ fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
+    v_held_block: View<HeldBlock>,
     input: UniqueView<InputManager>,
-    mut last_world_interaction: UniqueViewMut<LastWorldInteraction>,
+    mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     v_entity: View<Entity>,
     v_transform: View<Transform>,
     v_hitbox: View<Hitbox>,
+    
+    (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let Some(RaycastResult { prev_air, hit_position, .. }) = (&v_local_player, &v_looking_at_block)
-        .iter()
+    let (_, look_at, held) = (&v_local_player, &v_looking_at_block, &v_held_block).iter()
         .next()
-        .and_then(|(_, look_at)| look_at.0.as_ref())
-    else {
-        return
+        .expect("local player didn't have LookingAtBlock & HeldBlock");
+    
+    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = &look_at.0 else {
+        return;
     };
 
     let mut should_place = input.just_pressed().get_action(Action::PlaceBlock);
@@ -94,21 +176,26 @@ fn place_break_blocks(
         should_place |= input.pressed().get_action(Action::PlaceBlock);
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
+    
+    should_place &= held.0.placeable();
+
+    let mut update_block = |pos: BlockLocation, block: Block| {
+        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
+        last_world_interaction.reset_cooldown();
+
+        entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
+    };
 
     if should_place && should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Cobblestone);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), held.0);
     } else if should_break {
-        chunk_mgr.modify_block_from_world_loc(hit_position, Block::Air);
-        last_world_interaction.reset_cooldown();
+        update_block(hit_block.clone(), Block::Air);
     } else if should_place {
         if let Some(prev_air) = prev_air {
-            let min = prev_air.0.map(f32::floor);
-            let max = min.map(|n| n + 1.0);
+            let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                chunk_mgr.modify_block_from_world_loc(prev_air, Block::Cobblestone);
-                last_world_interaction.reset_cooldown();
+                update_block(prev_air.clone(), held.0);
             }
         }
     }
@@ -147,7 +234,7 @@ fn spawn_multiplayer_player(
                 GravityAffected,
                 IsOnGround::default(),
                 Transform {
-                    position: Vec3::new(0.5, 20.0, 0.5),
+                    position: Vec3::new(0.5, 60.0, 0.5),
                     .. Default::default()
                 },
                 Velocity::default(),
@@ -177,12 +264,8 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
 
 fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0);
+        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
     }
-}
-
-fn reset_mouse_manager_state(mut input_manager: UniqueViewMut<InputManager>) {
-    input_manager.mouse_manager.reset_scroll_rotate();
 }
 
 fn debug_draw_hitbox_gizmos(

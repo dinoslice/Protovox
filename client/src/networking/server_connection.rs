@@ -5,7 +5,6 @@ use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
 use packet::Packet as _;
-use crate::environment::is_multiplayer_client;
 use crate::events;
 
 #[derive(Unique)]
@@ -130,8 +129,12 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
 
         RenderDistanceRequestEvent => false,
         ClientSettingsRequestEvent => false,
+        
+        BlockUpdateEvent => false,
 
         ConnectionSuccess => false,
+        
+        KickedByServer => false,
 
         KeepAlive => false,
     });

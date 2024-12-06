@@ -1,4 +1,4 @@
-use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, Workload};
+use shipyard::{AllStoragesView, IntoWorkload, IntoWorkloadTrySystem, Unique, UniqueView, Workload};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::block_outline::update_block_outline_buffer;
 use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
@@ -6,19 +6,24 @@ use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 mod world;
 mod gizmos;
 mod block_outline;
-
+mod egui;
 
 pub fn render() -> Workload {
     (
         (
             update_block_outline_buffer,
             update_camera_uniform_buffer,
-            create_new_render_context,
+            create_new_render_context
+                .into_workload_try_system()
+                .expect("failed to convert to try_system?"),
         ).into_workload(),
-        world::render_world,
-        gizmos::render_line_gizmos,
-        block_outline::render_block_outline,
-        submit_rendered_frame,
+        (
+            world::render_world,
+            gizmos::render_line_gizmos,
+            block_outline::render_block_outline,
+            egui::render_egui,
+            submit_rendered_frame,
+        ).into_sequential_workload()
     ).into_sequential_workload()
 }
 

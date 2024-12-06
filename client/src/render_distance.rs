@@ -2,7 +2,7 @@ use glm::U16Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
 
-#[derive(Debug, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Eq, PartialEq)]
 pub struct RenderDistance(pub U16Vec3);
 
 impl Default for RenderDistance {
@@ -14,5 +14,9 @@ impl Default for RenderDistance {
 impl RenderDistance {
     pub fn render_size(&self) -> U16Vec3 {
         self.0.map(|n| 2 * n + 1)
+    }
+
+    pub fn total_chunks(&self) -> usize {
+        self.render_size().product() as usize
     }
 }

@@ -1,22 +1,17 @@
-use std::time::Instant;
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, Workload};
+use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::location::WorldLocation;
 use crate::camera::Camera;
-use crate::application::CaptureState;
-use crate::application::delta_time::LastDeltaTime;
 use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, GravityAffected, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
-use crate::input::InputManager;
-use crate::input::mouse_manager::MouseManager;
-use crate::last_world_interaction::LastWorldInteraction;
+use crate::gamemode::Gamemode;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
-use crate::networking::keep_alive::init_keep_alive;
 use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -28,9 +23,8 @@ pub fn startup() -> Workload {
         rendering::initialize,
         initialize_local_player,
         initialize_gameplay_systems.after_all(initialize_local_player),
-        initialize_application_systems,
         initialize_networking.after_all(args::parse_env),
-        init_keep_alive,//.run_if(is_hosted),
+        set_window_title,
     ).into_sequential_workload()
 }
 
@@ -51,13 +45,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
             .. Default::default()
         },
         Velocity::default(),
-        PlayerSpeed::from_observed(
-            4.32,
-            1.25,
-            9.8,
-            0.2,
-            0.18
-        ),
+        PlayerSpeed::default(),
         Camera {
             offset: Vec3::new(0.0, 0.5, 0.0),
             perspective: Perspective3::new(
@@ -67,37 +55,30 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
                 1000.0
             ),
         },
-        Hitbox(Vec3::new(0.6, 2.0, 0.6))
+        Hitbox::default_player(),
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
+    storages.add_component(id, HeldBlock(Block::Cobblestone));
+    storages.add_component(id, Gamemode::Survival);
+    storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
+    storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&LocalPlayer, &Transform)>();
+    let iter = &mut storages.iter::<(&RenderDistance, &LocalPlayer)>();
 
-    let transform = iter.iter()
+    let (render_dist, ..) = iter.iter()
         .next()
-        .expect("TODO: local player with transform should exist")
-        .1;
+        .expect("TODO: local player with transform should exist");
 
-    storages.add_unique(ChunkManager::new(
-        RenderDistance(U16Vec3::new(3,0,3)),
-        ChunkLocation::from(WorldLocation(transform.position))
-    ));
+    storages.add_unique(ChunkManager::new_with_expected_render_distance(6, render_dist));
     storages.add_unique(WorldGenerator::new(50));
-    storages.add_unique(LastWorldInteraction(Instant::now()));
-}
-
-pub fn initialize_application_systems(storages: AllStoragesView) {
-    storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
-    storages.add_unique(CaptureState::default());
-    storages.add_unique(LastDeltaTime::default());
 }
 
 fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
     if storages.run(is_hosted) {
-        storages.add_unique(ServerHandler::new());
+        storages.add_unique(ServerHandler::new(None));
     } else if storages.run(is_multiplayer_client) {
         let Environment::MultiplayerClient(addr) = *env else {
             unreachable!();
@@ -107,3 +88,6 @@ fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView
     }
 }
 
+fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {
+    g_ctx.window.set_title(&format!("voxel game: {}", *env))
+}

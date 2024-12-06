@@ -4,34 +4,51 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = { version = "1.16.1", features = [ "derive" ] }
-image = { version = "0.25.1", features = ["jpeg", "png"] }
-pollster = "0.3.0"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "std", "chrono"] }
+# windowing & graphics
 wgpu = "0.20.1"
-winit = "0.29.15" #temporarily using older version, switch to newer version later
-nalgebra = { version = "0.33.0", features = ["serde-serialize"] }
-nalgebra-glm = "0.19.0"
-tinybitset = "0.0.1"
-chrono = "0.4.38"
-game = { path = "../game" }
-rand = "0.8.5"
-shipyard = "0.7.3"
-hashbrown = "0.14.5"
-noise = "0.9.0"
-rayon = "1.10.0"
-crossbeam = "0.8.4"
+winit = "0.29.15" # temporarily using older version, switch to newer version later
+egui = "0.28.1"
+egui-wgpu = { version = "0.28.1",features = ["winit"] }
+egui-winit = { version = "0.28.1", features = ["arboard", "links", "wayland", "x11"], default-features = false }
+image = { version = "0.25.5", features = ["jpeg", "png"] }
+rgb = "0.8.50"
+
+# networking
+laminar = "0.5.0"
 packet = { path  = "../packet" }
 packet_derive = { path  = "../packet_derive" }
-postcard = "1.0.10"
-strum = { version = "0.26.3", features = ["derive", "strum_macros"] }
-serde = { version = "1.0.209", features = ["derive"] }
-laminar = "0.5.0"
+
+# util
+bytemuck = { version = "1.20.0", features = [ "derive" ] }
+rand = "0.8.5"
+pollster = "0.4.0"
+itertools = "0.13.0"
+thiserror = { workspace = true }
+strum = { workspace = true }
+serde = { workspace = true }
+
+# data
+shipyard = { workspace = true }
 bimap = "0.6.3"
+hashbrown = "0.15.2"
+tinybitset = "0.0.2"
+
+# application
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "std", "chrono"] }
+chrono = "0.4.38"
 clap = { version = "4.5.17", features = ["derive"] }
-rgb = "0.8.50"
-thiserror = "1.0.63"
+crossbeam = "0.8.4"
+rayon = "1.10.0"
+
+# game
+game = { path = "../game" }
+splines = { path = "../splines" }
+noise = "0.9.0"
+
+# math
+nalgebra = { workspace = true }
+nalgebra-glm = { workspace = true }
 
 [lints]
 workspace = true

@@ -6,7 +6,6 @@ use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
 use packet::PacketHeader;
-use crate::environment::is_hosted;
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
 
@@ -14,12 +13,12 @@ use crate::events::event_bus::EventBus;
 pub struct ServerHandler {
     pub tx: Sender<laminar::Packet>,
     pub rx: Receiver<SocketEvent>,
+    pub local_addr: SocketAddr,
     pub clients: BiHashMap<SocketAddr, EntityId>,
 }
 
 impl ServerHandler {
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(host_addr: Option<SocketAddr>) -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
@@ -27,19 +26,26 @@ impl ServerHandler {
             idle_connection_timeout: Duration::from_secs(6),
             .. Default::default()
         };
-
-        let mut socket = Socket::bind_any_with_config(config)
+        
+        let mut socket = match host_addr {
+            None => Socket::bind_any_with_config(config),
+            Some(addr) => Socket::bind_with_config(addr, config),
+        }
             .expect("unable to bind to address");
-
-        tracing::debug!("Bound server to socket {:?}", socket.local_addr());
+        
+        let local_addr = socket.local_addr()
+            .expect("failed to get local_addr?");
+        
+        tracing::debug!("Bound server to socket {local_addr:?}");
         let tx = socket.get_packet_sender();
         let rx = socket.get_event_receiver();
-
+        
         let _polling = thread::spawn(move || socket.start_polling());
 
         Self {
             tx,
             rx,
+            local_addr,
             clients: BiHashMap::default(),
         }
     }
@@ -165,7 +171,10 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
                                 Some(data) => match use_bus {
                                     false => { $storages.add_component($id, data); }
                                     true => match storages.borrow::<ViewMut<EventBus<$packet_struct>>>() {
-                                        Ok(mut vm_evt_bus) => vm_evt_bus.get_or_insert_with(id, Default::default).0.push(data),
+                                        Ok(mut vm_evt_bus) => match vm_evt_bus.get_or_insert_with(id, Default::default) {
+                                            Some(mut bus) => bus.0.push(data),
+                                            None => tracing::error!("Tried to insert {ty:?} event to {id:?}, but it was dead"),
+                                        },
                                         Err(_) => tracing::error!("Failed to borrow event bus storage"),
                                     }
                                 }
@@ -186,6 +195,8 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
         ConnectionRequest =>,
 
         ClientChunkRequest => bus,
+        
+        BlockUpdateEvent => bus,
 
         RenderDistanceUpdateEvent =>,
 

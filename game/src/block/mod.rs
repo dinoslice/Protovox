@@ -1,16 +1,21 @@
 use serde::{Deserialize, Serialize};
+use strum::{EnumCount, FromRepr};
 use crate::block::face_type::FaceType;
 
 pub mod face_type;
 
-#[repr(u16)]
-#[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize)]
+#[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
+#[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize, EnumCount, FromRepr)]
 pub enum Block {
     #[default]
     Air = 0,
     Grass,
     Dirt,
     Cobblestone,
+    Stone,
+    Log,
+    Leaf,
+    Debug
 }
 
 #[repr(u8)]
@@ -32,6 +37,10 @@ impl Block {
         const GRASS_TOP_TEXTURE: TextureId = 3;
         const GRASS_SIDE_TEXTURE: TextureId = 4;
 
+        const DEBUG_RED: TextureId = 6;
+        const DEBUG_GREEN: TextureId = 7;
+        const DEBUG_BLUE: TextureId = 8;
+
         match self {
             Block::Air => AIR_TEXTURE,
             Block::Grass => match face_type {
@@ -41,7 +50,21 @@ impl Block {
             }
             Block::Dirt => DIRT_TEXTURE,
             Block::Cobblestone => COBBLE_TEXTURE,
+            Block::Debug => match face_type {
+                FaceType::Left | FaceType::Right => DEBUG_RED,
+                FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
+                FaceType::Front | FaceType::Back => DEBUG_GREEN,
+            }
         }
     }
-
+    
+    pub fn placeable(&self) -> bool {
+        match self {
+            Block::Air => false,
+            Block::Grass => true,
+            Block::Dirt => true,
+            Block::Cobblestone => true,
+            Block::Debug => true,
+        }
+    }
 }

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::time::Duration;
 use glm::IVec3;
 use hashbrown::HashMap;
@@ -6,9 +7,9 @@ use wgpu::util::DeviceExt;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
-use game::location::WorldLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
-use crate::chunks::client_chunk::ClientChunk;
+use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -20,58 +21,64 @@ const REQ_TIMEOUT: f32 = 5.0;
 
 #[derive(Unique)]
 pub struct ChunkManager {
-    // TODO: add handle to gpu buffer?
-    loaded_chunks: Vec<Option<ClientChunk>>,
+    loaded: HashMap<ChunkLocation, ClientChunk>, // TODO: check for more optimized hashmaps
 
-    render_distance: RenderDistance,
-    center: ChunkLocation,
-
-    // TODO: one big buffer?
+    // TODO: one big buffer?, maybe remove bakery from chunk mgr?
     bakery: HashMap<ChunkLocation, SizedBuffer>,
 
     recently_requested_gen: HashMap<ChunkLocation, f32>,
+    max_bakes_per_frame: usize,
 }
 
 impl ChunkManager {
-    pub fn new(render_distance: RenderDistance, center: ChunkLocation) -> Self {
-        let size = render_distance.0.iter()
-            .map(|n| (2 * n + 1) as usize)
-            .product();
-
-        tracing::debug!("attempting to allocate size for {size} chunks.");
-
-        let mut loaded_chunks = Vec::new();
-        loaded_chunks.resize_with(size, || None);
-
+    pub fn new(max_bakes_per_frame: usize) -> Self {
         Self {
-            loaded_chunks,
-            render_distance,
-            center,
+            loaded: HashMap::default(),
             recently_requested_gen: HashMap::default(),
             bakery: HashMap::default(),
+            max_bakes_per_frame,
         }
     }
 
-    pub fn chunk_capacity(&self) -> usize {
-        self.render_distance.0.iter()
-            .map(|n| (2 * n + 1) as usize)
-            .product()
+    pub fn new_with_expected_render_distance(max_bakes_per_frame: usize, expected: &RenderDistance) -> Self {
+        let mut chunk_mgr = Self::new(max_bakes_per_frame);
+
+        chunk_mgr.expect_render_distance(expected);
+
+        chunk_mgr
     }
 
-    pub fn is_chunk_loc_in_render_distance(&self, chunk_loc: &ChunkLocation) -> bool {
-        self.get_index_from_chunk_location_checked(chunk_loc).is_some()
+    pub fn expect_render_distance(&mut self, expected: &RenderDistance) {
+        if let Some(additional) = self.loaded.capacity().checked_sub(expected.total_chunks()) {
+            self.loaded.reserve(additional);
+        }
     }
-    
-    pub fn drop_all_recently_requested(&mut self) {
+
+    pub fn reset(&mut self) {
+        self.loaded.clear();
+
+        self.bakery.clear();
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, new_center: ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, new_render_distance: Option<RenderDistance>, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
-        // TODO: skip if no chunks changed
-        if let Some(render_distance) = new_render_distance {
-            self.render_distance = render_distance;
-        }
+    // TODO: possibly optimize this method?
+    pub fn in_render_distance_with(chunk_loc: &ChunkLocation, center: &ChunkLocation, render_distance: &RenderDistance) -> bool {
+        let offset = chunk_loc.0 - center.0;
 
+        let render_dist_i32 = render_distance.0.cast();
+
+        let norm_offset = offset + render_dist_i32;
+
+        !norm_offset.iter()
+            .enumerate()
+            .any(|(i, n)| *n > 2 * render_dist_i32[i] || n.is_negative())
+    }
+    
+    pub fn clear_recently_requested(&mut self) {
+        self.recently_requested_gen.clear();
+    }
+
+    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
@@ -79,49 +86,47 @@ impl ChunkManager {
             *t > 0.0
         });
 
-        self.center = new_center;
+        // TODO: is it expensive to iterate over the hashmap again each frame? maybe only unload & update bake every few frames?
+        for (loc, cc) in &mut self.loaded {
+            let in_rend = Self::in_render_distance_with(loc, center, render_dist);
 
-        let mut new_loaded = Vec::new();
-        new_loaded.resize_with(self.chunk_capacity(), || None);
+            match (cc.bake, in_rend) {
+                (BakeState::DontBake, true) => cc.bake = BakeState::NeedsBaking,
+                (BakeState::NeedsBaking, false) => cc.bake = BakeState::DontBake,
+                (BakeState::Baked, false) => {
+                    let had_entry = self.bakery.remove(&cc.data.location).is_some();
 
-        // TODO: we know old center and new center, so calculate new vec positions
-        for chunk in std::mem::take(&mut self.loaded_chunks).into_iter().flatten() {
-            match self.get_index_from_chunk_location_checked(&chunk.data.location) {
-                Some(index) => *new_loaded.get_mut(index).expect("index to exist") = Some(chunk),
-                None => {
-                    let loc = &chunk.data.location;
-                    tracing::trace!("Deleting chunk buffer at {loc:?}");
-                    self.bakery.remove(loc);
+                    debug_assert!(had_entry, "if it was baked, it should've been in the bakery");
+
+                    cc.bake = BakeState::DontBake;
                 }
+
+                (BakeState::NeedsBaking, true) => {}
+                (BakeState::Baked, true) => {}
+                (BakeState::DontBake, false) => {}
             }
         }
-
-        self.loaded_chunks = new_loaded;
 
         for chunk in received_chunks {
             let data = chunk.0;
 
             self.recently_requested_gen.remove(&data.location);
 
-            let Some(index) = self.get_index_from_chunk_location_checked(&data.location) else {
-                continue;
+            // TODO: don't bake or render chunks that aren't in render distance
+
+            tracing::trace!("Adding {:?} to chunk manager", data.location);
+
+            let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
+                true => BakeState::NeedsBaking,
+                false => BakeState::DontBake,
             };
 
-            tracing::trace!("About to insert chunk {:?} at {}", data.location, index);
-
-            self.loaded_chunks
-                .get_mut(index)
-                .expect("index in bounds")
-                .get_or_insert(ClientChunk::new_dirty(data));
-            // TODO: create GPU data
+            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
         }
 
-        for chunk in self.loaded_chunks.iter_mut()
-            .filter_map(|cc|
-                cc.as_mut().and_then(|cc|
-                    cc.dirty.then_some(cc)
-                )
-            )
+        for (_, chunk) in self.loaded.iter_mut()
+            .filter(|(_, cc)| cc.bake == BakeState::NeedsBaking)
+            .take(self.max_bakes_per_frame)
         {
             let baked = ChunkMesh::from_chunk(&chunk.data).faces;
 
@@ -129,8 +134,8 @@ impl ChunkManager {
 
             let buffer = g_ctx.device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
-                    label: Some("chunk buffer"),
-                    contents: bytemuck::cast_slice(&baked),
+                    label: Some("ChunkManger chunk buffer"),
+                    contents: bytemuck::try_cast_slice(&baked).expect("compatible data"),
                     usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, // only needed in vertex buffer,
                 }
             );
@@ -141,14 +146,11 @@ impl ChunkManager {
             };
 
             self.bakery.insert(chunk.data.location.clone(), buffer);
-            chunk.dirty = false;
+            chunk.bake = BakeState::Baked;
         }
 
-        let requests = self.loaded_chunks.iter()
-            .enumerate()
-            .filter_map(|(i, c)| c.is_none().then_some(i))
-            .map(|i| self.get_location_from_index(i))
-            .filter(|loc| !self.recently_requested_gen.contains_key(loc))
+        let requests = Self::renderable_locations_with(center, render_dist)
+            .filter(|loc| !self.loaded.contains_key(loc) && !self.recently_requested_gen.contains_key(loc))
             .map(ChunkGenRequestEvent)
             .collect::<Vec<_>>();
 
@@ -158,93 +160,78 @@ impl ChunkManager {
 
         requests
     }
-    
-    pub fn get_index_from_chunk_location_checked(&self, location: &ChunkLocation) -> Option<usize> {
-        let offset = location.0 - self.center.0;
 
-        let render_dist_i32 = self.render_distance.0.cast();
+    // TODO: ideally the iterator would be &ChunkLocation instead of Transform, but this is much easier to get working
+    pub fn unload_chunks<'a>(&mut self, players_info: impl IntoIterator<Item = (&'a Transform, &'a RenderDistance), IntoIter: Clone>) {
+        let players_info = players_info.into_iter();
 
-        let norm_offset = offset + render_dist_i32;
+        self.loaded.retain(|loc, _| {
+            let ret = players_info.clone().any(|(transform, rend)| Self::in_render_distance_with(loc, &transform.get_loc(), rend));
 
-        if norm_offset.iter()
-            .enumerate()
-            .any(|(i, n)| *n > 2 * render_dist_i32[i] || n.is_negative())
-        {
-            return None;
-        }
+            if !ret {
+                debug_assert!(!self.bakery.contains_key(loc), "chunk should've been deleted earlier!");
+            }
 
-        let index = into_1d_coordinate(&norm_offset, &self.render_distance.render_size().cast()) as usize;
-
-        Some(index)
-    }
-
-    pub fn get_location_from_index(&self, index: usize) -> ChunkLocation {
-        let norm_offset = into_3d_coordinate(index as _, &self.render_distance.render_size().cast());
-
-        let offset = norm_offset - self.render_distance.0.cast();
-
-        let chunk_loc = offset + self.center.0;
-
-        ChunkLocation(chunk_loc)
-    }
-
-    pub fn get_offset_from_chunk_loc(&self, loc: &ChunkLocation) -> IVec3 {
-        loc.0 - self.center.0
+            ret
+        });
     }
 
     // TODO: error differentiating between invalid loc & not loaded chunk
-    pub fn get_chunk_ref_from_location(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
-
-        self.loaded_chunks.get(offset)?.as_ref()
+    pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
+        self.loaded.get(location)
     }
 
-    pub fn get_chunk_ref_from_location_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
-        let offset = self.get_index_from_chunk_location_checked(location)?;
-
-        self.loaded_chunks.get_mut(offset)?.as_mut()
+    pub fn get_chunk_mut(&mut self, location: &ChunkLocation) -> Option<&mut ClientChunk> {
+        self.loaded.get_mut(location)
     }
 
-    pub fn get_block_ref_from_world_loc(&self, world_loc: &WorldLocation) -> Option<&Block> {
-        let chunk = self.get_chunk_ref_from_location(&world_loc.into())?;
+    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+        let (loc, pos) = block_loc.as_chunk_parts();
 
-        let chunk_pos = ChunkPos::from(world_loc);
-
-        chunk
+        self
+            .get_chunk_ref(&loc)?
             .data
             .blocks
-            .get(chunk_pos.0 as usize)
+            .get(pos.0 as usize)
     }
 
-    pub fn get_block_ref_from_world_loc_mut(&mut self, world_loc: &WorldLocation) -> Option<&mut Block> {
-        let chunk = self.get_chunk_ref_from_location_mut(&world_loc.into())?;
+    pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
+        let (loc, pos) = block_loc.as_chunk_parts();
 
-        let chunk_pos = ChunkPos::from(world_loc);
-
-        chunk
+        self
+            .get_chunk_mut(&loc)?
             .data
             .blocks
-            .get_mut(chunk_pos.0 as usize)
+            .get_mut(pos.0 as usize)
     }
     
-    pub fn modify_block_from_world_loc(&mut self, world_loc: &WorldLocation, block: Block) -> Option<()> {
-        *self.get_block_ref_from_world_loc_mut(world_loc)? = block;
-        self.set_dirty_if_exists(world_loc)
-    }
-
-    pub fn set_dirty_if_exists(&mut self, location: impl Into<ChunkLocation>) -> Option<()> {
-        self.get_chunk_ref_from_location_mut(&location.into())?.dirty = true;
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
+        let block_mut = self.get_block_mut(block_loc)?;
         
-        Some(())
+        let prev = *block_mut;
+        
+        if prev != new {
+            *block_mut = new;
+
+            self.get_chunk_mut(&block_loc.into())?.set_dirty()
+        }
+        
+        Some(prev)
     }
 
-    pub fn loaded_locations(&self) -> Vec<ChunkLocation> {
-        self.loaded_chunks.iter()
-            // TODO is there a better way to do this
-            .filter_map(|n|
-                n.as_ref().map(|n| n.data.location.clone()) // TODO: remove clone
-            )
-            .collect()
+    pub fn loaded_locations(&self) -> Vec<&ChunkLocation> {
+        self.loaded.keys().collect()
+    }
+
+    pub fn renderable_locations_with(center: &ChunkLocation, render_distance: &RenderDistance) -> impl Iterator<Item = ChunkLocation> + Clone + fmt::Debug {
+        let rend_dist = render_distance.0.cast();
+
+        let min = center.0 - rend_dist;
+        let max = center.0 + rend_dist;
+
+        // possible fix to prioritize xz order
+        itertools::iproduct!(min.x..=max.x, min.z..=max.z, min.y..=max.y)
+            .map(|(x, z, y)| ChunkLocation(IVec3::new(x, y, z)))
     }
 
     pub fn baked_chunks(&self) -> &HashMap<ChunkLocation, SizedBuffer> {
@@ -258,58 +245,31 @@ pub fn chunk_manager_update_and_request(
 
     delta_time: UniqueView<LastDeltaTime>,
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
-    vm_transform: View<Transform>,
     vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
+
+    v_render_dist: View<RenderDistance>,
+    v_transform: View<Transform>
 ) {
-    let (_, transform) = (&vm_local_player, &vm_transform)
+    let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &vm_local_player)
         .iter()
         .next()
         .expect("TODO: local player with transform didn't exist");
 
-    let current_chunk = WorldLocation(transform.position).into();
-
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(current_chunk, delta_time.0, recv, None, &g_ctx);
+    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
     }
-}
 
-// TODO: make this not use i32
-fn into_1d_coordinate(coord: &IVec3, size: &IVec3) -> i32 {
-    coord.x + coord.y * size.x + coord.z * size.x * size.y
-}
+    // TODO: is it possible to eliminate the intermediate vec?
+    let player_info_vec = (&v_transform, &v_render_dist).iter()
+        .collect::<Vec<_>>();
 
-// TODO: make this not use i32
-fn into_3d_coordinate(coord: i32, size: &IVec3) -> IVec3 {
-    let x = coord % size.x;
-    let y = (coord / size.x) % size.y;
-    let z = coord / (size.x * size.y);
-
-    IVec3::new(x, y, z)
-}
-
-pub fn chunk_index_in_render_distance(location: &ChunkLocation, center: &ChunkLocation, render_distance: &RenderDistance) -> Option<usize> {
-    let offset = location.0 - center.0;
-
-    let render_dist_i32 = render_distance.0.cast();
-
-    let norm_offset = offset + render_dist_i32;
-
-    if norm_offset.iter()
-        .enumerate()
-        .any(|(i, n)| *n > 2 * render_dist_i32[i] || n.is_negative())
-    {
-        return None;
-    }
-
-    let index = into_1d_coordinate(&norm_offset, &render_distance.render_size().cast()) as usize;
-
-    Some(index)
+    chunk_mgr.unload_chunks(player_info_vec);
 }
 
 #[cfg(test)]

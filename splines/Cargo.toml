@@ -1,14 +1,10 @@
 [package]
-name = "packet_derive"
+name = "splines"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-syn = "2.0"
-quote = "1.0"
+nalgebra-glm = { workspace = true }
 
 [lints]
 workspace = true
-
-[lib]
-proc-macro = true

@@ -1,11 +1,12 @@
 use std::net::SocketAddr;
 use shipyard::{Unique, UniqueView};
 
-#[derive(Unique, PartialEq, Eq, Debug, Hash)]
+#[derive(Unique, PartialEq, Eq, Debug, Hash, strum::Display)]
 pub enum Environment {
     DedicatedServer,
     Singleplayer,
     HostedGame,
+    #[strum(to_string = "MultiplayerClient of {0}")]
     MultiplayerClient(SocketAddr),
 }
 

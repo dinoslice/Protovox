@@ -12,6 +12,8 @@ pub enum PacketType {
     ChunkGenRequestEvent,
     ChunkGenEvent,
 
+    BlockUpdateEvent,
+
     RenderDistanceRequestEvent,
     RenderDistanceUpdateEvent,
 
@@ -23,6 +25,8 @@ pub enum PacketType {
 
     ClientTransformUpdate,
 
+    KickedByServer,
+    
     KeepAlive,
 }
 

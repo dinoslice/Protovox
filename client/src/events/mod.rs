@@ -4,7 +4,8 @@ pub mod event_bus;
 use serde::{Deserialize, Serialize};
 use game::chunk::{data::ChunkData, location::ChunkLocation};
 use shipyard::Component;
-use game::location::WorldLocation;
+use game::block::Block;
+use game::location::{BlockLocation, WorldLocation};
 use packet_derive::Packet;
 use packet::Packet;
 use crate::components::Transform;
@@ -19,6 +20,10 @@ pub struct ChunkGenRequestEvent(pub ChunkLocation);
 #[packet_type(PacketType::ChunkGenEvent)]
 #[repr(transparent)]
 pub struct ChunkGenEvent(pub ChunkData);
+
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::BlockUpdateEvent)]
+pub struct BlockUpdateEvent(pub BlockLocation, pub Block);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ClientInformationRequestEvent)]
@@ -55,6 +60,10 @@ pub struct ClientChunkRequest(pub ChunkLocation);
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::KeepAlive)]
 pub struct KeepAlive;
+
+#[derive(Debug, Component, Packet, Serialize, Deserialize)]
+#[packet_type(PacketType::KickedByServer)]
+pub struct KickedByServer(pub String);
 
 impl From<ChunkGenRequestEvent> for ClientChunkRequest {
     fn from(evt: ChunkGenRequestEvent) -> Self {

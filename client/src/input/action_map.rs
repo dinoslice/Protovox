@@ -1,14 +1,13 @@
+use strum::EnumCount;
 use tinybitset::TinyBitSet;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-const N: usize = std::mem::size_of::<Action>() * u8::BITS as usize;
-
 #[derive(Debug, Default)]
-pub struct ActionMap(TinyBitSet<u8, N>); // TODO: replace this with own bitset
+pub struct ActionMap(TinyBitSet<u8, { Action::COUNT.div_ceil(u8::BITS as _) }>);
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, EnumCount)]
 pub enum Action {
     MoveForward,
     MoveBackward,
@@ -18,22 +17,8 @@ pub enum Action {
     Sneak,
     PlaceBlock,
     BreakBlock,
-}
-
-impl Action {
-    pub fn mapped_from_key(key: &KeyCode) -> Option<Self> {
-        use KeyCode as KC;
-
-        match key {
-            KC::KeyW => Some(Self::MoveForward),
-            KC::KeyS => Some(Self::MoveBackward),
-            KC::KeyA => Some(Self::MoveLeft),
-            KC::KeyD => Some(Self::MoveRight),
-            KC::Space => Some(Self::Jump),
-            KC::ShiftLeft => Some(Self::Sneak),
-            _ => None,
-        }
-    }
+    ToggleGamemode,
+    ToggleFullscreen,
 }
 
 impl ActionMap {
@@ -81,6 +66,8 @@ impl TryFrom<&KeyCode> for Action {
             KC::KeyD => Ok(Self::MoveRight),
             KC::Space => Ok(Self::Jump),
             KC::ShiftLeft => Ok(Self::Sneak),
+            KC::F4 => Ok(Self::ToggleGamemode),
+            KC::F11 => Ok(Self::ToggleFullscreen),
             _ => Err(UnmappedAction),
         }
     }
