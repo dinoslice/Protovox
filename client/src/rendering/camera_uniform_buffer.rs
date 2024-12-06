@@ -1,3 +1,5 @@
+use bytemuck::{Pod, Zeroable};
+use glm::Mat4;
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, View};
 use wgpu::util::DeviceExt;
 use crate::camera::Camera;
@@ -13,11 +15,11 @@ pub struct CameraUniformBuffer {
 
 impl CameraUniformBuffer {
     pub fn new(g_ctx: &GraphicsContext) -> Self {
-        Self::new_with_initial_buffer(g_ctx, &[[0.0; 4]; 4])
+        Self::new_with_initial_buffer(g_ctx, &[0.0; (4 * 4 * 4)])
     }
 
     // TODO: don't initialize?
-    pub fn new_with_initial_buffer(g_ctx: &GraphicsContext, initial_uniform: &[[f32; 4]; 4]) -> Self {
+    pub fn new_with_initial_buffer(g_ctx: &GraphicsContext, initial_uniform: &[f32]) -> Self {
         // buffer to hold the camera matrix
         let buffer = g_ctx.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -34,7 +36,7 @@ impl CameraUniformBuffer {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX, // only need the camera in the vertex shader
+                        visibility: wgpu::ShaderStages::all(), // only need the camera in the vertex shader
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform, // var<uniform> in wgsl
                             has_dynamic_offset: false,
@@ -65,7 +67,7 @@ impl CameraUniformBuffer {
         }
     }
 
-    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[[f32; 4]; 4]) {
+    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[f32]) {
         g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(uniform));
     }
 }
@@ -86,5 +88,27 @@ pub fn update_camera_uniform_buffer(
         .next()
         .expect("TODO: local player did not have camera to render to");
 
-    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
+    #[repr(C)]
+    #[derive(Pod, Zeroable, Copy, Clone)]
+    struct ShaderCamera {
+        view: [[f32; 4]; 4],
+        view_proj: [[f32; 4]; 4],
+        inv_proj: [[f32; 4]; 4],
+        inv_view: [[f32; 4]; 4]
+    }
+
+    let view_mat = render_cam.view_matrix(transform.position, transform.pitch, transform.yaw);
+    let view_inv = view_mat.try_inverse().expect("TODO: handler error better");
+    let proj_mat = render_cam.perspective.as_matrix();
+    let inv_proj = proj_mat.try_inverse().expect("TODO: handle error better");
+    let view_proj = proj_mat * view_mat;
+
+    let camera = ShaderCamera {
+        view: view_mat.into(),
+        view_proj: view_proj.into(),
+        inv_proj: inv_proj.into(),
+        inv_view: view_inv.into()
+    };
+
+    cam_uniform_buffer.update_buffer(&g_ctx, bytemuck::try_cast_slice(&[camera]).expect("camera is too long"));
 }

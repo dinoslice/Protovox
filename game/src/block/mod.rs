@@ -54,7 +54,8 @@ impl Block {
                 FaceType::Left | FaceType::Right => DEBUG_RED,
                 FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
                 FaceType::Front | FaceType::Back => DEBUG_GREEN,
-            }
+            },
+            _ => COBBLE_TEXTURE
         }
     }
     
@@ -65,6 +66,7 @@ impl Block {
             Block::Dirt => true,
             Block::Cobblestone => true,
             Block::Debug => true,
+            _ => true
         }
     }
 }

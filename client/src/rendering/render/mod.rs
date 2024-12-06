@@ -7,6 +7,7 @@ mod world;
 mod gizmos;
 mod block_outline;
 mod egui;
+mod skybox;
 
 pub fn render() -> Workload {
     (
@@ -18,6 +19,7 @@ pub fn render() -> Workload {
                 .expect("failed to convert to try_system?"),
         ).into_workload(),
         (
+            skybox::render_skybox,
             world::render_world,
             gizmos::render_line_gizmos,
             block_outline::render_block_outline,
