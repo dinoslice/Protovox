@@ -1,7 +1,6 @@
 use glm::{Mat4, Vec3};
 use na::{Perspective3, UnitQuaternion};
 use shipyard::Component;
-use crate::components::Transform;
 
 #[derive(Component)]
 pub struct Camera {
@@ -16,16 +15,5 @@ impl Camera {
         let target = position + direction.zyx();
 
         glm::look_at_rh(&position, &target, &Vec3::y_axis())
-    }
-
-    pub fn as_uniform(&self, transform: &Transform) -> [[f32; 4]; 4] {
-        const OPENGL_TO_WGPU_MATRIX: Mat4 = Mat4::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.5,
-            0.0, 0.0, 0.0, 1.0,
-        );
-
-        (OPENGL_TO_WGPU_MATRIX * self.perspective.as_matrix() * self.view_matrix(transform.position + self.offset, transform.pitch, transform.yaw)).into()
     }
 }
