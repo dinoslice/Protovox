@@ -30,19 +30,18 @@ pub enum TextureType {
 pub type TextureId = u8;
 
 impl Block {
-    pub fn texture_id(&self, face_type: FaceType) -> TextureId {
-        const AIR_TEXTURE: TextureId = 0;
-        const COBBLE_TEXTURE: TextureId = 1;
-        const DIRT_TEXTURE: TextureId = 2;
-        const GRASS_TOP_TEXTURE: TextureId = 3;
-        const GRASS_SIDE_TEXTURE: TextureId = 4;
+    pub const fn texture_id(&self, face_type: FaceType) -> Option<TextureId> {
+        const COBBLE_TEXTURE: TextureId = 0;
+        const DIRT_TEXTURE: TextureId = 1;
+        const GRASS_TOP_TEXTURE: TextureId = 2;
+        const GRASS_SIDE_TEXTURE: TextureId = 3;
 
-        const DEBUG_RED: TextureId = 6;
-        const DEBUG_GREEN: TextureId = 7;
-        const DEBUG_BLUE: TextureId = 8;
+        const DEBUG_RED: TextureId = 4;
+        const DEBUG_GREEN: TextureId = 5;
+        const DEBUG_BLUE: TextureId = 6;
 
-        match self {
-            Block::Air => AIR_TEXTURE,
+        let id = match self {
+            Block::Air => return None,
             Block::Grass => match face_type {
                 FaceType::Top => GRASS_TOP_TEXTURE,
                 FaceType::Bottom => DIRT_TEXTURE,
@@ -56,7 +55,9 @@ impl Block {
                 FaceType::Front | FaceType::Back => DEBUG_GREEN,
             },
             Block::Stone | Block::Log | Block::Leaf => todo!()
-        }
+        };
+
+        Some(id)
     }
     
     pub fn placeable(&self) -> bool {
