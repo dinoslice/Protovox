@@ -107,6 +107,15 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { // store result in firs
         }
     }
 
-    // return the color sampled at the texture
-    return textureSample(t_diffuse, s_diffuse, rotated_coords, texture_id);
+    var shadow_factor: f32;
+
+    switch (face_type) {
+        case FACE_TOP: { shadow_factor = 1.0; }
+        case FACE_BOTTOM: { shadow_factor = 0.775; }
+        default: { shadow_factor = 0.875; }
+    }
+
+    let color = textureSample(t_diffuse, s_diffuse, rotated_coords, texture_id);
+
+    return vec4(color.rgb * shadow_factor, color.a);
 }
