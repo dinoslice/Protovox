@@ -19,6 +19,7 @@ pub mod gizmos;
 mod block_outline;
 mod world;
 mod egui;
+mod shader_cam;
 
 pub use egui::EguiRenderer;
 
