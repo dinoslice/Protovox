@@ -28,7 +28,7 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
 
     let loaded_textures = textures.map(|key| {
         // TODO: pack textures into binary or better loading?
-        let path = String::from("client/assets/") + key + ".png";
+        let path = format!("client/assets/{key}.png");
 
         tracing::debug!("{path}");
         let bytes = fs::read(path).expect("TODO: better error; file to exist");
