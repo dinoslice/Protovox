@@ -21,6 +21,7 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
         "dirt",
         "grass",
         "grass_side",
+        "selection",
         "debug_red",
         "debug_green",
         "debug_blue",

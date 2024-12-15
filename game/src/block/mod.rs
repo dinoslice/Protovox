@@ -36,9 +36,9 @@ impl Block {
         const GRASS_TOP_TEXTURE: TextureId = 2;
         const GRASS_SIDE_TEXTURE: TextureId = 3;
 
-        const DEBUG_RED: TextureId = 4;
-        const DEBUG_GREEN: TextureId = 5;
-        const DEBUG_BLUE: TextureId = 6;
+        const DEBUG_RED: TextureId = 5;
+        const DEBUG_GREEN: TextureId = 6;
+        const DEBUG_BLUE: TextureId = 7;
 
         let id = match self {
             Block::Air => return None,
