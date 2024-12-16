@@ -90,5 +90,13 @@ pub fn render_egui(
                         });
                     });
             });
+
+        // reticle
+        ctx.layer_painter(egui::LayerId::background())
+            .circle_filled(
+                ctx.screen_rect().center(),
+                2.5,
+                egui::Color32::from_rgba_premultiplied(192, 192, 192, 128),
+            );
     });
 }
