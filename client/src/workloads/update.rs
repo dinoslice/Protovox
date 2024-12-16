@@ -2,7 +2,6 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
-use winit::window::Fullscreen;
 use game::block::Block;
 use game::location::BlockLocation;
 use crate::camera::Camera;
@@ -21,9 +20,7 @@ use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, p
 use crate::physics::{collision, process_physics};
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::world_gen::params::WorldGenParams;
-use crate::world_gen::{WorldGenSplines, WorldGenerator};
+use crate::world_gen::WorldGenerator;
 
 pub fn update() -> Workload {
     (

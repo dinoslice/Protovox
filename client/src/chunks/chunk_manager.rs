@@ -6,8 +6,7 @@ use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, Vie
 use wgpu::util::DeviceExt;
 use game::block::Block;
 use game::chunk::location::ChunkLocation;
-use game::chunk::pos::ChunkPos;
-use game::location::{BlockLocation, WorldLocation};
+use game::location::BlockLocation;
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};

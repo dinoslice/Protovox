@@ -7,7 +7,6 @@ use std::sync::Arc;
 use crossbeam::channel::{Receiver, Sender};
 use game::{block::Block, chunk::{data::ChunkData, location::ChunkLocation, pos::ChunkPos, CHUNK_SIZE}};
 use noise::{NoiseFn, Perlin};
-use rand::Rng;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use shipyard::Unique;
 use game::location::BlockLocation;
@@ -17,8 +16,6 @@ use crate::events::ChunkGenEvent;
 use crate::world_gen::params::WorldGenParams;
 
 pub type SineSpline = Spline<InOutSine>;
-
-pub const PERLIN_SCALE: f64 = 100.0;
 
 #[derive(Unique)]
 pub struct WorldGenerator {

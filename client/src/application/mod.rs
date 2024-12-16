@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::time::Instant;
-use shipyard::{AsLabel, IntoWorkload, UniqueView, Workload, WorkloadModificator, World};
+use shipyard::{UniqueView, Workload, WorkloadModificator, World};
 use tracing::error;
 use wgpu::SurfaceError;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
