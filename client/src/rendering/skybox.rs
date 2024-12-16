@@ -20,7 +20,7 @@ pub fn initialize_skybox(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buff
 
     let loaded_textures = cube_faces.map(|face| { // TODO: abstract this into method?
         // TODO: pack textures into binary or better loading?
-        let path = format!("client/assets/skybox/sky_{face}png");
+        let path = format!("client/assets/skybox/sky_{face}.png");
 
         let bytes = fs::read(path).expect("TODO: better error; file to exist");
 
