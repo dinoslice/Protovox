@@ -1,3 +1,4 @@
+use std::fs;
 use shipyard::{AllStoragesView, Unique, UniqueView};
 use wgpu::{include_wgsl, BindGroupDescriptor, RenderPipeline};
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
@@ -5,7 +6,7 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::texture::Texture;
 
 #[derive(Unique)]
-pub struct Skybox {
+pub struct SkyboxRenderBundle {
     pub texture: Texture,
     pub render_pipeline: RenderPipeline,
     pub bind_group: wgpu::BindGroup,
@@ -15,14 +16,18 @@ pub struct Skybox {
 pub fn initialize_skybox(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buffer: UniqueView<CameraUniformBuffer>, storages: AllStoragesView) {
     let shader = g_ctx.device.create_shader_module(include_wgsl!("shaders/skybox.wgsl"));
 
-    let texture = Texture::from_cubemap(&g_ctx.device, &g_ctx.queue, &vec![
-        image::load_from_memory(include_bytes!("sky/sky_px.png")).unwrap(),
-        image::load_from_memory(include_bytes!("sky/sky_nx.png")).unwrap(),
-        image::load_from_memory(include_bytes!("sky/sky_py.png")).unwrap(),
-        image::load_from_memory(include_bytes!("sky/sky_ny.png")).unwrap(),
-        image::load_from_memory(include_bytes!("sky/sky_pz.png")).unwrap(),
-        image::load_from_memory(include_bytes!("sky/sky_nz.png")).unwrap(),
-    ], Some("skybox texture"));
+    let cube_faces = ["px", "nx", "py", "ny", "pz", "nz"];
+
+    let loaded_textures = cube_faces.map(|face| { // TODO: abstract this into method?
+        // TODO: pack textures into binary or better loading?
+        let path = format!("client/assets/skybox/sky_{face}png");
+
+        let bytes = fs::read(path).expect("TODO: better error; file to exist");
+
+        image::load_from_memory(&bytes).expect("TODO: better error; valid image")
+    });
+
+    let texture = Texture::from_cubemap(&g_ctx.device, &g_ctx.queue, &loaded_textures, Some("skybox texture"));
 
     let bind_group_layout = g_ctx.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("skybox bind group layout"),
@@ -98,5 +103,5 @@ pub fn initialize_skybox(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buff
         multiview: None,
     });
 
-    storages.add_unique(Skybox { texture, bind_group, bind_group_layout, render_pipeline });
+    storages.add_unique(SkyboxRenderBundle { texture, bind_group, bind_group_layout, render_pipeline });
 }

@@ -85,7 +85,7 @@ impl Texture {
     pub fn from_cubemap(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        imgs: &Vec<image::DynamicImage>,
+        imgs: &[image::DynamicImage; 6],
         label: Option<&str>
     ) -> Self {
         let dimensions = imgs.iter().map(|d| d.dimensions()).max().unwrap();
