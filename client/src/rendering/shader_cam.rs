@@ -25,16 +25,16 @@ pub struct ShaderCam {
 
 impl ShaderCam {
     pub fn from_camera_and_transform(camera: &Camera, transform: &Transform) -> Option<Self> {
-        Self::new(
+        Self::from_view_proj(
+            view_matrix(transform.position + camera.offset, transform.pitch, transform.yaw),
             *camera.perspective.as_matrix(),
-            view_matrix(transform.position + camera.offset, transform.pitch, transform.yaw)
         )
     }
 
-    pub fn new(view: Mat4, proj: Mat4) -> Option<Self> {
+    pub fn from_view_proj(view: Mat4, proj: Mat4) -> Option<Self> {
         let inv_view = view.try_inverse()?;
         let inv_proj = proj.try_inverse()?;
-        let view_proj = view * proj;
+        let view_proj = proj * view;
         let inv_view_proj = view_proj.try_inverse()?;
 
         Some(Self { view, proj, inv_view, inv_proj, view_proj, inv_view_proj })
