@@ -20,6 +20,7 @@ mod block_outline;
 mod world;
 mod egui;
 mod shader_cam;
+mod skybox;
 
 pub use egui::EguiRenderer;
 
@@ -32,6 +33,7 @@ pub fn initialize() -> Workload {
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,
         ).into_workload(),
+        skybox::initialize_skybox,
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
         egui::initialize_egui_renderer,

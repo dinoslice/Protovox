@@ -31,7 +31,7 @@ impl CameraUniformBuffer {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX, // only need the camera in the vertex shader
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform, // var<uniform> in wgsl
                             has_dynamic_offset: false,
