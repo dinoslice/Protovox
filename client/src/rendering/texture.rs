@@ -22,7 +22,34 @@ impl Texture {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         images: &[image::DynamicImage],
-        label: Option<&str>
+        label: Option<&str>,
+    ) -> Option<Self> {
+        Self::from_images_2d_inner(device, queue, images, label, &wgpu::TextureViewDescriptor::default())
+    }
+
+    pub fn new_cubemap(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        images: &[image::DynamicImage; 6],
+        label: Option<&str>,
+    ) -> Option<Self> {
+        let view_descriptor = wgpu::TextureViewDescriptor {
+            label,
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            format: Some(wgpu::TextureFormat::Rgba8UnormSrgb),
+            aspect: wgpu::TextureAspect::All,
+            ..Default::default()
+        };
+
+        Self::from_images_2d_inner(device, queue, images, label, &view_descriptor)
+    }
+
+    fn from_images_2d_inner(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        images: &[image::DynamicImage],
+        label: Option<&str>,
+        view_descriptor: &wgpu::TextureViewDescriptor,
     ) -> Option<Self> {
         let dimensions = images.first()?.dimensions();
 
@@ -78,7 +105,7 @@ impl Texture {
         }
 
         // view into the texture to read from it
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.create_view(view_descriptor);
 
         // sampler uses tex-coords (u, v) and sampler returns data from the texture
         let sampler = device.create_sampler(
