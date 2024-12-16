@@ -57,12 +57,3 @@ pub trait Packet<H: PacketHeader> {
         postcard::from_bytes(&bytes).ok()
     }
 }
-
-#[allow(dead_code)]
-pub fn get_id(buffer: &[u8]) -> Option<u16> {
-    let first_two_bytes: [u8; 2] = buffer.get(..2)?
-        .try_into()
-        .ok()?;
-
-    Some(u16::from_le_bytes(first_two_bytes))
-}
