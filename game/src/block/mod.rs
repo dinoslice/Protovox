@@ -40,6 +40,7 @@ impl Block {
         const DEBUG_RED: TextureId = 6;
         const DEBUG_GREEN: TextureId = 7;
         const DEBUG_BLUE: TextureId = 8;
+        const LOG_TEXTURE: TextureId = 9;
 
         match self {
             Block::Air => AIR_TEXTURE,
@@ -55,7 +56,9 @@ impl Block {
                 FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
                 FaceType::Front | FaceType::Back => DEBUG_GREEN,
             },
-            Block::Stone | Block::Log | Block::Leaf => todo!()
+            Block::Log => LOG_TEXTURE,
+            Block::Leaf => DEBUG_GREEN,
+            Block::Stone => DEBUG_RED,
         }
     }
     
