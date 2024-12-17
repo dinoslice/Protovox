@@ -1,0 +1,100 @@
+use std::fmt::Debug;
+use std::num::NonZeroU8;
+use serde::{Deserialize, Serialize};
+use strum::{EnumCount, FromRepr};
+
+#[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, EnumCount, FromRepr)]
+pub enum ItemType {
+    Grass,
+    Dirt,
+    Cobblestone,
+    Stone,
+    Log,
+    LeafPile,
+}
+
+impl ItemType {
+    pub fn default_stack(self, count: NonZeroU8) -> ItemStack {
+        ItemStack {
+            ty: self,
+            count,
+            title: self.default_name().into(),
+            desc: self.default_desc().into(),
+            data: self.default_data(),
+        }
+    }
+
+    pub fn default_one(self) -> ItemStack {
+        self.default_stack(NonZeroU8::new(1).expect("one is not zero"))
+    }
+
+    pub const fn default_name(self) -> &'static str {
+        use ItemType as IT;
+
+        match self {
+            IT::Grass => "Grass",
+            IT::Dirt => "Dirt",
+            IT::Cobblestone => "Cobblestone",
+            IT::Stone => "Stone",
+            IT::Log => "Log",
+            IT::LeafPile => "Leaf Pile",
+        }
+    }
+
+    pub const fn default_desc(self) -> &'static str {
+        use ItemType as IT;
+
+        match self {
+            IT::Grass => "very grassy",
+            IT::Dirt => "dirt",
+            IT::Cobblestone => "rocky form of stone",
+            IT::Stone => "found underground",
+            IT::Log => "the basic building material",
+            IT::LeafPile => "gathered from trees",
+        }
+    }
+
+    pub const fn default_data(self) -> Option<Box<dyn ItemDataProvider>> {
+        use ItemType as IT;
+
+        match self {
+            _ => None,
+        }
+    }
+}
+
+// TODO: move name and description into item data provider
+#[derive(Debug)]
+pub struct ItemStack {
+    pub ty: ItemType,
+    pub count: NonZeroU8,
+    pub title: String,
+    pub desc: String,
+    pub data: Option<Box<dyn ItemDataProvider>>,
+}
+
+impl ItemStack {
+    pub fn new_one_without_data(ty: ItemType, title: impl Into<String>, desc: impl Into<String>) -> Self {
+        Self::new_one(ty, title, desc, None)
+    }
+
+    pub fn new_one(ty: ItemType, title: impl Into<String>, desc: impl Into<String>, data: Option<Box<dyn ItemDataProvider>>) -> Self {
+        Self {
+            ty,
+            count: NonZeroU8::new(1).expect("one is not zero"),
+            title: title.into(),
+            desc: desc.into(),
+            data,
+        }
+    }
+
+    pub fn with_count(self, count: NonZeroU8) -> Self {
+        Self {
+           count,
+            .. self
+        }
+    }
+}
+
+pub trait ItemDataProvider: Debug {}
