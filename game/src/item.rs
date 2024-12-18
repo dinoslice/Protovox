@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::num::NonZeroU8;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
@@ -65,6 +66,7 @@ impl ItemType {
 }
 
 // TODO: move name and description into item data provider
+// TODO: make this clone
 #[derive(Debug)]
 pub struct ItemStack {
     pub ty: ItemType,
@@ -75,6 +77,8 @@ pub struct ItemStack {
 }
 
 impl ItemStack {
+    pub const MAX_STACK: NonZeroU8 = NonZeroU8::MAX;
+
     pub fn new_one_without_data(ty: ItemType, title: impl Into<String>, desc: impl Into<String>) -> Self {
         Self::new_one(ty, title, desc, None)
     }
@@ -95,6 +99,53 @@ impl ItemStack {
             .. self
         }
     }
+
+    pub fn eq_data(&self, rhs: &Self) -> bool {
+        let Self { ty: lhs_ty, count: _, title: lhs_title, desc: lhs_desc, data: lhs_data } = self;
+        let Self { ty: rhs_ty, count: _, title: rhs_title, desc: rhs_desc, data: rhs_data } = rhs;
+
+        let data_eq = |lhs: &Option<Box<dyn ItemDataProvider>>, rhs: &Option<Box<dyn ItemDataProvider>>| -> bool {
+            match (lhs, rhs) {
+                (None, None) => false,
+                (Some(rhs), Some(lhs)) => rhs.hash() == lhs.hash(),
+                _ => false,
+            }
+        };
+
+        lhs_ty == rhs_ty && lhs_title == rhs_title && lhs_desc == rhs_desc && data_eq(lhs_data, rhs_data)
+    }
+
+    pub fn try_combine(&mut self, rhs: Self) -> Option<Self> {
+        if !self.eq_data(&rhs) {
+            return None;
+        }
+
+        let lhs_ct = self.count.get();
+        let rhs_ct = rhs.count.get();;
+
+        match Self::MAX_STACK.get() - lhs_ct {
+            0 => Some(rhs),
+            n if n >= rhs_ct => {
+                self.count = NonZeroU8::new(lhs_ct + rhs_ct)
+                    .expect("should be nonzero");
+
+                None
+            }
+            n => {
+                let rem = rhs_ct - n;
+
+                self.count = Self::MAX_STACK;
+
+                let count = NonZeroU8::new(rem)
+                    .expect("if it was zero, should've been handled in case above");
+
+                Some(rhs.with_count(count))
+            }
+        }
+    }
 }
 
-pub trait ItemDataProvider: Debug {}
+pub trait ItemDataProvider: Debug + Send + Sync {
+    // TODO: better way to check for equality
+    fn hash(&self) -> u64;
+}
