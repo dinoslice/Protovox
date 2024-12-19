@@ -2,6 +2,7 @@ use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::block::Block;
 use crate::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::gamemode::Gamemode;
+use crate::inventory::Inventory;
 use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
@@ -15,7 +16,7 @@ pub fn render_egui(
     // for player debug info
     (v_local_player, v_entity): (View<LocalPlayer>, View<Entity>),
     (v_transform, v_velocity): (View<Transform>, View<Velocity>),
-    v_held_block: View<HeldBlock>,
+    (v_held_block, v_inventory): (View<HeldBlock>, View<Inventory>),
     (v_gamemode, v_spectator_speed): (View<Gamemode>, View<SpectatorSpeed>),
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
@@ -24,7 +25,7 @@ pub fn render_egui(
 
     let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
     
-    let (_, local_transform, velocity, held_block, gamemode, spec_speed) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed)
+    let (_, local_transform, velocity, held_block, gamemode, spec_speed, inventory) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed, &v_inventory)
         .iter()
         .next()
         .expect("LocalPlayer didn't have transform & held block");
@@ -47,6 +48,14 @@ pub fn render_egui(
                     for pos in other_pos {
                         ui.label(vec3_fmt("Position", pos));
                     }
+                }
+            });
+
+        egui::Window::new("Inventory")
+            .default_open(true)
+            .show(ctx, |ui| {
+                for item in inventory.items() {
+                    ui.label(format!("{item:?}"));
                 }
             });
 
