@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::num::NonZeroU8;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
+use crate::texture_ids::TextureId;
 
 #[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, EnumCount, FromRepr)]
@@ -61,6 +62,20 @@ impl ItemType {
 
         match self {
             _ => None,
+        }
+    }
+
+    pub const fn texture_id(self) -> TextureId {
+        use ItemType as IT;
+        use crate::texture_ids::*;
+
+        match self {
+            IT::Grass => GRASS_SIDE,
+            IT::Dirt => DIRT,
+            IT::Cobblestone => COBBLE,
+            IT::Stone => DEBUG_RED,
+            IT::Log => DEBUG_RED,
+            IT::LeafPile => DEBUG_GREEN,
         }
     }
 }
