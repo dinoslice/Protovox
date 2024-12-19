@@ -106,7 +106,7 @@ impl ItemStack {
 
         let data_eq = |lhs: &Option<Box<dyn ItemDataProvider>>, rhs: &Option<Box<dyn ItemDataProvider>>| -> bool {
             match (lhs, rhs) {
-                (None, None) => false,
+                (None, None) => true,
                 (Some(rhs), Some(lhs)) => rhs.hash() == lhs.hash(),
                 _ => false,
             }
