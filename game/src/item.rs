@@ -117,11 +117,15 @@ impl ItemStack {
 
     pub fn try_combine(&mut self, rhs: Self) -> Option<Self> {
         if !self.eq_data(&rhs) {
-            return None;
+            return Some(rhs);
         }
 
         let lhs_ct = self.count.get();
-        let rhs_ct = rhs.count.get();;
+        let rhs_ct = rhs.count.get();
+
+        if lhs_ct > Self::MAX_STACK.get() {
+            return Some(rhs);
+        }
 
         match Self::MAX_STACK.get() - lhs_ct {
             0 => Some(rhs),
