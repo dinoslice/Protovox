@@ -77,14 +77,8 @@ fn vs_main(
     return out;
 }
 
-
-const SPRITE_SIZE: vec2<f32> = vec2(16.0, 16.0);
-const SHEET_SIZE: vec2<f32> = vec2(64.0, 64.0);
-
-const SHEET_RANGE: vec2<u32> = vec2<u32>(SHEET_SIZE / SPRITE_SIZE);
-
 @group(0) @binding(0)
-var t_diffuse: texture_2d<f32>;
+var t_diffuse: texture_2d_array<f32>;
 @group(0) @binding(1)
 var s_diffuse: sampler;
 
@@ -92,11 +86,6 @@ var s_diffuse: sampler;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { // store result in first color target
     let face_type = in.face_data >> 16 & 0x7;
     let texture_id = in.face_data >> (16 + 3) & 0xFF;
-
-    let ss_coords = vec2(
-        f32(texture_id % SHEET_RANGE.x),
-        f32(texture_id / SHEET_RANGE.x),
-    );
 
     // TODO: refactor this?
     var rotated_coords: vec2<f32>;
@@ -113,8 +102,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { // store result in firs
         }
     }
 
-    let final_coords = (ss_coords + rotated_coords) * (SPRITE_SIZE / SHEET_SIZE);
-
     // return the color sampled at the texture
-    return textureSample(t_diffuse, s_diffuse, final_coords);
+    return textureSample(t_diffuse, s_diffuse, rotated_coords, texture_id);
 }

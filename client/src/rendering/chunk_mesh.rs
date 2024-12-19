@@ -31,7 +31,7 @@ impl ChunkMesh {
                     }
                 }
 
-                faces.push(FaceData::new(pos, ft, block.texture_id(ft)));
+                faces.push(FaceData::new(pos, ft, block.texture_id(ft).expect("not air")));
             }
         }
 
@@ -55,7 +55,7 @@ impl ChunkMesh {
                 faces.push(FaceData::new(
                     ChunkPos(pos),
                     ft,
-                    block.texture_id(ft)
+                    block.texture_id(ft).expect("already filtered to not be air")
                 ));
             }
         }
