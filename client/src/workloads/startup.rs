@@ -8,6 +8,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
+use crate::inventory::Inventory;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
 use crate::networking::server_handler::ServerHandler;
@@ -61,6 +62,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
+    storages.add_component(id, Inventory::new(18.try_into().expect("18 is nonzero")));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {

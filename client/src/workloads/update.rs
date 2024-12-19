@@ -3,6 +3,7 @@ use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_reques
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
 use game::block::Block;
+use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
@@ -13,6 +14,7 @@ use crate::events::event_bus::EventBus;
 use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
 use crate::input::{reset_mouse_manager_state, InputManager};
+use crate::inventory::Inventory;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
@@ -152,13 +154,13 @@ fn place_break_blocks(
     mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
-    v_entity: View<Entity>,
-    v_transform: View<Transform>,
+    (v_entity, v_transform): (View<Entity>, View<Transform>),
     v_hitbox: View<Hitbox>,
-    
+    mut vm_inventory: ViewMut<Inventory>,
+
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let (_, look_at, held) = (&v_local_player, &v_looking_at_block, &v_held_block).iter()
+    let (_, look_at, held, mut inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     
@@ -177,22 +179,31 @@ fn place_break_blocks(
     should_place &= held.0.placeable();
 
     let mut update_block = |pos: BlockLocation, block: Block| {
-        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
+
+        chunk_mgr.modify_block(&pos, block) // TODO: only create event now, modify world later?
     };
 
     if should_place && should_break {
-        update_block(hit_block.clone(), held.0);
+        if let Some(old) = update_block(hit_block.clone(), held.0) {
+            if let Some(stack) = old.on_break() {
+                let _ = inventory.try_insert(stack); // TODO: deal with overflow
+            }
+        }
     } else if should_break {
-        update_block(hit_block.clone(), Block::Air);
+        if let Some(old) = update_block(hit_block.clone(), Block::Air) {
+            if let Some(stack) = old.on_break() {
+                let _ = inventory.try_insert(stack); // TODO: deal with overflow
+            }
+        }
     } else if should_place {
         if let Some(prev_air) = prev_air {
             let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                update_block(prev_air.clone(), held.0);
+                let _ = update_block(prev_air.clone(), held.0);
             }
         }
     }
