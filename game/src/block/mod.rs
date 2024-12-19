@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
 use crate::block::face_type::FaceType;
 use crate::item::{ItemStack, ItemType};
+use crate::texture_ids::TextureId;
 
 pub mod face_type;
 
@@ -30,28 +31,19 @@ pub enum TextureType {
     UniqueTops,
 }
 
-pub type TextureId = u8;
-
 impl Block {
     pub const fn texture_id(&self, face_type: FaceType) -> Option<TextureId> {
-        const COBBLE_TEXTURE: TextureId = 0;
-        const DIRT_TEXTURE: TextureId = 1;
-        const GRASS_TOP_TEXTURE: TextureId = 2;
-        const GRASS_SIDE_TEXTURE: TextureId = 3;
-
-        const DEBUG_RED: TextureId = 5;
-        const DEBUG_GREEN: TextureId = 6;
-        const DEBUG_BLUE: TextureId = 7;
+        use crate::texture_ids::*;
 
         let id = match self {
             Block::Air => return None,
             Block::Grass => match face_type {
-                FaceType::Top => GRASS_TOP_TEXTURE,
-                FaceType::Bottom => DIRT_TEXTURE,
-                _ => GRASS_SIDE_TEXTURE,
+                FaceType::Top => GRASS_TOP,
+                FaceType::Bottom => DIRT,
+                _ => GRASS_SIDE,
             }
-            Block::Dirt => DIRT_TEXTURE,
-            Block::Cobblestone => COBBLE_TEXTURE,
+            Block::Dirt => DIRT,
+            Block::Cobblestone => COBBLE,
             Block::Debug => match face_type {
                 FaceType::Left | FaceType::Right => DEBUG_RED,
                 FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
