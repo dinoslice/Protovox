@@ -11,6 +11,7 @@ pub struct TextureAtlas {
     pub texture_atlas: Texture,
     pub bind_group: wgpu::BindGroup,
     pub bind_group_layout: wgpu::BindGroupLayout,
+    pub num_textures: usize,
 }
 
 pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
@@ -82,5 +83,5 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
         }
     );
 
-    storages.add_unique(TextureAtlas { texture_atlas, bind_group, bind_group_layout });
+    storages.add_unique(TextureAtlas { texture_atlas, bind_group, bind_group_layout, num_textures: loaded_textures.len() });
 }
