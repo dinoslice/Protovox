@@ -7,11 +7,12 @@ use crate::networking::server_handler::ServerHandler;
 use crate::rendering::egui::EguiRenderer;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::render::RenderContext;
+use crate::rendering::texture_atlas::EguiTextureAtlasViews;
 
 pub fn render_egui(
     mut ctx: UniqueViewMut<RenderContext>,
     g_ctx: UniqueView<GraphicsContext>,
-    mut egui_renderer: UniqueViewMut<EguiRenderer>,
+    (mut egui_renderer, texture_atlas_views): (UniqueViewMut<EguiRenderer>, UniqueView<EguiTextureAtlasViews>),
 
     // for player debug info
     (v_local_player, v_entity): (View<LocalPlayer>, View<Entity>),
@@ -55,7 +56,13 @@ pub fn render_egui(
             .default_open(true)
             .show(ctx, |ui| {
                 for item in inventory.items() {
-                    ui.label(format!("{item:?}"));
+                    let id = texture_atlas_views.get_from_texture_id(item.ty.texture_id())
+                        .expect("texture atlas views should have all textures");
+
+                    ui.horizontal(|ui| {
+                        ui.image(egui::load::SizedTexture { id, size: egui::vec2(16.0, 16.0) });
+                        ui.label(item.count.to_string())
+                    });
                 }
             });
 
