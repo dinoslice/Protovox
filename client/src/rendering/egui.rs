@@ -5,6 +5,7 @@ use shipyard::{AllStoragesView, Unique, UniqueView};
 use winit::event::WindowEvent;
 use winit::window::Window;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::texture_atlas::{EguiTextureAtlasViews, TextureAtlas};
 
 #[derive(Unique)]
 pub struct EguiRenderer {
@@ -99,6 +100,11 @@ impl EguiRenderer {
 }
 
 
-pub fn initialize_egui_renderer(g_ctx: UniqueView<GraphicsContext>, all_storages: AllStoragesView) {
-    all_storages.add_unique(EguiRenderer::new(&g_ctx.device, g_ctx.config.format, None, 1, &g_ctx.window))
+pub fn initialize_egui_renderer(g_ctx: UniqueView<GraphicsContext>, texture_atlas: UniqueView<TextureAtlas>, all_storages: AllStoragesView) {
+    let mut renderer = EguiRenderer::new(&g_ctx.device, g_ctx.config.format, None, 1, &g_ctx.window);
+
+    let egui_texture_atlas_view = EguiTextureAtlasViews::from_texture_atlas(&texture_atlas, &g_ctx, &mut renderer.renderer);
+
+    all_storages.add_unique(renderer);
+    all_storages.add_unique(egui_texture_atlas_view);
 }
