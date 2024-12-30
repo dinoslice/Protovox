@@ -6,6 +6,10 @@ use game::item::ItemStack;
 pub struct Inventory(Box<[Option<ItemStack>]>);
 
 impl Inventory {
+    pub fn spaces(&self) -> impl Iterator<Item = Option<&'_ ItemStack>> {
+        self.0.iter().map(Option::as_ref)
+    }
+
     pub fn items(&self) -> impl Iterator<Item = &ItemStack> {
         self.0.iter()
             .filter_map(Option::as_ref)
