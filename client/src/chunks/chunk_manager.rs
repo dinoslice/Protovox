@@ -11,7 +11,7 @@ use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};
-use crate::rendering::chunk_mesh::ChunkMesh;
+use crate::rendering::chunk_mesh::ChunkMeshContext;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
@@ -124,30 +124,44 @@ impl ChunkManager {
             let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
         }
 
-        for (_, chunk) in self.loaded.iter_mut()
+        // TODO: don't collect this
+        let mut baked = Vec::new();
+
+        for (_, chunk) in self.loaded.iter()
             .filter(|(_, cc)| cc.bake == BakeState::NeedsBaking)
             .take(self.max_bakes_per_frame)
         {
-            let baked = ChunkMesh::from_chunk(&chunk.data).faces;
+            // TODO change this iterator to a collected iterator iterating over location or a immutable iterator?
+            let mesher = ChunkMeshContext::from_manager(&self, &chunk.data);
+
+            let faces = mesher.faces();
 
             tracing::trace!("Finished baking chunk at {:?}", &chunk.data.location);
 
             let buffer = g_ctx.device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
                     label: Some("ChunkManger chunk buffer"),
-                    contents: bytemuck::try_cast_slice(&baked).expect("compatible data"),
+                    contents: bytemuck::try_cast_slice(&faces).expect("compatible data"),
                     usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, // only needed in vertex buffer,
                 }
             );
 
             let buffer = SizedBuffer {
                 buffer,
-                size: baked.len() as u32,
+                size: faces.len() as _,
             };
 
             self.bakery.insert(chunk.data.location.clone(), buffer);
-            chunk.bake = BakeState::Baked;
+            // chunk.bake = BakeState::Baked;
+            baked.push(chunk.data.location.clone());
         }
+
+        baked.into_iter().for_each(|loc|
+            self.loaded
+                .get_mut(&loc)
+                .expect("should exist")
+                .bake = BakeState::Baked
+        );
 
         let requests = Self::renderable_locations_with(center, render_dist)
             .filter(|loc| !self.loaded.contains_key(loc) && !self.recently_requested_gen.contains_key(loc))
