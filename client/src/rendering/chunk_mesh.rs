@@ -52,7 +52,7 @@ impl ChunkMesh {
         let mut faces = Vec::with_capacity(non_air_block_count);
 
         for (pos, block) in chunk.blocks.iter().enumerate().filter(|(_, &b)| b != Block::Air) {
-            assert_eq!(chunk.blocks.len(), u16::MAX as usize + 1, "size of ChunkBlocks changed");
+            debug_assert_eq!(chunk.blocks.len(), u16::MAX as usize + 1, "size of ChunkBlocks changed");
             let pos = pos.try_into().expect("index should fit into u16");
 
             for ft in FaceType::ALL {
