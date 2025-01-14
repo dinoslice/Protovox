@@ -16,12 +16,12 @@ impl ChunkPos {
         let new_z = self.z()
             .wrapping_add(dz as u8);
 
-        Self::new(new_x, new_y, new_z).or_else(|_| {
+        Self::new(new_x, new_y, new_z).map_err(|_| {
             let new = [new_x, new_y, new_z];
 
             let [x, y, z] = array::from_fn(|i| new[i] % CHUNK_SIZE[i]);
 
-            Ok(ChunkPos::new(x, y, z).expect("in range"))
+            ChunkPos::new(x, y, z).expect("in range")
         })
     }
 }
