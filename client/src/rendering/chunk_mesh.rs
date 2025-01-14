@@ -75,8 +75,8 @@ pub struct ChunkMeshContext<'a> {
 
 
 impl<'a> ChunkMeshContext<'a> {
-    pub fn from_manager(chunk_mgr: &'a ChunkManager, center_chunk: &'a ClientChunk) -> Option<Self> {
-        let center_loc = &center_chunk.data.location;
+    pub fn from_manager(chunk_mgr: &'a ChunkManager, center_chunk: &'a ChunkData) -> Self {
+        let center_loc = &center_chunk.location;
 
         let sides = array::from_fn(|i| {
             let ft = FaceType::from_repr(i as _)
@@ -88,8 +88,9 @@ impl<'a> ChunkMeshContext<'a> {
                 .map(|c| &c.data.blocks)
         });
 
-        let center = &center_chunk.data.blocks;
-
-        Some(Self { sides, center })
+        Self {
+            sides,
+            center: &center_chunk.blocks,
+        }
     }
 }
