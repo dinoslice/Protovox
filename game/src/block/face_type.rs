@@ -1,3 +1,4 @@
+use std::ops::Neg;
 use glm::TVec3;
 use num_traits::{One, Signed, Zero};
 use strum::FromRepr;
@@ -27,6 +28,23 @@ impl FaceType {
             FT::Back => TVec3::new(T::zero(), T::zero(), -T::one()),
             FT::Left => TVec3::new(-T::one(), T::zero(), T::zero()),
             FT::Right => TVec3::new(T::one(), T::zero(), T::zero()),
+        }
+    }
+}
+
+impl Neg for FaceType {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        use FaceType as FT;
+
+        match self {
+            FT::Bottom => FT::Top,
+            FT::Top => FT::Bottom,
+            FT::Front => FT::Back,
+            FT::Back => FT::Front,
+            FT::Left => FT::Right,
+            FT::Right => FT::Left,
         }
     }
 }
