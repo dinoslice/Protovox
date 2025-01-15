@@ -23,7 +23,7 @@ use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, p
 use crate::physics::{collision, process_physics};
 use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
-use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
+use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle, LineGizmo};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::params::WorldGenParams;
 use crate::world_gen::{WorldGenSplines, WorldGenerator};
@@ -300,20 +300,66 @@ fn debug_draw_chunks(
     v_render_dist: View<RenderDistance>,
 
     mut entities: EntitiesViewMut,
-    mut vm_box_gizmos: ViewMut<BoxGizmo>,
+    mut vm_line_gizmos: ViewMut<LineGizmo>,
 ) {
     let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &local_player).iter()
         .next()
         .expect("local player should exist");
 
-    for loc in ChunkManager::renderable_locations_with(&transform.get_loc(), render_dist) {
+    let mut lines = Vec::new();
+
+    // TODO: overflows gpu buffer
+    // let locations = ChunkManager::renderable_locations_with(&transform.get_loc(), render_dist);
+
+    let locations = [transform.get_loc::<ChunkLocation>()];
+
+    for loc in locations {
         let start = WorldLocation::from(&loc).0;
 
-        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
-            start,
-            start + CHUNK_SIZE.cast(),
-            GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 1.0, b: 0.0 }),
-            GizmoLifetime::SingleFrame,
-        ));
+        let style = GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 1.0, b: 0.0 });
+
+        let lifetime = GizmoLifetime::SingleFrame;
+
+        let scale = 4;
+
+        for axis in 0..3 {
+            let cross = [(axis + 1) % 3, (axis + 2) % 3];
+
+            let mut len = Vec3::zeros();
+            len[axis] = CHUNK_SIZE[axis] as _;
+
+            for i in 0..2 {
+                let ca1 = cross[i];
+                let ca2 = cross[(i + 1) % 2];
+
+                for c1 in (0..=CHUNK_SIZE[ca1]).step_by(scale) {
+                    let mut base = Vec3::zeros();
+                    base[ca1] = c1 as _;
+
+                    let start = start + base;
+
+                    lines.push(LineGizmo {
+                        start,
+                        end: start + len,
+                        style,
+                        lifetime,
+                    });
+
+                    let mut c_len = Vec3::zeros();
+                    c_len[ca2] = CHUNK_SIZE[ca2] as _;
+
+                    let start = start + c_len;
+
+                    lines.push(LineGizmo {
+                        start,
+                        end: start + len,
+                        style,
+                        lifetime,
+                    });
+                }
+            }
+        }
     }
+
+    entities.bulk_add_entity(&mut vm_line_gizmos, lines);
 }
