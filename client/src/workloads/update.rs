@@ -4,7 +4,9 @@ use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModifica
 use strum::EnumCount;
 use winit::window::Fullscreen;
 use game::block::Block;
-use game::location::BlockLocation;
+use game::chunk::CHUNK_SIZE;
+use game::chunk::location::ChunkLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
@@ -19,6 +21,7 @@ use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
+use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::rendering::graphics_context::GraphicsContext;
@@ -38,6 +41,7 @@ pub fn update() -> Workload {
         server_apply_block_updates.run_if(is_hosted),
         client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
+        debug_draw_chunks,
         spawn_multiplayer_player,
         raycast.skip_if(local_player_is_gamemode_spectator),
         place_break_blocks.skip_if(local_player_is_gamemode_spectator),
@@ -285,6 +289,30 @@ fn debug_draw_hitbox_gizmos(
             min_extent,
             max_extent,
             GizmoStyle::stroke(rgb::Rgb { r: 1.0, g: 0.0, b: 0.0 }),
+            GizmoLifetime::SingleFrame,
+        ));
+    }
+}
+
+fn debug_draw_chunks(
+    local_player: View<LocalPlayer>,
+    v_transform: View<Transform>,
+    v_render_dist: View<RenderDistance>,
+
+    mut entities: EntitiesViewMut,
+    mut vm_box_gizmos: ViewMut<BoxGizmo>,
+) {
+    let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &local_player).iter()
+        .next()
+        .expect("local player should exist");
+
+    for loc in ChunkManager::renderable_locations_with(&transform.get_loc(), render_dist) {
+        let start = WorldLocation::from(&loc).0;
+
+        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(
+            start,
+            start + CHUNK_SIZE.cast(),
+            GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 1.0, b: 0.0 }),
             GizmoLifetime::SingleFrame,
         ));
     }
