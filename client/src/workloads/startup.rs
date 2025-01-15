@@ -47,7 +47,7 @@ fn initialize_local_player(mut storages: AllStoragesViewMut) {
         Velocity::default(),
         PlayerSpeed::default(),
         Camera {
-            offset: Vec3::new(0.0, 0.5, 0.0),
+            offset: Vec3::new(0.0, 0.5, 0.0), // TODO: spawning in in free space causes gravity to not work
             perspective: Perspective3::new(
                 aspect,
                 70.0f32.to_radians(),
