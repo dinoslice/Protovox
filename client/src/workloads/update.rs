@@ -297,66 +297,60 @@ fn debug_draw_hitbox_gizmos(
 fn debug_draw_chunks(
     local_player: View<LocalPlayer>,
     v_transform: View<Transform>,
-    v_render_dist: View<RenderDistance>,
 
     mut entities: EntitiesViewMut,
     mut vm_line_gizmos: ViewMut<LineGizmo>,
 ) {
-    let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &local_player).iter()
+    // TODO: add egui window to change this
+
+    let (transform, ..) = (&v_transform, &local_player).iter()
         .next()
         .expect("local player should exist");
 
     let mut lines = Vec::new();
 
-    // TODO: overflows gpu buffer
-    // let locations = ChunkManager::renderable_locations_with(&transform.get_loc(), render_dist);
+    let start = WorldLocation::from(&transform.get_loc::<ChunkLocation>()).0;
 
-    let locations = [transform.get_loc::<ChunkLocation>()];
+    let dark_green = GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 0.8, b: 0.0 });
 
-    for loc in locations {
-        let start = WorldLocation::from(&loc).0;
+    let lifetime = GizmoLifetime::SingleFrame;
 
-        let style = GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 1.0, b: 0.0 });
+    let scale = 4;
 
-        let lifetime = GizmoLifetime::SingleFrame;
+    for axis in 0..3 {
+        let cross = [(axis + 1) % 3, (axis + 2) % 3];
 
-        let scale = 4;
+        let mut len = Vec3::zeros();
+        len[axis] = CHUNK_SIZE[axis] as _;
 
-        for axis in 0..3 {
-            let cross = [(axis + 1) % 3, (axis + 2) % 3];
+        for i in 0..2 {
+            let ca1 = cross[i];
+            let ca2 = cross[i ^ 1];
 
-            let mut len = Vec3::zeros();
-            len[axis] = CHUNK_SIZE[axis] as _;
+            for c1 in (0..=CHUNK_SIZE[ca1]).step_by(scale) {
+                let mut base = Vec3::zeros();
+                base[ca1] = c1 as _;
 
-            for i in 0..2 {
-                let ca1 = cross[i];
-                let ca2 = cross[(i + 1) % 2];
+                let start = start + base;
 
-                for c1 in (0..=CHUNK_SIZE[ca1]).step_by(scale) {
-                    let mut base = Vec3::zeros();
-                    base[ca1] = c1 as _;
+                lines.push(LineGizmo {
+                    start,
+                    end: start + len,
+                    style: dark_green,
+                    lifetime,
+                });
 
-                    let start = start + base;
+                let mut c_len = Vec3::zeros();
+                c_len[ca2] = CHUNK_SIZE[ca2] as _;
 
-                    lines.push(LineGizmo {
-                        start,
-                        end: start + len,
-                        style,
-                        lifetime,
-                    });
+                let start = start + c_len;
 
-                    let mut c_len = Vec3::zeros();
-                    c_len[ca2] = CHUNK_SIZE[ca2] as _;
-
-                    let start = start + c_len;
-
-                    lines.push(LineGizmo {
-                        start,
-                        end: start + len,
-                        style,
-                        lifetime,
-                    });
-                }
+                lines.push(LineGizmo {
+                    start,
+                    end: start + len,
+                    style: dark_green,
+                    lifetime,
+                });
             }
         }
     }
