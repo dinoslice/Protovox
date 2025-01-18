@@ -62,8 +62,6 @@ impl Identity {
         username.hash(&mut hasher);
         password.hash(&mut hasher);
 
-        rand.hash(&mut hasher);
-
         let hash = hasher.finish();
 
         let full = ((hash as u128) << 64) | (rand as u128);
