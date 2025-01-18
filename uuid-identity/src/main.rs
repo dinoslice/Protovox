@@ -1,5 +1,4 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
-use rand::random;
 use uuid::{NonNilUuid, Uuid};
 
 fn main() {
@@ -12,10 +11,13 @@ fn main() {
 pub struct Identity(pub NonNilUuid);
 
 impl Identity {
+    const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
+    const UUID_SET: u128 = 0x000000000000c0008000000000000000;
+
     // TODO: make generic for any hasher
     // TODO: hash into u128?
     pub fn create(username: &str, encrypted_pwd: &str) -> Self {
-        let uuid = Self::hash_inner(random(), username, encrypted_pwd);
+        let uuid = Self::hash_inner(Self::gen_rand(), username, encrypted_pwd);
 
         Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null"))
     }
@@ -28,13 +30,17 @@ impl Identity {
         self_u128 == hash
     }
 
+    fn gen_rand() -> u64 {
+        rand::random::<u64>() & (Self::UUID_MASK as u64) | (Self::UUID_SET as u64)
+    }
+
     fn hash_inner(rand: u64, username: &str, encrypted_pwd: &str) -> u128 {
         let mut hasher = DefaultHasher::new();
 
         username.hash(&mut hasher);
         encrypted_pwd.hash(&mut hasher);
 
-        (rand as u32).hash(&mut hasher);
+        rand.hash(&mut hasher);
 
         let hash = hasher.finish();
 
