@@ -1,5 +1,9 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
+use argon2::Argon2;
 use uuid::{NonNilUuid, Uuid};
+
+const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
+const UUID_SET: u128 = 0x000000000000c0008000000000000000;
 
 fn main() {
     let id = Identity::create("joshua", "password123");
@@ -10,35 +14,71 @@ fn main() {
 #[derive(Eq, PartialEq)]
 pub struct Identity(pub NonNilUuid);
 
-impl Identity {
-    const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
-    const UUID_SET: u128 = 0x000000000000c0008000000000000000;
+struct IdentityPassword {
+    pub pwd_hash: [u8; 56],
+    pub rand_salt: IdRand,
+}
 
+impl IdentityPassword {
+    pub fn new(password: &str) -> Result<Self, argon2::Error> {
+        Self::with_rand_salt(password, IdRand::rand())
+    }
+
+    pub(crate) fn with_rand_salt(password: &str, rand_salt: IdRand) -> Result<Self, argon2::Error> {
+        let argon2 = Argon2::default();
+
+        let mut pwd_hash = [0; 56];
+
+        argon2.hash_password_into(password.as_bytes(), &rand_salt.bytes(), &mut pwd_hash)?;
+
+        Ok(Self { pwd_hash, rand_salt })
+    }
+}
+
+struct IdRand(u64);
+
+impl IdRand {
+    pub fn rand() -> Self {
+        Self::new(rand::random())
+    }
+
+    pub fn new(n: u64) -> Self {
+        Self(n & (UUID_MASK as u64) | (UUID_SET as u64))
+    }
+
+    pub fn get(&self) -> u64 {
+        self.0
+    }
+
+    pub fn bytes(&self) -> [u8; size_of::<u64>()] {
+        self.get().to_le_bytes()
+    }
+}
+
+impl Identity {
     // TODO: make generic for any hasher
     // TODO: hash into u128?
-    pub fn create(username: &str, encrypted_pwd: &str) -> Self {
-        let uuid = Self::hash_inner(Self::gen_rand(), username, encrypted_pwd);
+    pub fn create(username: &str, password: &str) -> Self {
+        let uuid = Self::hash_inner(IdRand::rand(), username, password);
 
         Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null"))
     }
 
-    pub fn verify(&self, username: &str, encrypted_pwd: &str) -> bool {
+    pub fn verify(&self, username: &str, password: &str) -> bool {
         let self_u128 = self.0.get().as_u128();
 
-        let hash = Self::hash_inner(self_u128 as u64, username, encrypted_pwd);
+        let hash = Self::hash_inner(IdRand::new(self_u128 as u64), username, password);
 
         self_u128 == hash
     }
 
-    fn gen_rand() -> u64 {
-        rand::random::<u64>() & (Self::UUID_MASK as u64) | (Self::UUID_SET as u64)
-    }
+    fn hash_inner(rand: IdRand, username: &str, password: &str) -> u128 {
+        let rand = rand.get();
 
-    fn hash_inner(rand: u64, username: &str, encrypted_pwd: &str) -> u128 {
         let mut hasher = DefaultHasher::new();
 
         username.hash(&mut hasher);
-        encrypted_pwd.hash(&mut hasher);
+        password.hash(&mut hasher);
 
         rand.hash(&mut hasher);
 

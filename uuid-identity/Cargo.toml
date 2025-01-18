@@ -7,6 +7,7 @@ authors.workspace = true
 [dependencies]
 uuid = { version = "1.12.0", features = ["v4"] }
 rand = "0.9.0-beta.3"
+argon2 = "0.5.3"
 
 [lints]
 workspace = true
