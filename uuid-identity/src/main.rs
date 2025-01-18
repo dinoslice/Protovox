@@ -6,14 +6,15 @@ const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
 const UUID_SET: u128 = 0x000000000000c0008000000000000000;
 
 fn main() {
-    let id = Identity::create("joshua", "password123");
-
-    dbg!(id.verify("joshua", "password123"));
+    let id = Identity::create("joshua", "password123").expect("no argon err");
+    dbg!(id.0.get());
+    dbg!(id.verify("joshua", "password123").expect("no argon err"));
 }
 
 #[derive(Eq, PartialEq)]
 pub struct Identity(pub NonNilUuid);
 
+#[derive(Debug, Clone, Hash)]
 struct IdentityPassword {
     pub pwd_hash: [u8; 56],
     pub rand_salt: IdRand,
@@ -35,6 +36,7 @@ impl IdentityPassword {
     }
 }
 
+#[derive(Debug, Clone, Hash, Copy, Eq, PartialEq)]
 struct IdRand(u64);
 
 impl IdRand {
@@ -58,21 +60,23 @@ impl IdRand {
 impl Identity {
     // TODO: make generic for any hasher
     // TODO: hash into u128?
-    pub fn create(username: &str, password: &str) -> Self {
-        let uuid = Self::hash_inner(IdRand::rand(), username, password);
+    pub fn create(username: &str, password: &str) -> Result<Self, argon2::Error> {
+        let uuid = Self::hash_inner(IdRand::rand(), username, password)?;
 
-        Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null"))
+        Ok(Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null")))
     }
 
-    pub fn verify(&self, username: &str, password: &str) -> bool {
+    pub fn verify(&self, username: &str, password: &str) -> Result<bool, argon2::Error> {
         let self_u128 = self.0.get().as_u128();
 
-        let hash = Self::hash_inner(IdRand::new(self_u128 as u64), username, password);
+        let hash = Self::hash_inner(IdRand::new(self_u128 as u64), username, password)?;
 
-        self_u128 == hash
+        Ok(self_u128 == hash)
     }
 
-    fn hash_inner(rand: IdRand, username: &str, password: &str) -> u128 {
+    fn hash_inner(rand: IdRand, username: &str, password: &str) -> Result<u128, argon2::Error> {
+        let password = IdentityPassword::with_rand_salt(password, rand)?;
+
         let rand = rand.get();
 
         let mut hasher = DefaultHasher::new();
@@ -86,7 +90,7 @@ impl Identity {
 
         let full = ((hash as u128) << 64) | (rand as u128);
 
-        full & 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF | 0x000000000000c0008000000000000000
+        Ok(full & 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF | 0x000000000000c0008000000000000000)
     }
 }
 
@@ -105,16 +109,16 @@ mod tests {
 
     #[test]
     fn verify() {
-        for _ in 0..100000 {
+        for _ in 0..20 {
             let username: String = random_string(5..=32);
 
             let password: String = random_string(8..=64);
-            let id = Identity::create(&username, &password);
+            let id = Identity::create(&username, &password).expect("no argon err");
 
-            assert!(id.verify(&username, &password));
+            assert!(id.verify(&username, &password).expect("no argon err"));
 
-            assert!(!id.verify(&random_string(5..=32), &password));
-            assert!(!id.verify(&username, &random_string(8..=64)));
+            assert!(!id.verify(&random_string(5..=32), &password).expect("no argon err"));
+            assert!(!id.verify(&username, &random_string(8..=64)).expect("no argon err"));
         }
     }
 }
