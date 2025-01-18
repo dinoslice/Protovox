@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["client", "game", "packet", "packet_derive", "splines"]
+members = ["client", "game", "packet", "packet_derive", "splines", "uuid-identity"]
 
 [workspace.package]
 name = "voxel_game"
