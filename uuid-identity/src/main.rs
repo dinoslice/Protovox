@@ -1,11 +1,13 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
 use argon2::Argon2;
+use sha2::{Digest, Sha256};
 use uuid::{NonNilUuid, Uuid};
 
 const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
 const UUID_SET: u128 = 0x000000000000c0008000000000000000;
 
 fn main() {
+    // TODO: hash username separately to check if username is valid without needing password
+
     let id = Identity::create("j", "p");
     dbg!(id.0.get());
     dbg!(id.verify("j", "p"));
@@ -36,8 +38,6 @@ impl IdRand {
 }
 
 impl Identity {
-    // TODO: make generic for any hasher
-    // TODO: hash into u128?
     pub fn create(username: &str, password: &str) -> Self {
         let uuid = Self::hash_inner(IdRand::rand(), username, password);
 
@@ -55,16 +55,14 @@ impl Identity {
     fn hash_inner(rand: IdRand, username: &str, password: &str) -> u128 {
         let password = Self::hash_pwd(password, rand);
 
-        let rand = rand.get();
+        let sha256 = Sha256::new()
+            .chain_update(username)
+            .chain_update(password)
+            .finalize();
 
-        let mut hasher = DefaultHasher::new();
+        let hash = u64::from_le_bytes(sha256[0..8].try_into().expect("slice is correct size"));
 
-        username.hash(&mut hasher);
-        password.hash(&mut hasher);
-
-        let hash = hasher.finish();
-
-        let full = ((hash as u128) << 64) | (rand as u128);
+        let full = ((hash as u128) << 64) | (rand.get() as u128);
 
         full & UUID_MASK | UUID_SET
     }
