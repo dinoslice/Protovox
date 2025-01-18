@@ -6,35 +6,13 @@ const UUID_MASK: u128 = 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF;
 const UUID_SET: u128 = 0x000000000000c0008000000000000000;
 
 fn main() {
-    let id = Identity::create("joshua", "password123").expect("no argon err");
+    let id = Identity::create("j", "p");
     dbg!(id.0.get());
-    dbg!(id.verify("joshua", "password123").expect("no argon err"));
+    dbg!(id.verify("j", "p"));
 }
 
 #[derive(Eq, PartialEq)]
 pub struct Identity(pub NonNilUuid);
-
-#[derive(Debug, Clone, Hash)]
-struct IdentityPassword {
-    pub pwd_hash: [u8; 56],
-    pub rand_salt: IdRand,
-}
-
-impl IdentityPassword {
-    pub fn new(password: &str) -> Result<Self, argon2::Error> {
-        Self::with_rand_salt(password, IdRand::rand())
-    }
-
-    pub(crate) fn with_rand_salt(password: &str, rand_salt: IdRand) -> Result<Self, argon2::Error> {
-        let argon2 = Argon2::default();
-
-        let mut pwd_hash = [0; 56];
-
-        argon2.hash_password_into(password.as_bytes(), &rand_salt.bytes(), &mut pwd_hash)?;
-
-        Ok(Self { pwd_hash, rand_salt })
-    }
-}
 
 #[derive(Debug, Clone, Hash, Copy, Eq, PartialEq)]
 struct IdRand(u64);
@@ -60,22 +38,22 @@ impl IdRand {
 impl Identity {
     // TODO: make generic for any hasher
     // TODO: hash into u128?
-    pub fn create(username: &str, password: &str) -> Result<Self, argon2::Error> {
-        let uuid = Self::hash_inner(IdRand::rand(), username, password)?;
+    pub fn create(username: &str, password: &str) -> Self {
+        let uuid = Self::hash_inner(IdRand::rand(), username, password);
 
-        Ok(Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null")))
+        Self(NonNilUuid::new(Uuid::from_u128(uuid)).expect("cannot be null"))
     }
 
-    pub fn verify(&self, username: &str, password: &str) -> Result<bool, argon2::Error> {
+    pub fn verify(&self, username: &str, password: &str) -> bool {
         let self_u128 = self.0.get().as_u128();
 
-        let hash = Self::hash_inner(IdRand::new(self_u128 as u64), username, password)?;
+        let hash = Self::hash_inner(IdRand::new(self_u128 as u64), username, password);
 
-        Ok(self_u128 == hash)
+        self_u128 == hash
     }
 
-    fn hash_inner(rand: IdRand, username: &str, password: &str) -> Result<u128, argon2::Error> {
-        let password = IdentityPassword::with_rand_salt(password, rand)?;
+    fn hash_inner(rand: IdRand, username: &str, password: &str) -> u128 {
+        let password = Self::hash_pwd(password, rand);
 
         let rand = rand.get();
 
@@ -90,7 +68,28 @@ impl Identity {
 
         let full = ((hash as u128) << 64) | (rand as u128);
 
-        Ok(full & 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF | 0x000000000000c0008000000000000000)
+        full & UUID_MASK | UUID_SET
+    }
+
+    fn hash_pwd(password: &str, rand: IdRand) -> [u8; 32] {
+        let argon2 = Argon2::default();
+
+        let mut pwd_hash = [0; 32];
+
+        use argon2::Error as E;
+
+        match argon2.hash_password_into(password.as_bytes(), &rand.bytes(), &mut pwd_hash) {
+            Ok(_) => pwd_hash,
+            Err(err) => match err {
+                E::AdTooLong | E::AlgorithmInvalid | E::KeyIdTooLong | E::VersionInvalid |
+                E::SecretTooLong | E::MemoryTooLittle | E::MemoryTooMuch |
+                E::ThreadsTooFew | E::ThreadsTooMany | E::TimeTooSmall => unreachable!("cannot happen with default params"),
+                E::B64Encoding(_) => unreachable!("PHC strings are never used"),
+                E::OutputTooShort | E::OutputTooLong => unreachable!("32 byte buffer is valid"),
+                E::SaltTooShort | E::SaltTooLong => unreachable!("salt should be a u64, which is 8 bytes"),
+                E::PwdTooLong => unreachable!("very unlikely + length should be constrained"),
+            }
+        }
     }
 }
 
@@ -113,12 +112,12 @@ mod tests {
             let username: String = random_string(5..=32);
 
             let password: String = random_string(8..=64);
-            let id = Identity::create(&username, &password).expect("no argon err");
+            let id = Identity::create(&username, &password);
 
-            assert!(id.verify(&username, &password).expect("no argon err"));
+            assert!(id.verify(&username, &password));
 
-            assert!(!id.verify(&random_string(5..=32), &password).expect("no argon err"));
-            assert!(!id.verify(&username, &random_string(8..=64)).expect("no argon err"));
+            assert!(!id.verify(&random_string(5..=32), &password));
+            assert!(!id.verify(&username, &random_string(8..=64)));
         }
     }
 }
