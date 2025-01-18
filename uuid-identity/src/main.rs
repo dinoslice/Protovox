@@ -43,3 +43,32 @@ impl Identity {
         full & 0xFFFFFFFFFFFFcFFFBFFFFFFFFFFFFFFF | 0x000000000000c0008000000000000000
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::{rng, Rng};
+    use rand::distr::uniform::SampleRange;
+    use super::*;
+
+    fn random_string(len: impl SampleRange<usize>) -> String {
+        (0..rng().random_range(len))
+            .map(|_| rng().sample(rand::distr::Alphanumeric))
+            .map(char::from)
+            .collect()
+    }
+
+    #[test]
+    fn verify() {
+        for _ in 0..100000 {
+            let username: String = random_string(5..=32);
+
+            let password: String = random_string(8..=64);
+            let id = Identity::create(&username, &password);
+
+            assert!(id.verify(&username, &password));
+
+            assert!(!id.verify(&random_string(5..=32), &password));
+            assert!(!id.verify(&username, &random_string(8..=64)));
+        }
+    }
+}
