@@ -12,7 +12,7 @@ serde = { workspace = true }
 strum = { workspace = true }
 serde-big-array = "0.5.1"
 num-traits = "0.2.19"
-derive_more = { version = "1.0.0", features = ["add"] }
+derive_more = { version = "1.0.0", features = ["add", "from"] }
 
 [lints]
 workspace = true
