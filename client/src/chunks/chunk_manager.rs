@@ -122,6 +122,13 @@ impl ChunkManager {
                 false => BakeState::DontBake,
             };
 
+            // TODO: potentially set neighbors as dirty
+            for ft in FaceType::ALL {
+                let neighbor_loc = ChunkLocation(&data.location.0 + ft.as_vector());
+
+                self.loaded.get_mut(&neighbor_loc).map(ClientChunk::set_dirty);
+            }
+
             let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
         }
 
