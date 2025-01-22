@@ -79,7 +79,7 @@ impl ChunkManager {
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
@@ -296,7 +296,7 @@ pub fn chunk_manager_update_and_request(
 
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
+    let reqs = chunk_mgr.update(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
