@@ -93,8 +93,6 @@ impl ChunkManager {
 
             self.recently_requested_gen.remove(&data.location);
 
-            // TODO: don't bake or render chunks that aren't in render distance
-
             tracing::trace!("Adding {:?} to chunk manager", data.location);
 
             let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
@@ -102,7 +100,6 @@ impl ChunkManager {
                 false => BakeState::DontBake,
             };
 
-            // TODO: potentially set neighbors as dirty
             for ft in FaceType::ALL {
                 let neighbor_loc = ChunkLocation(&data.location.0 + ft.as_vector());
 
@@ -200,7 +197,6 @@ impl ChunkManager {
         });
     }
 
-    // TODO: error differentiating between invalid loc & not loaded chunk
     pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
         self.loaded.get(location)
     }
