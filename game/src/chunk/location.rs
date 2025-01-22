@@ -4,7 +4,7 @@ use crate::chunk;
 use crate::location::{BlockLocation, WorldLocation};
 
 #[repr(transparent)]
-#[derive(Default, Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
+#[derive(Default, Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize, derive_more::Add, derive_more::Sub)]
 pub struct ChunkLocation(pub IVec3);
 
 impl From<&WorldLocation> for ChunkLocation {
