@@ -5,6 +5,7 @@ use hashbrown::HashMap;
 use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use wgpu::util::DeviceExt;
 use game::block::Block;
+use game::block::face_type::FaceType;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use game::location::{BlockLocation, WorldLocation};
@@ -227,7 +228,20 @@ impl ChunkManager {
         if prev != new {
             *block_mut = new;
 
-            self.get_chunk_mut(&block_loc.into())?.set_dirty()
+            self.get_chunk_mut(&block_loc.into()).map(ClientChunk::set_dirty);
+
+            // TODO: work with chunk parts instead?
+            for ft in FaceType::ALL {
+                let original = BlockLocation(block_loc.0 + ft.as_vector());
+
+                let (new_chunk_loc, new_chunk_pos) = original.as_chunk_parts();
+
+                if let Some(chunk) = self.get_chunk_mut(&new_chunk_loc) {
+                    if chunk.data.get_block(new_chunk_pos) != Block::Air {
+                        chunk.set_dirty();
+                    }
+                }
+            }
         }
         
         Some(prev)
