@@ -25,3 +25,9 @@ impl From<&BlockLocation> for ChunkLocation {
     }
 }
 
+impl From<BlockLocation> for ChunkLocation {
+    fn from(loc: BlockLocation) -> Self {
+        (&loc).into()
+    }
+}
+
