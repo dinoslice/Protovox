@@ -95,10 +95,7 @@ impl ChunkManager {
 
             tracing::trace!("Adding {:?} to chunk manager", data.location);
 
-            let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
-                true => BakeState::NeedsBaking,
-                false => BakeState::DontBake,
-            };
+            // not calculating bake state here anymore, since it's done in the next section
 
             for ft in FaceType::ALL {
                 let neighbor_loc = ChunkLocation(&data.location.0 + ft.as_vector());
@@ -106,7 +103,7 @@ impl ChunkManager {
                 self.loaded.get_mut(&neighbor_loc).map(ClientChunk::set_dirty);
             }
 
-            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
+            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake: BakeState::DontBake });
         }
 
         // 2. un-bake any chunks not in OUR render distance
