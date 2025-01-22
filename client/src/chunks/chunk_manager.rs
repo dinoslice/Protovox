@@ -87,27 +87,7 @@ impl ChunkManager {
             *t > 0.0
         });
 
-        // TODO: is it expensive to iterate over the hashmap again each frame? maybe only unload & update bake every few frames?
-        for (loc, cc) in &mut self.loaded {
-            let in_rend = Self::in_render_distance_with(loc, center, render_dist);
-
-            match (cc.bake, in_rend) {
-                (BakeState::DontBake, true) => cc.bake = BakeState::NeedsBaking,
-                (BakeState::NeedsBaking, false) => cc.bake = BakeState::DontBake,
-                (BakeState::Baked, false) => {
-                    let had_entry = self.bakery.remove(&cc.data.location).is_some();
-
-                    debug_assert!(had_entry, "if it was baked, it should've been in the bakery");
-
-                    cc.bake = BakeState::DontBake;
-                }
-
-                (BakeState::NeedsBaking, true) => {}
-                (BakeState::Baked, true) => {}
-                (BakeState::DontBake, false) => {}
-            }
-        }
-
+        // 3. insert any received chunks
         for chunk in received_chunks {
             let data = chunk.0;
 
@@ -130,6 +110,28 @@ impl ChunkManager {
             }
 
             let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
+        }
+
+        // 2. un-bake any chunks not in OUR render distance
+        // TODO: is it expensive to iterate over the hashmap again each frame? maybe only unload & update bake every few frames?
+        for (loc, cc) in &mut self.loaded {
+            let in_rend = Self::in_render_distance_with(loc, center, render_dist);
+
+            match (cc.bake, in_rend) {
+                (BakeState::DontBake, true) => cc.bake = BakeState::NeedsBaking,
+                (BakeState::NeedsBaking, false) => cc.bake = BakeState::DontBake,
+                (BakeState::Baked, false) => {
+                    let had_entry = self.bakery.remove(&cc.data.location).is_some();
+
+                    debug_assert!(had_entry, "if it was baked, it should've been in the bakery");
+
+                    cc.bake = BakeState::DontBake;
+                }
+
+                (BakeState::NeedsBaking, true) => {}
+                (BakeState::Baked, true) => {}
+                (BakeState::DontBake, false) => {}
+            }
         }
 
         // TODO: don't collect this
