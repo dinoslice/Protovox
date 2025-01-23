@@ -33,7 +33,7 @@ pub fn move_with_collision(
                     for z in min_floor.z..=max_floor.z {
                         let world_loc = WorldLocation(Vec3::new(x as f32, y as f32, z as f32));
                         
-                        if let Some(&block) = world.get_block_ref(&world_loc.into()) {
+                        if let Some(block) = world.get_block(&world_loc.into()) {
                             if block != Block::Air {
                                 return Some(true);
                             }

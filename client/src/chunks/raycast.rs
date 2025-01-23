@@ -24,9 +24,9 @@ impl ChunkManager {
             let block_loc = WorldLocation(curr).into();
 
             // TODO: should I early return if the chunk doesn't exist? or should you be able to raycast through it?
-            let block = self.get_block_ref(&block_loc)?;
+            let block = self.get_block(&block_loc)?;
 
-            if *block != Block::Air {
+            if block != Block::Air {
                 return Some(BlockRaycastResult {
                     hit_block: block_loc,
                     prev_air,

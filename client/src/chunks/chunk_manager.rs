@@ -32,34 +32,15 @@ pub struct ChunkManager {
 }
 
 impl ChunkManager {
-    pub fn new(max_bakes_per_frame: usize) -> Self {
+    pub fn new(max_bakes_per_frame: usize, expected_render_dist: Option<&RenderDistance>) -> Self {
+        let size = expected_render_dist.map(RenderDistance::total_chunks).unwrap_or(0);
+
         Self {
-            loaded: HashMap::default(),
+            loaded: HashMap::with_capacity(size),
             recently_requested_gen: HashMap::default(),
-            bakery: HashMap::default(),
+            bakery: HashMap::with_capacity(size),
             max_bakes_per_frame,
         }
-    }
-
-    pub fn new_with_expected_render_distance(max_bakes_per_frame: usize, expected: &RenderDistance) -> Self {
-        let mut chunk_mgr = Self::new(max_bakes_per_frame);
-
-        chunk_mgr.expect_render_distance(expected);
-
-        chunk_mgr
-    }
-
-    pub fn expect_render_distance(&mut self, expected: &RenderDistance) {
-        if let Some(additional) = self.loaded.capacity().checked_sub(expected.total_chunks()) {
-            self.loaded.reserve(additional);
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.loaded.clear();
-
-        self.bakery.clear();
-        self.recently_requested_gen.clear();
     }
 
     // TODO: possibly optimize this method?
@@ -202,7 +183,7 @@ impl ChunkManager {
         self.loaded.get_mut(location)
     }
 
-    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+    pub fn get_block(&self, block_loc: &BlockLocation) -> Option<Block> {
         let (loc, pos) = block_loc.as_chunk_parts();
 
         self
@@ -210,6 +191,7 @@ impl ChunkManager {
             .data
             .blocks
             .get(pos.0 as usize)
+            .copied()
     }
 
     pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {

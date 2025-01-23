@@ -72,7 +72,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
         .next()
         .expect("TODO: local player with transform should exist");
 
-    storages.add_unique(ChunkManager::new_with_expected_render_distance(6, render_dist));
+    storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
 }
 
