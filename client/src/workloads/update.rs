@@ -4,7 +4,9 @@ use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModifica
 use strum::EnumCount;
 use winit::window::Fullscreen;
 use game::block::Block;
-use game::location::BlockLocation;
+use game::chunk::CHUNK_SIZE;
+use game::chunk::location::ChunkLocation;
+use game::location::{BlockLocation, WorldLocation};
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
@@ -19,8 +21,9 @@ use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
+use crate::render_distance::RenderDistance;
 use crate::rendering::gizmos;
-use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
+use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle, LineGizmo};
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::params::WorldGenParams;
 use crate::world_gen::{WorldGenSplines, WorldGenerator};
@@ -38,6 +41,7 @@ pub fn update() -> Workload {
         server_apply_block_updates.run_if(is_hosted),
         client_apply_block_updates.run_if(is_multiplayer_client),
         debug_draw_hitbox_gizmos,
+        debug_draw_chunks,
         spawn_multiplayer_player,
         raycast.skip_if(local_player_is_gamemode_spectator),
         place_break_blocks.skip_if(local_player_is_gamemode_spectator),
@@ -288,4 +292,68 @@ fn debug_draw_hitbox_gizmos(
             GizmoLifetime::SingleFrame,
         ));
     }
+}
+
+fn debug_draw_chunks(
+    local_player: View<LocalPlayer>,
+    v_transform: View<Transform>,
+
+    mut entities: EntitiesViewMut,
+    mut vm_line_gizmos: ViewMut<LineGizmo>,
+) {
+    // TODO: add egui window to change this
+
+    let (transform, ..) = (&v_transform, &local_player).iter()
+        .next()
+        .expect("local player should exist");
+
+    let mut lines = Vec::new();
+
+    let start = WorldLocation::from(&transform.get_loc::<ChunkLocation>()).0;
+
+    let dark_green = GizmoStyle::stroke(rgb::Rgb { r: 0.0, g: 0.8, b: 0.0 });
+
+    let lifetime = GizmoLifetime::SingleFrame;
+
+    let scale = 4;
+
+    for axis in 0..3 {
+        let cross = [(axis + 1) % 3, (axis + 2) % 3];
+
+        let mut len = Vec3::zeros();
+        len[axis] = CHUNK_SIZE[axis] as _;
+
+        for i in 0..2 {
+            let ca1 = cross[i];
+            let ca2 = cross[i ^ 1];
+
+            for c1 in (0..=CHUNK_SIZE[ca1]).step_by(scale) {
+                let mut base = Vec3::zeros();
+                base[ca1] = c1 as _;
+
+                let start = start + base;
+
+                lines.push(LineGizmo {
+                    start,
+                    end: start + len,
+                    style: dark_green,
+                    lifetime,
+                });
+
+                let mut c_len = Vec3::zeros();
+                c_len[ca2] = CHUNK_SIZE[ca2] as _;
+
+                let start = start + c_len;
+
+                lines.push(LineGizmo {
+                    start,
+                    end: start + len,
+                    style: dark_green,
+                    lifetime,
+                });
+            }
+        }
+    }
+
+    entities.bulk_add_entity(&mut vm_line_gizmos, lines);
 }

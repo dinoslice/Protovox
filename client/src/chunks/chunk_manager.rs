@@ -5,13 +5,14 @@ use hashbrown::HashMap;
 use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use wgpu::util::DeviceExt;
 use game::block::Block;
+use game::block::face_type::FaceType;
 use game::chunk::location::ChunkLocation;
 use game::chunk::pos::ChunkPos;
 use game::location::{BlockLocation, WorldLocation};
 use crate::application::delta_time::LastDeltaTime;
 use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};
-use crate::rendering::chunk_mesh::ChunkMesh;
+use crate::rendering::chunk_mesh::ChunkMeshContext;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
@@ -31,34 +32,15 @@ pub struct ChunkManager {
 }
 
 impl ChunkManager {
-    pub fn new(max_bakes_per_frame: usize) -> Self {
+    pub fn new(max_bakes_per_frame: usize, expected_render_dist: Option<&RenderDistance>) -> Self {
+        let size = expected_render_dist.map(RenderDistance::total_chunks).unwrap_or(0);
+
         Self {
-            loaded: HashMap::default(),
+            loaded: HashMap::with_capacity(size),
             recently_requested_gen: HashMap::default(),
-            bakery: HashMap::default(),
+            bakery: HashMap::with_capacity(size),
             max_bakes_per_frame,
         }
-    }
-
-    pub fn new_with_expected_render_distance(max_bakes_per_frame: usize, expected: &RenderDistance) -> Self {
-        let mut chunk_mgr = Self::new(max_bakes_per_frame);
-
-        chunk_mgr.expect_render_distance(expected);
-
-        chunk_mgr
-    }
-
-    pub fn expect_render_distance(&mut self, expected: &RenderDistance) {
-        if let Some(additional) = self.loaded.capacity().checked_sub(expected.total_chunks()) {
-            self.loaded.reserve(additional);
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.loaded.clear();
-
-        self.bakery.clear();
-        self.recently_requested_gen.clear();
     }
 
     // TODO: possibly optimize this method?
@@ -78,7 +60,7 @@ impl ChunkManager {
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
@@ -86,6 +68,26 @@ impl ChunkManager {
             *t > 0.0
         });
 
+        // 3. insert any received chunks
+        for chunk in received_chunks {
+            let data = chunk.0;
+
+            self.recently_requested_gen.remove(&data.location);
+
+            tracing::trace!("Adding {:?} to chunk manager", data.location);
+
+            // not calculating bake state here anymore, since it's done in the next section
+
+            for ft in FaceType::ALL {
+                let neighbor_loc = ChunkLocation(&data.location.0 + ft.as_vector());
+
+                self.loaded.get_mut(&neighbor_loc).map(ClientChunk::set_dirty);
+            }
+
+            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake: BakeState::DontBake });
+        }
+
+        // 2. un-bake any chunks not in OUR render distance
         // TODO: is it expensive to iterate over the hashmap again each frame? maybe only unload & update bake every few frames?
         for (loc, cc) in &mut self.loaded {
             let in_rend = Self::in_render_distance_with(loc, center, render_dist);
@@ -107,47 +109,44 @@ impl ChunkManager {
             }
         }
 
-        for chunk in received_chunks {
-            let data = chunk.0;
+        // TODO: don't collect this
+        let mut baked = Vec::new();
 
-            self.recently_requested_gen.remove(&data.location);
-
-            // TODO: don't bake or render chunks that aren't in render distance
-
-            tracing::trace!("Adding {:?} to chunk manager", data.location);
-
-            let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
-                true => BakeState::NeedsBaking,
-                false => BakeState::DontBake,
-            };
-
-            let _ = self.loaded.try_insert(data.location.clone(), ClientChunk { data, bake });
-        }
-
-        for (_, chunk) in self.loaded.iter_mut()
+        for (_, chunk) in self.loaded.iter()
             .filter(|(_, cc)| cc.bake == BakeState::NeedsBaking)
             .take(self.max_bakes_per_frame)
         {
-            let baked = ChunkMesh::from_chunk(&chunk.data).faces;
+            // TODO change this iterator to a collected iterator iterating over location or a immutable iterator?
+            let mesher = ChunkMeshContext::from_manager(&self, &chunk.data);
+
+            let faces = mesher.faces();
 
             tracing::trace!("Finished baking chunk at {:?}", &chunk.data.location);
 
             let buffer = g_ctx.device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
                     label: Some("ChunkManger chunk buffer"),
-                    contents: bytemuck::try_cast_slice(&baked).expect("compatible data"),
+                    contents: bytemuck::try_cast_slice(&faces).expect("compatible data"),
                     usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, // only needed in vertex buffer,
                 }
             );
 
             let buffer = SizedBuffer {
                 buffer,
-                size: baked.len() as u32,
+                size: faces.len() as _,
             };
 
             self.bakery.insert(chunk.data.location.clone(), buffer);
-            chunk.bake = BakeState::Baked;
+            // chunk.bake = BakeState::Baked;
+            baked.push(chunk.data.location.clone());
         }
+
+        baked.into_iter().for_each(|loc|
+            self.loaded
+                .get_mut(&loc)
+                .expect("should exist")
+                .bake = BakeState::Baked
+        );
 
         let requests = Self::renderable_locations_with(center, render_dist)
             .filter(|loc| !self.loaded.contains_key(loc) && !self.recently_requested_gen.contains_key(loc))
@@ -176,7 +175,6 @@ impl ChunkManager {
         });
     }
 
-    // TODO: error differentiating between invalid loc & not loaded chunk
     pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
         self.loaded.get(location)
     }
@@ -185,7 +183,7 @@ impl ChunkManager {
         self.loaded.get_mut(location)
     }
 
-    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+    pub fn get_block(&self, block_loc: &BlockLocation) -> Option<Block> {
         let (loc, pos) = block_loc.as_chunk_parts();
 
         self
@@ -193,6 +191,7 @@ impl ChunkManager {
             .data
             .blocks
             .get(pos.0 as usize)
+            .copied()
     }
 
     pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
@@ -213,7 +212,20 @@ impl ChunkManager {
         if prev != new {
             *block_mut = new;
 
-            self.get_chunk_mut(&block_loc.into())?.set_dirty()
+            self.get_chunk_mut(&block_loc.into()).map(ClientChunk::set_dirty);
+
+            // TODO: work with chunk parts instead?
+            for ft in FaceType::ALL {
+                let original = BlockLocation(block_loc.0 + ft.as_vector());
+
+                let (new_chunk_loc, new_chunk_pos) = original.as_chunk_parts();
+
+                if let Some(chunk) = self.get_chunk_mut(&new_chunk_loc) {
+                    if chunk.data.get_block(new_chunk_pos) != Block::Air {
+                        chunk.set_dirty();
+                    }
+                }
+            }
         }
         
         Some(prev)
@@ -259,7 +271,7 @@ pub fn chunk_manager_update_and_request(
 
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
+    let reqs = chunk_mgr.update(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);
