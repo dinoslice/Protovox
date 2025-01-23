@@ -36,7 +36,8 @@ impl Identifiable for EnginePhase {
 
 pub struct EnginePluginMetadata {
     pub name: &'static Ident,
-    pub version: &'static str, // TODO: ues semver crate?
+    pub version: &'static str, // TODO: use semver crate?
+    // TODO: dependencies? &[&'static Ident]
 }
 
 impl Identifiable for EnginePluginMetadata {
