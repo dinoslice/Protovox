@@ -1,5 +1,6 @@
 use shipyard::Workload;
 use crate::DinoPlugin;
+use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum EnginePhase { // TODO: eventually add all these phases
@@ -19,7 +20,7 @@ pub enum EnginePhase { // TODO: eventually add all these phases
 }
 
 pub struct EnginePluginMetadata {
-    pub name: &'static str,
+    pub name: &'static Ident,
     pub version: &'static str, // TODO: ues semver crate?
 }
 
