@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use strck::{Check, Ck, Invariant, ident::unicode};
+use crate::Identifiable;
 
 pub struct DinoIdent;
 
@@ -38,5 +39,11 @@ impl Invariant for DinoIdent {
             }
             res => check_inner(res.map(|_| str)),
         }
+    }
+}
+
+impl Identifiable for &'static Ident {
+    fn identifier(&self) -> &'static Ident {
+        self
     }
 }

@@ -1,5 +1,7 @@
 use shipyard::Workload;
 use crate::DinoPlugin;
+use strck::IntoCk;
+use crate::{DinoPlugin, Identifiable};
 use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -19,12 +21,31 @@ pub enum EnginePhase { // TODO: eventually add all these phases
     Shutdown,
 }
 
+impl Identifiable for EnginePhase {
+    fn identifier(&self) -> &'static Ident {
+        let res = match self {
+            EnginePhase::Startup => "startup".ck(),
+            EnginePhase::Input => "input".ck(),
+            EnginePhase::EarlyUpdate => "early_update".ck(),
+            EnginePhase::Render => "render".ck(),
+            EnginePhase::Shutdown => "shutdown".ck(),
+        };
+
+        res.expect("valid identifier")
+    }
+}
+
 pub struct EnginePluginMetadata {
     pub name: &'static Ident,
     pub version: &'static str, // TODO: ues semver crate?
 }
 
-pub trait DinoEnginePlugin {
+impl Identifiable for EnginePluginMetadata {
+    fn identifier(&self) -> &'static Ident {
+        self.name
+    }
+}
+
     fn startup(&self) -> Option<Workload> {
         None
     }
