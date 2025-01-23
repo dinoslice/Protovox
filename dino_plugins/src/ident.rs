@@ -4,7 +4,7 @@ use crate::Identifiable;
 
 pub struct DinoIdent;
 
-pub type Ident = Ck<DinoIdent>;
+pub type Ident = Ck<DinoIdent>; // TODO: eventually use wrapper ty?
 pub type IdentBuf<B = Arc<str>> = Check<DinoIdent, B>;
 
 #[derive(thiserror::Error, Debug)]
