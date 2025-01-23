@@ -19,7 +19,8 @@ pub enum EnginePhase { // TODO: eventually add all these phases
 }
 
 pub struct EnginePluginMetadata {
-    name: &'static str,
+    pub name: &'static str,
+    pub version: &'static str, // TODO: ues semver crate?
 }
 
 pub trait DinoEnginePlugin {
