@@ -1,5 +1,4 @@
-use shipyard::Workload;
-use crate::DinoPlugin;
+use shipyard::{Workload, WorkloadModificator};
 use strck::IntoCk;
 use crate::{DinoPlugin, Identifiable};
 use crate::ident::Ident;
@@ -46,6 +45,7 @@ impl Identifiable for EnginePluginMetadata {
     }
 }
 
+pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> {
     fn startup(&self) -> Option<Workload> {
         None
     }
@@ -66,7 +66,15 @@ impl Identifiable for EnginePluginMetadata {
         None
     }
 
-    fn metadata(&self) -> EnginePluginMetadata;
+    fn instructions_renamed(&self, phase: EnginePhase) -> Option<Workload> {
+        self.instructions(phase).map(|workload| {
+            let name = format!("{}::{}", self.plugin_metadata().name, phase.identifier());
+
+            workload.rename(name)
+        })
+    }
+
+    fn plugin_metadata(&self) -> EnginePluginMetadata;
 }
 
 impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> for T {
@@ -81,6 +89,6 @@ impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata
     }
 
     fn metadata(&self) -> EnginePluginMetadata {
-        DinoEnginePlugin::metadata(self)
+        self.plugin_metadata()
     }
 }
