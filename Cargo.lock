@@ -802,6 +802,9 @@ dependencies = [
 [[package]]
 name = "dino_plugins"
 version = "0.1.0"
+dependencies = [
+ "shipyard",
+]
 
 [[package]]
 name = "dispatch"
