@@ -1,9 +1,9 @@
 pub mod engine;
 
 pub trait DinoPlugin<P, I, M> {
-    fn instructions(phase: P) -> Option<I> {
+    fn instructions(&self, phase: P) -> Option<I> {
         None
     }
 
-    fn metadata() -> M;
+    fn metadata(&self) -> M;
 }

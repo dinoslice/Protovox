@@ -24,41 +24,41 @@ pub struct EnginePluginMetadata {
 }
 
 pub trait DinoEnginePlugin {
-    fn startup() -> Option<Workload> {
+    fn startup(&self) -> Option<Workload> {
         None
     }
 
-    fn input() -> Option<Workload> {
+    fn input(&self) -> Option<Workload> {
         None
     }
 
-    fn early_update() -> Option<Workload> {
+    fn early_update(&self) -> Option<Workload> {
         None
     }
 
-    fn render() -> Option<Workload> {
+    fn render(&self) -> Option<Workload> {
         None
     }
 
-    fn shutdown() -> Option<Workload> {
+    fn shutdown(&self) -> Option<Workload> {
         None
     }
 
-    fn metadata() -> EnginePluginMetadata;
+    fn metadata(&self) -> EnginePluginMetadata;
 }
 
 impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> for T {
-    fn instructions(phase: EnginePhase) -> Option<Workload> {
+    fn instructions(&self, phase: EnginePhase) -> Option<Workload> {
         match phase {
-            EnginePhase::Startup => T::startup(),
-            EnginePhase::Input => T::input(),
-            EnginePhase::EarlyUpdate => T::early_update(),
-            EnginePhase::Render => T::render(),
-            EnginePhase::Shutdown => T::shutdown(),
+            EnginePhase::Startup => self.startup(),
+            EnginePhase::Input => self.input(),
+            EnginePhase::EarlyUpdate => self.early_update(),
+            EnginePhase::Render => self.render(),
+            EnginePhase::Shutdown => self.shutdown(),
         }
     }
 
-    fn metadata() -> EnginePluginMetadata {
-        T::metadata()
+    fn metadata(&self) -> EnginePluginMetadata {
+        DinoEnginePlugin::metadata(self)
     }
 }
