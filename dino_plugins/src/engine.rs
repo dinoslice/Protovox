@@ -8,26 +8,36 @@ pub enum EnginePhase { // TODO: eventually add all these phases
     Startup,
     Input,
     EarlyUpdate,
-    // NetworkingClientPreRecv,
-    // NetworkingClientPostRecv,
-    // NetworkingServerPreRecv,
-    // NetworkingServerPostRecv,
-    // LateUpdate,
-    // PreRender,
+    NetworkingClientPreRecv,
+    NetworkingClientPostRecv,
+    NetworkingServerPreRecv,
+    NetworkingServerPostRecv,
+    LateUpdate,
+    PreRender,
     Render,
-    // RenderUi,
-    // PostRender,
+    RenderUi,
+    PostRender,
     Shutdown,
 }
 
 impl Identifiable for EnginePhase {
     fn identifier(&self) -> &'static Ident {
+        use EnginePhase as P;
+
         let res = match self {
-            EnginePhase::Startup => "startup".ck(),
-            EnginePhase::Input => "input".ck(),
-            EnginePhase::EarlyUpdate => "early_update".ck(),
-            EnginePhase::Render => "render".ck(),
-            EnginePhase::Shutdown => "shutdown".ck(),
+            P::Startup => "startup".ck(),
+            P::Input => "input".ck(),
+            P::EarlyUpdate => "early_update".ck(),
+            P::NetworkingClientPreRecv => "networking_client_pre_recv".ck(),
+            P::NetworkingClientPostRecv => "networking_client_post_recv".ck(),
+            P::NetworkingServerPreRecv => "networking_server_pre_recv".ck(),
+            P::NetworkingServerPostRecv => "networking_server_post_recv".ck(),
+            P::LateUpdate => "late_update".ck(),
+            P::PreRender => "pre_render".ck(),
+            P::Render => "render".ck(),
+            P::RenderUi => "render_ui".ck(),
+            P::PostRender => "post_render".ck(),
+            P::Shutdown => "shutdown".ck(),
         };
 
         res.expect("valid identifier")
@@ -59,7 +69,39 @@ pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetada
         None
     }
 
+    fn networking_client_pre_recv(&self) -> Option<Workload> {
+        None
+    }
+
+    fn networking_client_post_recv(&self) -> Option<Workload> {
+        None
+    }
+
+    fn networking_server_pre_recv(&self) -> Option<Workload> {
+        None
+    }
+
+    fn networking_server_post_recv(&self) -> Option<Workload> {
+        None
+    }
+
+    fn late_update(&self) -> Option<Workload> {
+        None
+    }
+
+    fn pre_render(&self) -> Option<Workload> {
+        None
+    }
+
     fn render(&self) -> Option<Workload> {
+        None
+    }
+
+    fn render_ui(&self) -> Option<Workload> {
+        None
+    }
+
+    fn post_render(&self) -> Option<Workload> {
         None
     }
 
@@ -80,12 +122,22 @@ pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetada
 
 impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> for T {
     fn instructions(&self, phase: EnginePhase) -> Option<Workload> {
+        use EnginePhase as P;
+
         match phase {
-            EnginePhase::Startup => self.startup(),
-            EnginePhase::Input => self.input(),
-            EnginePhase::EarlyUpdate => self.early_update(),
-            EnginePhase::Render => self.render(),
-            EnginePhase::Shutdown => self.shutdown(),
+            P::Startup => self.startup(),
+            P::Input => self.input(),
+            P::EarlyUpdate => self.early_update(),
+            P::NetworkingClientPreRecv => self.networking_client_pre_recv(),
+            P::NetworkingClientPostRecv => self.networking_client_post_recv(),
+            P::NetworkingServerPreRecv => self.networking_server_pre_recv(),
+            P::NetworkingServerPostRecv => self.networking_server_post_recv(),
+            P::LateUpdate => self.late_update(),
+            P::PreRender => self.pre_render(),
+            P::Render => self.render(),
+            P::RenderUi => self.render_ui(),
+            P::PostRender => self.post_render(),
+            P::Shutdown => self.shutdown(),
         }
     }
 
