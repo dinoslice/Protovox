@@ -94,11 +94,11 @@ pub fn build_render<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlug
         }
 
         if let Some(w) = plugin.instructions_renamed(EnginePhase::Render) {
-            pre_render = pre_render.with_workload(w);
+            render = render.with_workload(w);
         }
 
         if let Some(w) = plugin.instructions_renamed(EnginePhase::PostRender) {
-            pre_render = pre_render.with_workload(w);
+            post_render = post_render.with_workload(w);
         }
     }
 
