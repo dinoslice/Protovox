@@ -1,7 +1,7 @@
 mod startup;
 mod update;
 mod shutdown;
-mod dino;
+pub mod dino;
 
 pub use startup::startup;
 pub use update::update;

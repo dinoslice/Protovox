@@ -18,6 +18,7 @@ mod resize;
 pub mod delta_time;
 pub mod exit;
 mod core_workloads;
+mod build_workloads;
 
 pub use capture_state::CaptureState;
 
