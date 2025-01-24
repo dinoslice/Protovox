@@ -22,7 +22,9 @@ pub mod server_connection;
 
 pub fn update_networking_server() -> Workload {
     (
+        // -- NETWORKING SERVER PRE RECV -- //
         server_process_network_events,
+        // -- NETWORKING SERVER POST RECV -- //
         (
             server_broadcast_chunks,
             server_broadcast_block_updates,
@@ -38,14 +40,14 @@ pub fn update_networking_server() -> Workload {
 
 pub fn update_networking_client() -> Workload {
     (
-        // PRE-PACKET RECV NETWORKING
+        // -- NETWORKING CLIENT PRE RECV -- //
         (
             client_send_block_updates
         ).into_workload(),
         
         client_process_network_events_multiplayer,
-        
-        // POST-PACKET RECV NETWORKING
+
+        // -- NETWORKING CLIENT POST RECV -- //
         (
             client_handle_kicked_by_server,
             client_acknowledge_connection_success,

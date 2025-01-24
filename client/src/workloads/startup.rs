@@ -17,12 +17,14 @@ use crate::world_gen::WorldGenerator;
 
 pub fn startup() -> Workload {
     (
+        // - - EARLY STARTUP -- //
         args::parse_env,
         rendering::initialize,
         initialize_local_player,
         initialize_gameplay_systems.after_all(initialize_local_player),
         initialize_networking.after_all(args::parse_env),
         set_window_title,
+        // - - LATE STARTUP -- //
     ).into_sequential_workload()
 }
 

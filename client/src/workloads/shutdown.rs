@@ -8,6 +8,7 @@ use crate::networking::server_handler::ServerHandler;
 
 pub fn shutdown() -> Workload {
     (
+        // -- SHUTDOWN -- //
         disconnect_connected_players.run_if(is_hosted),
     ).into_sequential_workload()
 }

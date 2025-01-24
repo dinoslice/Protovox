@@ -11,6 +11,7 @@ mod egui;
 pub fn render() -> Workload {
     (
         (
+            // -- PRE RENDER -- //
             update_block_outline_buffer,
             update_camera_uniform_buffer,
             create_new_render_context
@@ -18,12 +19,14 @@ pub fn render() -> Workload {
                 .expect("failed to convert to try_system?"),
         ).into_workload(),
         (
+            // -- RENDER -- //
             world::render_world,
             gizmos::render_line_gizmos,
             block_outline::render_block_outline,
-            egui::render_egui,
+            egui::render_egui, // -- RENDER UI -- //
             submit_rendered_frame,
         ).into_sequential_workload()
+        // -- POST RENDER -- //
     ).into_sequential_workload()
 }
 
