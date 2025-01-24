@@ -1,5 +1,6 @@
 use shipyard::{IntoWorkload, IntoWorkloadSystem, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase};
+use crate::environment::{is_hosted, is_multiplayer_client};
 
 pub fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
     // TODO: macro/func to make the path idents?
@@ -72,12 +73,12 @@ pub fn build_update<'a, CB, CR: 'static, SB, SR: 'static>(
             networking_client_pre_recv,
             client_process,
             networking_client_post_recv,
-        ).into_sequential_workload(),
+        ).into_sequential_workload().run_if(is_multiplayer_client),
         (
             networking_server_pre_recv,
             server_process,
             networking_server_post_recv,
-        ).into_sequential_workload(),
+        ).into_sequential_workload().run_if(is_hosted),
         late_update,
     ).into_sequential_workload()
         .rename("engine::update")
