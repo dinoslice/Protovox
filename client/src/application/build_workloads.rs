@@ -1,4 +1,4 @@
-use shipyard::{IntoWorkload, Workload, WorkloadModificator};
+use shipyard::{IntoWorkload, IntoWorkloadSystem, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase};
 
 pub fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
@@ -22,7 +22,11 @@ pub fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlu
         .rename("engine::startup")
 }
 
-pub fn build_update<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
+pub fn build_update<'a, CB, CR: 'static, SB, SR: 'static>(
+    plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>,
+    client_process: impl IntoWorkloadSystem<CB, CR> + 'static,
+    server_process: impl IntoWorkloadSystem<SB, SR> + 'static,
+) -> Workload {
     let mut input = Workload::new("engine::input");
     let mut early_update = Workload::new("engine::early_update");
     let mut networking_client_pre_recv = Workload::new("engine::networking_client_pre_recv");
@@ -66,12 +70,12 @@ pub fn build_update<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlug
         early_update,
         (
             networking_client_pre_recv,
-            // TODO
+            client_process,
             networking_client_post_recv,
         ).into_sequential_workload(),
         (
             networking_server_pre_recv,
-            // TODO
+            server_process,
             networking_server_post_recv,
         ).into_sequential_workload(),
         late_update,
