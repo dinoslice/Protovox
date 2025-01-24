@@ -13,7 +13,7 @@ pub fn shutdown() -> Workload {
     ).into_sequential_workload()
 }
 
-fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>) {
+pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>) {
     let tx = &server_handler.tx;
     
     let kick_packet = KickedByServer("Server closed".into())

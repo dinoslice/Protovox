@@ -55,7 +55,7 @@ pub fn process_input() -> Workload {
     ).into_workload()
 }
 
-fn toggle_gamemode(
+pub fn toggle_gamemode(
     input: UniqueView<InputManager>,
     v_local_player: View<LocalPlayer>,
     mut vm_looking_at_block: ViewMut<LookingAtBlock>,
@@ -94,7 +94,7 @@ fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
+pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
     let scroll = input.mouse_manager.scroll.floor() as i32;
     
     let (_, held) = (&v_local_player, &mut vm_held_block).iter()
@@ -108,7 +108,7 @@ fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlay
     held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
 }
 
-fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
+pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
     for mut bus in vm_block_update_evt_bus.drain() {
         for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
             if world.modify_block(&loc, new_block).is_none() {
@@ -120,7 +120,7 @@ fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_blo
     vm_block_update_evt.drain();
 }
 
-fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
+pub fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
     for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
         if world.modify_block(&loc, new_block).is_none() {
             tracing::error!("Location from block update wasn't loaded");
@@ -128,7 +128,7 @@ fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_blo
     }
 }
 
-fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
+pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
     let (_, transform, camera, looking_at_block) = (&v_local_player, &v_transform, &v_camera, &mut vm_looking_at_block)
         .iter()
         .next()
@@ -146,7 +146,7 @@ fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer
     looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);
 }
 
-fn place_break_blocks(
+pub fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
@@ -201,7 +201,7 @@ fn place_break_blocks(
     }
 }
 
-fn spawn_multiplayer_player(
+pub fn spawn_multiplayer_player(
     // TODO: for now using this event to spawn the player's components
     mut vm_info_req_evt: ViewMut<ClientInformationRequestEvent>,
 
@@ -251,7 +251,7 @@ fn spawn_multiplayer_player(
     }
 }
 
-fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: EntitiesViewMut, vm_chunk_gen_evt: ViewMut<ChunkGenEvent>) {
+pub fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: EntitiesViewMut, vm_chunk_gen_evt: ViewMut<ChunkGenEvent>) {
     let chunks = world_gen.receive_chunks();
 
     drop(world_gen);
@@ -262,13 +262,13 @@ fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entities: 
 }
 
 
-fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
+pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
     for req in reqs.drain() {
         world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
     }
 }
 
-fn debug_draw_hitbox_gizmos(
+pub fn debug_draw_hitbox_gizmos(
     v_hitbox: View<Hitbox>,
     v_transform: View<Transform>,
 

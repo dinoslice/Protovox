@@ -58,7 +58,7 @@ pub fn update_networking_client() -> Workload {
     ).into_sequential_workload()
 }
 
-fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_block_update_evt: View<BlockUpdateEvent>) {
+pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_block_update_evt: View<BlockUpdateEvent>) {
     let tx = &server_connection.tx;
     let server_addr = server_connection.server_addr;
     
@@ -75,7 +75,7 @@ fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_
     }
 }
 
-fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, v_block_update_evt: View<BlockUpdateEvent>, v_block_update_evt_bus: View<EventBus<BlockUpdateEvent>>) {
+pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, v_block_update_evt: View<BlockUpdateEvent>, v_block_update_evt_bus: View<EventBus<BlockUpdateEvent>>) {
     let tx = &server_handler.tx;
     
     for (&addr, &id) in &server_handler.clients {
@@ -112,7 +112,7 @@ fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, v_b
     }
 }
 
-fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionRequest>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionRequest>, server_handler: UniqueView<ServerHandler>) {
     vm_conn_req.retain(|id, _| {
         match server_handler.clients.get_by_right(&id) {
             None => {
@@ -136,7 +136,7 @@ fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionReque
     });
 }
 
-fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_handler: UniqueView<ServerHandler>) {
     vm_client_settings_req.retain(|id, evt| {
         match server_handler.clients.get_by_right(&id) {
             None => {
@@ -159,7 +159,7 @@ fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSett
     });
 }
 
-fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
+pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
     if vm_client_settings_req.drain().next().is_some() {
         let (render_dist, ..) = (&v_render_dist, &v_local_player)
             .iter()
@@ -180,17 +180,17 @@ fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsReques
     }
 }
 
-fn server_process_render_dist_update(mut vm_render_distance_update: ViewMut<RenderDistanceUpdateEvent>, entities: EntitiesView, mut vm_render_dist: ViewMut<RenderDistance>) {
+pub fn server_process_render_dist_update(mut vm_render_distance_update: ViewMut<RenderDistanceUpdateEvent>, entities: EntitiesView, mut vm_render_dist: ViewMut<RenderDistance>) {
     vm_render_distance_update.drain().with_id().for_each(|(id, evt)| {
         entities.add_component(id, &mut vm_render_dist, evt.0);
     });
 }
 
-fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<ConnectionSuccess>) {
+pub fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<ConnectionSuccess>) {
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
 }
 
-fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
+pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
     let transform = (&local_player, &vm_transform)
         .iter()
         .next()
@@ -210,13 +210,13 @@ fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Tr
         .expect("packet serialization failed");
 }
 
-fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransformUpdate>, mut vm_transform: ViewMut<Transform>, entities: EntitiesView) {
+pub fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTransformUpdate>, mut vm_transform: ViewMut<Transform>, entities: EntitiesView) {
     vm_client_pos_update.drain().with_id().for_each(|(id, evt)| {
         entities.add_component(id, &mut vm_transform, evt.0);
     });
 }
 
-fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
     for (id, events) in (&mut reqs).iter().with_id() {
@@ -244,7 +244,7 @@ fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest
     }
 }
 
-fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>) {
     let sender = &server_connection.tx;
     let addr = server_connection.server_addr;
 
@@ -262,7 +262,7 @@ fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, se
     }
 }
 
-fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
     let sender = &server_handler.tx;
 
     for (id, (render_dist, transform)) in (&v_render_dist, &v_transform).iter().with_id() {
@@ -286,7 +286,7 @@ fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkG
     }
 }
 
-fn client_handle_kicked_by_server(v_kick_evt: View<KickedByServer>, storages: AllStoragesView) {
+pub fn client_handle_kicked_by_server(v_kick_evt: View<KickedByServer>, storages: AllStoragesView) {
     if let Some(KickedByServer(reason)) = (&v_kick_evt)
         .iter()
         .next()
