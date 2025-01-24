@@ -5,7 +5,8 @@ use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum EnginePhase { // TODO: eventually add all these phases
-    Startup,
+    EarlyStartup,
+    LateStartup,
     Input,
     EarlyUpdate,
     NetworkingClientPreRecv,
@@ -25,7 +26,8 @@ impl Identifiable for EnginePhase {
         use EnginePhase as P;
 
         let res = match self {
-            P::Startup => "startup".ck(),
+            P::EarlyStartup => "early_startup".ck(),
+            P::LateStartup => "late_startup".ck(),
             P::Input => "input".ck(),
             P::EarlyUpdate => "early_update".ck(),
             P::NetworkingClientPreRecv => "networking_client_pre_recv".ck(),
@@ -57,7 +59,11 @@ impl Identifiable for EnginePluginMetadata {
 }
 
 pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> {
-    fn startup(&self) -> Option<Workload> {
+    fn early_startup(&self) -> Option<Workload> {
+        None
+    }
+
+    fn late_startup(&self) -> Option<Workload> {
         None
     }
 
@@ -125,7 +131,8 @@ impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata
         use EnginePhase as P;
 
         match phase {
-            P::Startup => self.startup(),
+            P::EarlyStartup => self.early_startup(),
+            P::LateStartup => self.late_startup(),
             P::Input => self.input(),
             P::EarlyUpdate => self.early_update(),
             P::NetworkingClientPreRecv => self.networking_client_pre_recv(),
