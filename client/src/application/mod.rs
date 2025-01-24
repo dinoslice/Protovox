@@ -8,7 +8,7 @@ use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering;
+use crate::{rendering, VoxelEngine};
 use crate::application::exit::{request_exit, ExitRequested};
 use crate::application::core_workloads::{startup_core, update_core};
 
@@ -21,36 +21,32 @@ mod core_workloads;
 mod build_workloads;
 
 pub use capture_state::CaptureState;
+use dino_plugins::engine::DinoEnginePlugin;
+use crate::networking::server_connection::client_process_network_events_multiplayer;
+use crate::networking::server_handler::server_process_network_events;
+
 
 pub fn run_game() {
-    use crate::workloads::*;
-
-    run(startup, update, rendering::render, shutdown);
-}
-
-pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> Workload, shutdown: fn() -> Workload) {
     // initialize world and workloads
     let world = World::new();
 
-    startup
-        .rename("startup")
-        .add_to_world(&world)
-        .expect("failed to add startup workload");
+    let plugins = [&VoxelEngine as &dyn DinoEnginePlugin];
 
-    update
-        .rename("update")
+    build_workloads::build_startup(plugins)
         .add_to_world(&world)
-        .expect("failed to add update workload");
+        .expect("failed to add workload");
 
-    render
-        .rename("render")
+    build_workloads::build_update(plugins, client_process_network_events_multiplayer, server_process_network_events)
         .add_to_world(&world)
-        .expect("failed to add render workload");
+        .expect("failed to add workload");
 
-    shutdown
-        .rename("shutdown")
+    build_workloads::build_render(plugins)
         .add_to_world(&world)
-        .expect("failed to add shutdown workload");
+        .expect("failed to add workload");
+
+    build_workloads::build_shutdown(plugins)
+        .add_to_world(&world)
+        .expect("failed to add workload");
 
     world.add_workload(startup_core);
     world.add_workload(update_core);
@@ -70,7 +66,7 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
     world.run_workload(startup_core)
         .expect("TODO: panic message");
 
-    world.run_workload("startup")
+    world.run_workload("engine::startup")
         .expect("TODO: panic message");
 
     let mut last_render_time = Instant::now();
@@ -96,10 +92,10 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
                         world.run_workload(update_core)
                             .expect("TODO: panic message");
 
-                        world.run_workload("update")
+                        world.run_workload("engine::update")
                             .expect("TODO: failed to run update workload");
 
-                        if let Err(err) = world.run_workload("render") {
+                        if let Err(err) = world.run_workload("engine::render") {
                             match err
                                 .custom_error()
                                 .expect("TODO: workload error")
@@ -114,7 +110,7 @@ pub fn run(startup: fn() -> Workload, update: fn() -> Workload, render: fn() -> 
 
                         if world.get_unique::<&ExitRequested>().is_ok() {
                             // TODO: for now, immediately exit upon receiving ExitRequested
-                            world.run_workload("shutdown")
+                            world.run_workload("engine::shutdown")
                                 .expect("TODO: failed to run shutdown workload");
                             control_flow.exit();
                         }
