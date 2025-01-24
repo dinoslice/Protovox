@@ -41,6 +41,10 @@ clap = { version = "4.5.17", features = ["derive"] }
 crossbeam = "0.8.4"
 rayon = "1.10.0"
 
+# plugins
+dino_plugins = { path = "../dino_plugins" }
+strck = "1.0.0"
+
 # game
 game = { path = "../game" }
 splines = { path = "../splines" }
