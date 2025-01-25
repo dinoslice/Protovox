@@ -1,10 +1,10 @@
 use shipyard::{AllStoragesView, Unique, UniqueView};
-use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::gizmos::vertex::GizmoVertex;
-use crate::rendering::gizmos::settings::GizmoRenderingSettings;
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::sized_buffer::SizedBuffer;
-use crate::rendering::texture::Texture;
+use engine::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use engine::rendering::graphics_context::GraphicsContext;
+use engine::rendering::sized_buffer::SizedBuffer;
+use engine::rendering::texture::Texture;
+use crate::plugin::settings::GizmoRenderingSettings;
+use crate::plugin::vertex::GizmoVertex;
 
 #[derive(Unique)]
 pub struct GizmosLineRenderState {
@@ -31,7 +31,7 @@ pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, g
         }
     );
 
-    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../../rendering/shaders/gizmos_lines.wgsl"));
+    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("lines.wgsl"));
 
     let pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("line_gizmos_pipeline_layout"),

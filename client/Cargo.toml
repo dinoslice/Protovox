@@ -14,5 +14,9 @@ shipyard = { workspace = true }
 engine = { path = "../engine" }
 nalgebra-glm = { workspace = true }
 
+# plugins
+gizmos = { path = "../plugins/gizmos" }
+visual_debug = { path = "../plugins/visual_debug" }
+
 [lints]
 workspace = true

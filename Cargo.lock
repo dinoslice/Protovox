@@ -527,10 +527,12 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "engine",
+ "gizmos",
  "nalgebra-glm",
  "shipyard",
  "tracing",
  "tracing-subscriber",
+ "visual_debug",
  "wgpu",
  "winit",
 ]
@@ -1107,6 +1109,20 @@ checksum = "3fb2d69b19215e18bb912fa30f7ce15846e301408695e44e0ef719f1da9e19f2"
 dependencies = [
  "color_quant",
  "weezl",
+]
+
+[[package]]
+name = "gizmos"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "dino_plugins",
+ "engine",
+ "nalgebra-glm",
+ "rgb",
+ "shipyard",
+ "strck",
+ "wgpu",
 ]
 
 [[package]]
@@ -3293,6 +3309,17 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "visual_debug"
+version = "0.1.0"
+dependencies = [
+ "dino_plugins",
+ "engine",
+ "gizmos",
+ "shipyard",
+ "strck",
+]
 
 [[package]]
 name = "walkdir"

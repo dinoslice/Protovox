@@ -45,6 +45,9 @@ rayon = "1.10.0"
 dino_plugins = { path = "../dino_plugins" }
 strck = "1.0.0"
 
+# loaded plugins
+#gizmos = { path = "../plugins/gizmos" }
+
 # game
 game = { path = "../game" }
 splines = { path = "../splines" }

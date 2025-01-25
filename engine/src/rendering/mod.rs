@@ -15,14 +15,11 @@ pub mod depth_texture; // TODO: fix visibility
 mod texture_atlas;
 
 pub mod sized_buffer;
-pub mod gizmos;
 pub mod block_outline;
 pub mod world;
 pub mod egui;
 
 pub use egui::EguiRenderer;
-
-pub use render::render;
 
 pub fn initialize() -> Workload {
     (
@@ -34,6 +31,6 @@ pub fn initialize() -> Workload {
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
         egui::initialize_egui_renderer,
-        gizmos::initialize,
+        // gizmos::initialize, TODO(gizmos)
     ).into_sequential_workload()
 }
