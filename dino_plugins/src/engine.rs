@@ -58,7 +58,7 @@ impl Identifiable for EnginePluginMetadata {
     }
 }
 
-pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> {
+pub trait DinoEnginePlugin: DinoPlugin<&'static Ident, EnginePhase, Workload, EnginePluginMetadata> {
     fn early_startup(&self) -> Option<Workload> {
         None
     }
@@ -126,7 +126,7 @@ pub trait DinoEnginePlugin: DinoPlugin<EnginePhase, Workload, EnginePluginMetada
     fn plugin_metadata(&self) -> EnginePluginMetadata;
 }
 
-impl<T: DinoEnginePlugin> DinoPlugin<EnginePhase, Workload, EnginePluginMetadata> for T {
+impl<T: DinoEnginePlugin> DinoPlugin<&'static Ident, EnginePhase, Workload, EnginePluginMetadata> for T {
     fn instructions(&self, phase: EnginePhase) -> Option<Workload> {
         use EnginePhase as P;
 
