@@ -22,6 +22,8 @@ mod startup;
 mod update;
 mod shutdown;
 
+// TODO: fix visibility with all systems for this plugin
+
 pub struct VoxelEngine;
 
 impl DinoEnginePlugin for VoxelEngine {
