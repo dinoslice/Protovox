@@ -522,46 +522,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
-name = "client"
-version = "0.1.0"
-dependencies = [
- "bimap",
- "bytemuck",
- "chrono",
- "clap",
- "crossbeam",
- "dino_plugins",
- "egui",
- "egui-wgpu",
- "egui-winit",
- "game",
- "hashbrown 0.15.2",
- "image",
- "itertools 0.13.0",
- "laminar",
- "nalgebra",
- "nalgebra-glm",
- "noise",
- "packet",
- "packet_derive",
- "pollster",
- "rand",
- "rayon",
- "rgb",
- "serde",
- "shipyard",
- "splines",
- "strck",
- "strum",
- "thiserror 2.0.3",
- "tinybitset",
- "tracing",
- "tracing-subscriber",
- "wgpu",
- "winit",
-]
-
-[[package]]
 name = "clipboard-win"
 version = "5.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -935,6 +895,46 @@ name = "embedded-io"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
+
+[[package]]
+name = "engine"
+version = "0.1.0"
+dependencies = [
+ "bimap",
+ "bytemuck",
+ "chrono",
+ "clap",
+ "crossbeam",
+ "dino_plugins",
+ "egui",
+ "egui-wgpu",
+ "egui-winit",
+ "game",
+ "hashbrown 0.15.2",
+ "image",
+ "itertools 0.13.0",
+ "laminar",
+ "nalgebra",
+ "nalgebra-glm",
+ "noise",
+ "packet",
+ "packet_derive",
+ "pollster",
+ "rand",
+ "rayon",
+ "rgb",
+ "serde",
+ "shipyard",
+ "splines",
+ "strck",
+ "strum",
+ "thiserror 2.0.3",
+ "tinybitset",
+ "tracing",
+ "tracing-subscriber",
+ "wgpu",
+ "winit",
+]
 
 [[package]]
 name = "epaint"

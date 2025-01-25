@@ -4,7 +4,7 @@ use chrono::Utc;
 use tracing_subscriber::{fmt, fmt::time::ChronoUtc, EnvFilter, Registry};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use client::application;
+use engine::application;
 
 fn init_tracing() -> io::Result<()> {
     let file_name = format!("logs/{}.log", Utc::now().format("%Y-%m-%d_%H-%M-%S"));
@@ -36,7 +36,7 @@ fn init_tracing() -> io::Result<()> {
 
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or(
-            EnvFilter::from_str("warn,client=debug")
+            EnvFilter::from_str("warn,engine=debug")
                 .expect("failed to set default env filter")
         );
 
