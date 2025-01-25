@@ -1,6 +1,6 @@
 use shipyard::{Workload, WorkloadModificator};
 use strck::IntoCk;
-use crate::{DinoPlugin, Identifiable};
+use crate::{path, DinoPlugin, Identifiable};
 use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -116,11 +116,9 @@ pub trait DinoEnginePlugin: DinoPlugin<&'static Ident, EnginePhase, Workload, En
     }
 
     fn instructions_renamed(&self, phase: EnginePhase) -> Option<Workload> {
-        self.instructions(phase).map(|workload| {
-            let name = format!("{}::{}", self.plugin_metadata().name, phase.identifier());
-
-            workload.rename(name)
-        })
+        self.instructions(phase).map(|workload|
+            workload.rename(path!({self}::{phase}))
+        )
     }
 
     fn plugin_metadata(&self) -> EnginePluginMetadata;
