@@ -2,6 +2,7 @@ use crate::ident::Ident;
 
 pub mod engine;
 pub mod ident;
+pub mod path;
 
 pub trait DinoPlugin<I, P: Identifiable<I>, W, M: Identifiable<I>> {
     fn instructions(&self, phase: P) -> Option<W> {
