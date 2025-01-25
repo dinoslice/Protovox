@@ -1,38 +1,21 @@
 use std::sync::Arc;
 use std::time::Instant;
-use shipyard::{UniqueView, Workload, WorkloadModificator, World};
+use shipyard::{UniqueView, World};
 use tracing::error;
 use wgpu::SurfaceError;
 use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::{rendering, VoxelEngine};
-use crate::application::exit::{request_exit, ExitRequested};
-use crate::application::core_workloads::{startup_core, update_core};
+use engine::application::{capture_state, delta_time};
+use engine::application::exit::{request_exit, ExitRequested};
+use engine::application::plugin_manager::PluginManager;
+use engine::rendering::graphics_context::GraphicsContext;
+use core_workloads::{startup_core, update_core};
 
-mod capture_state;
-mod input;
-mod resize;
-pub mod delta_time;
-pub mod exit;
 mod core_workloads;
-mod plugin_manager;
-
-pub use capture_state::CaptureState;
-use dino_plugins::engine::DinoEnginePlugin;
-use plugin_manager::PluginManager;
-use crate::networking::server_connection::client_process_network_events_multiplayer;
-use crate::networking::server_handler::server_process_network_events;
-
-
-pub fn run_game() {
-    run(
-        PluginManager::new()
-            .with(&VoxelEngine)
-    );
-}
+mod input;
+pub mod resize;
 
 pub fn run(plugin_manager: PluginManager) {
     // initialize world and workloads
@@ -61,8 +44,6 @@ pub fn run(plugin_manager: PluginManager) {
     world.run_workload("engine::startup")
         .expect("TODO: panic message");
 
-    let mut last_render_time = Instant::now();
-
     let res = event_loop.run(move |event, control_flow| {
         match event {
             Event::DeviceEvent {
@@ -78,9 +59,6 @@ pub fn run(plugin_manager: PluginManager) {
             => if !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window
-                        world.run_with_data(delta_time::update_delta_time, last_render_time);
-                        last_render_time = Instant::now();
-
                         world.run_workload(update_core)
                             .expect("TODO: panic message");
 

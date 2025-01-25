@@ -1,8 +1,8 @@
 use shipyard::{IntoIter, UniqueViewMut, ViewMut};
-use crate::camera::Camera;
-use crate::rendering::depth_texture::DepthTexture;
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::texture::Texture;
+use engine::camera::Camera;
+use engine::rendering::depth_texture::DepthTexture;
+use engine::rendering::graphics_context::GraphicsContext;
+use engine::rendering::texture::Texture;
 
 pub fn resize(new_size: winit::dpi::PhysicalSize<u32>, mut g_ctx: UniqueViewMut<GraphicsContext>, mut cameras: ViewMut<Camera>, mut depth_texture: UniqueViewMut<DepthTexture>) {
     if new_size.width > 0 && new_size.height > 0 {
