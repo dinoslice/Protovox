@@ -12,7 +12,7 @@ use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, p
 use crate::physics::process_physics;
 use crate::rendering::block_outline::update_block_outline_buffer;
 use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
-use crate::rendering::{gizmos, render};
+use crate::rendering::{/*gizmos, */render}; // TODO(gizmos)
 use crate::rendering::render::{block_outline, submit_rendered_frame, world};
 use crate::workloads::shutdown::disconnect_connected_players;
 use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, set_window_title};
@@ -119,7 +119,7 @@ impl DinoEnginePlugin for VoxelEngine {
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
             place_break_blocks.skip_if(local_player_is_gamemode_spectator),
-            gizmos::update,
+            // gizmos::update, TODO(gizmos)
         ).into_sequential_workload()
             .into()
     }
@@ -140,6 +140,7 @@ impl DinoEnginePlugin for VoxelEngine {
         (
             // -- RENDER -- //
             world::render_world.tag("voxel_game::render::render_world"),
+            // render::gizmos::render_line_gizmos, TODO(gizmos)
             block_outline::render_block_outline,
             render::egui::render_egui.tag("voxel_game::render::render_ui"), // -- RENDER UI -- //
             submit_rendered_frame.tag("voxel_game::render::submit_frame"), // TODO: make these identifiers better, [] as Label?

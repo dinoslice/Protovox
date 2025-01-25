@@ -1,8 +1,8 @@
 use shipyard::{UniqueView, UniqueViewMut};
-use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::depth_texture::DepthTexture;
-use crate::rendering::gizmos::line_render_state::GizmosLineRenderState;
-use crate::rendering::render::RenderContext;
+use engine::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use engine::rendering::depth_texture::DepthTexture;
+use engine::rendering::render::RenderContext;
+use crate::plugin::line_render_state::GizmosLineRenderState;
 
 pub fn render_line_gizmos(
     mut ctx: UniqueViewMut<RenderContext>,

@@ -18,8 +18,8 @@ use crate::looking_at_block::LookingAtBlock;
 use crate::networking;
 use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
 use crate::physics::{collision, process_physics};
-use crate::rendering::gizmos;
-use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
+// use crate::rendering::gizmos; TODO(gizmos)
+// use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle}; TODO(gizmos)
 use crate::world_gen::WorldGenerator;
 
 pub fn toggle_gamemode(

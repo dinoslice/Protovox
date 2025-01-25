@@ -12,7 +12,7 @@ impl GizmoVertex {
             wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
 
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
+            array_stride: size_of::<Self>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &ATTRIBUTES,
         }

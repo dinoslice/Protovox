@@ -1113,10 +1113,14 @@ dependencies = [
 name = "gizmos"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "dino_plugins",
  "engine",
+ "nalgebra-glm",
+ "rgb",
  "shipyard",
  "strck",
+ "wgpu",
 ]
 
 [[package]]

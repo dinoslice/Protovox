@@ -9,6 +9,10 @@ dino_plugins = { path = "../../dino_plugins" }
 strck = "1.0.0"
 engine = { path = "../../engine" }
 shipyard = { workspace = true }
+bytemuck = { version = "1.20.0", features = [ "derive" ] }
+rgb = "0.8.50"
+wgpu = "0.20.1"
+nalgebra-glm = { workspace = true }
 
 [lints]
 workspace = true

@@ -4,7 +4,6 @@ use crate::rendering::block_outline::update_block_outline_buffer;
 use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 
 pub mod world;
-pub mod gizmos;
 pub mod block_outline;
 pub mod egui;
 

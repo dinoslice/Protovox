@@ -1,10 +1,10 @@
 use shipyard::{AllStoragesView, Unique, UniqueView};
-use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::gizmos::vertex::GizmoVertex;
-use crate::rendering::gizmos::settings::GizmoRenderingSettings;
-use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::sized_buffer::SizedBuffer;
-use crate::rendering::texture::Texture;
+use engine::rendering::camera_uniform_buffer::CameraUniformBuffer;
+use engine::rendering::graphics_context::GraphicsContext;
+use engine::rendering::sized_buffer::SizedBuffer;
+use engine::rendering::texture::Texture;
+use crate::plugin::settings::GizmoRenderingSettings;
+use crate::plugin::vertex::GizmoVertex;
 
 #[derive(Unique)]
 pub struct GizmosLineRenderState {

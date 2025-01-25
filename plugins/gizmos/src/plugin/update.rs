@@ -1,32 +1,10 @@
 use glm::Vec3;
-use shipyard::{EntitiesViewMut, IntoWorkload, UniqueView, UniqueViewMut, ViewMut, Workload};
-use settings::read_settings;
-use line_render_state::initialize_line_gizmos_render_state;
-use line_render_state::GizmosLineRenderState;
-use vertex::GizmoVertex;
-use crate::application::delta_time::LastDeltaTime;
-use crate::rendering::graphics_context::GraphicsContext;
-pub use types::*;
-
-pub(super) mod line_render_state;
-mod settings;
-mod vertex;
-mod types;
-
-
-pub fn initialize() -> Workload {
-    (
-        read_settings,
-        initialize_line_gizmos_render_state,
-    ).into_sequential_workload()
-}
-
-pub fn update() -> Workload {
-    (
-        process_line_gizmos,
-        decompose_box_gizmos,
-    ).into_workload()
-}
+use shipyard::{EntitiesViewMut, UniqueView, UniqueViewMut, ViewMut};
+use engine::application::delta_time::LastDeltaTime;
+use engine::rendering::graphics_context::GraphicsContext;
+use crate::plugin::line_render_state::GizmosLineRenderState;
+use crate::plugin::vertex::GizmoVertex;
+use crate::types::{BoxGizmo, GizmoLifetime, LineGizmo};
 
 pub fn process_line_gizmos(g_ctx: UniqueView<GraphicsContext>, mut line_gizmo_rend_state: UniqueViewMut<GizmosLineRenderState>, mut vm_line_gizmos: ViewMut<LineGizmo>, delta_time: UniqueView<LastDeltaTime>) {
     let mut buf = Vec::with_capacity(vm_line_gizmos.len() * 2);
