@@ -2,10 +2,10 @@ use glm::Vec2;
 use shipyard::{UniqueView, UniqueViewMut};
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
-use crate::application::capture_state::CaptureState;
-use crate::input::InputManager;
-use crate::rendering::EguiRenderer;
-use crate::rendering::graphics_context::GraphicsContext;
+use engine::application::capture_state::CaptureState;
+use engine::input::InputManager;
+use engine::rendering::EguiRenderer;
+use engine::rendering::graphics_context::GraphicsContext;
 
 pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut input: UniqueViewMut<InputManager>) {
     if capture.is_captured() {

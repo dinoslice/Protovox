@@ -12,6 +12,7 @@ winit = "0.29.15" # temporarily using older version, switch to newer version lat
 wgpu = "0.20.1"
 shipyard = { workspace = true }
 engine = { path = "../engine" }
+nalgebra-glm = { workspace = true }
 
 [lints]
 workspace = true

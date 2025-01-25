@@ -5,7 +5,7 @@ pub mod application;
 
 pub mod rendering;
 pub mod input;
-mod camera;
+pub mod camera;
 mod workloads;
 mod events;
 mod world_gen;
