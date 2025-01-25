@@ -2,7 +2,8 @@ use shipyard::{EntitiesViewMut, IntoIter, IntoWorkload, View, ViewMut, Workload}
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 use engine::components::{Hitbox, Transform};
-use gizmos::{BoxGizmo, GizmoColor, GizmoLifetime, GizmoStyle};
+use engine::VoxelEngine;
+use gizmos::{BoxGizmo, GizmoColor, GizmoLifetime, GizmoStyle, GizmosPlugin};
 
 pub struct VisualDebugPlugin;
 
@@ -17,6 +18,7 @@ impl DinoEnginePlugin for VisualDebugPlugin {
         EnginePluginMetadata {
             name: "visual_debug".ck().expect("valid identifier"),
             version: env!("CARGO_PKG_VERSION"),
+            dependencies: &[ &VoxelEngine, &GizmosPlugin ]
         }
     }
 }

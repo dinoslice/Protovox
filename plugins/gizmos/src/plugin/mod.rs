@@ -47,6 +47,7 @@ impl DinoEnginePlugin for GizmosPlugin {
         EnginePluginMetadata {
             name: "gizmos".ck().expect("valid identifier"),
             version: env!("CARGO_PKG_VERSION"),
+            dependencies: &[&VoxelEngine]
         }
     }
 }
