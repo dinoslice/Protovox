@@ -12,16 +12,21 @@ use engine::application::exit::{request_exit, ExitRequested};
 use engine::application::plugin_manager::PluginManager;
 use engine::rendering::graphics_context::GraphicsContext;
 use core_workloads::{startup_core, update_core};
+use strck::IntoCk;
+use dino_plugins::engine::EnginePhase;
+use dino_plugins::path;
 
 mod core_workloads;
 mod input;
 pub mod resize;
 
 pub fn run(plugin_manager: PluginManager) {
+    let client = "client".ck().expect("valid ident");
+
     // initialize world and workloads
     let world = World::new();
 
-    plugin_manager.build_into(&world);
+    plugin_manager.build_into(&world, client);
 
     world.add_workload(startup_core);
     world.add_workload(update_core);
@@ -41,7 +46,7 @@ pub fn run(plugin_manager: PluginManager) {
     world.run_workload(startup_core)
         .expect("TODO: panic message");
 
-    world.run_workload("engine::startup")
+    world.run_workload(path!({client}::startup))
         .expect("TODO: panic message");
 
     let res = event_loop.run(move |event, control_flow| {
@@ -62,10 +67,10 @@ pub fn run(plugin_manager: PluginManager) {
                         world.run_workload(update_core)
                             .expect("TODO: panic message");
 
-                        world.run_workload("engine::update")
+                        world.run_workload(path!({client}::update))
                             .expect("TODO: failed to run update workload");
 
-                        if let Err(err) = world.run_workload("engine::render") {
+                        if let Err(err) = world.run_workload(path!({client}::render)) {
                             match err
                                 .custom_error()
                                 .expect("TODO: workload error")
@@ -80,7 +85,7 @@ pub fn run(plugin_manager: PluginManager) {
 
                         if world.get_unique::<&ExitRequested>().is_ok() {
                             // TODO: for now, immediately exit upon receiving ExitRequested
-                            world.run_workload("engine::shutdown")
+                            world.run_workload(path!({client}::shutdown))
                                 .expect("TODO: failed to run shutdown workload");
                             control_flow.exit();
                         }
