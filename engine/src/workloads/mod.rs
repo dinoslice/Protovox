@@ -139,11 +139,10 @@ impl DinoEnginePlugin for VoxelEngine {
     fn render(&self) -> Option<Workload> {
         (
             // -- RENDER -- //
-            world::render_world,
-            render::gizmos::render_line_gizmos,
+            world::render_world.tag("voxel_game::render::render_world"),
             block_outline::render_block_outline,
-            render::egui::render_egui, // -- RENDER UI -- //
-            submit_rendered_frame,
+            render::egui::render_egui.tag("voxel_game::render::render_ui"), // -- RENDER UI -- //
+            submit_rendered_frame.tag("voxel_game::render::submit_frame"), // TODO: make these identifiers better, [] as Label?
         ).into_sequential_workload()
             .into()
     }
