@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["engine", "dino_plugins", "game", "packet", "packet_derive", "splines"]
+members = ["engine", "dino_plugins", "game", "packet", "packet_derive", "splines", "client"]
 
 [workspace.package]
 name = "voxel_game"

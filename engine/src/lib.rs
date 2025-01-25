@@ -3,8 +3,8 @@ extern crate nalgebra_glm as glm;
 
 pub mod application;
 
-mod rendering;
-mod input;
+pub mod rendering;
+pub mod input;
 mod camera;
 mod workloads;
 mod events;
