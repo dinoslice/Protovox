@@ -131,7 +131,7 @@ pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRe
 
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
-            RenderDistanceUpdateEvent(render_dist.clone()) // TODO: handle a different way
+            RenderDistanceUpdateEvent(render_dist.clone())
                 .serialize_packet()
                 .expect("packet serialization failed")
         );

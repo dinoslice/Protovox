@@ -4,7 +4,7 @@ use crate::{path, DinoPlugin, Identifiable};
 use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum EnginePhase { // TODO: eventually add all these phases
+pub enum EnginePhase {
     EarlyStartup,
     LateStartup,
     Input,

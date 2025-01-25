@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 use shipyard::Unique;
 
-#[derive(Unique)] // TODO: switch this to Local if shipyard gets locals
+#[derive(Unique)] // TODO: define this in same file, effectively local
 pub struct LastWorldInteraction(pub Instant);
 
 impl Default for LastWorldInteraction {

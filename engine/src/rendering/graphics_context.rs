@@ -8,14 +8,11 @@ use game::chunk::location::ChunkLocation;
 // TODO: fix visibility
 #[derive(Unique)]
 pub struct GraphicsContext {
-    // TODO: can this work as 'a?
     pub surface: wgpu::Surface<'static>,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
-    // must be dropped after the device since surface has unsafe references to the window
-    // TODO: arc to fix lifetimes
     pub window: Arc<Window>,
 }
 

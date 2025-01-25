@@ -31,6 +31,5 @@ pub fn initialize() -> Workload {
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
         egui::initialize_egui_renderer,
-        // gizmos::initialize, TODO(gizmos)
     ).into_sequential_workload()
 }

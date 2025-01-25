@@ -11,7 +11,6 @@ pub struct BlockRaycastResult {
 }
 
 impl ChunkManager {
-    // TODO: eventually don't return a floating point type?
     pub fn raycast(&self, origin: &Vec3, direction: &Vec3, max_dist: f32, step: f32) -> Option<BlockRaycastResult> {
         let delta = direction.normalize() * step;
 

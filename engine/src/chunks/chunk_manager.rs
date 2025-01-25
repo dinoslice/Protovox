@@ -111,8 +111,6 @@ impl ChunkManager {
 
             self.recently_requested_gen.remove(&data.location);
 
-            // TODO: don't bake or render chunks that aren't in render distance
-
             tracing::trace!("Adding {:?} to chunk manager", data.location);
 
             let bake = match Self::in_render_distance_with(&data.location, center, render_dist) {
