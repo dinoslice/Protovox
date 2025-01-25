@@ -1,6 +1,8 @@
 use shipyard::{IntoWorkload, SystemModificator, Workload};
 use strck::IntoCk;
-use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use dino_plugins::path;
+use engine::VoxelEngine;
 use line_render_state::initialize_line_gizmos_render_state;
 use settings::read_settings;
 use update::{decompose_box_gizmos, process_line_gizmos};
@@ -34,8 +36,8 @@ impl DinoEnginePlugin for GizmosPlugin {
     fn render(&self) -> Option<Workload> {
         (
             render_line_gizmos
-                .after_all("voxel_game::render::render_world")
-                .before_all("voxel_game::render::render_ui"),
+                .after_all(path!({VoxelEngine}::{EnginePhase::Render}::render_world))
+                .before_all(path!({VoxelEngine}::{EnginePhase::Render}::render_egui)),
         ).into_workload()
             .into()
     }
