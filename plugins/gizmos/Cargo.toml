@@ -1,0 +1,14 @@
+[package]
+name = "gizmos"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+dino_plugins = { path = "../../dino_plugins" }
+strck = "1.0.0"
+engine = { path = "../../engine" }
+shipyard = { workspace = true }
+
+[lints]
+workspace = true
