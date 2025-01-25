@@ -152,3 +152,9 @@ impl<T: DinoEnginePlugin> DinoPlugin<&'static Ident, EnginePhase, Workload, Engi
         self.plugin_metadata()
     }
 }
+
+impl<T: DinoEnginePlugin> Identifiable for T {
+    fn identifier(&self) -> &'static Ident {
+        self.identifier()
+    }
+}
