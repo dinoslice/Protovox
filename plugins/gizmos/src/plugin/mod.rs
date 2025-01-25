@@ -1,4 +1,4 @@
-use shipyard::{IntoWorkload, SystemModificator, Workload};
+use shipyard::{IntoWorkload, SystemModificator, Workload, WorkloadModificator};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use dino_plugins::path;
@@ -17,11 +17,12 @@ mod update;
 pub struct GizmosPlugin;
 
 impl DinoEnginePlugin for GizmosPlugin {
-    fn late_startup(&self) -> Option<Workload> { // TODO: move to early startup?
+    fn early_startup(&self) -> Option<Workload> {
         (
             read_settings,
             initialize_line_gizmos_render_state,
         ).into_sequential_workload()
+            .after_all(path!({VoxelEngine}::{EnginePhase::EarlyStartup}))
             .into()
     }
 
