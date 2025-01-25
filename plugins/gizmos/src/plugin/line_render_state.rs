@@ -31,7 +31,7 @@ pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, g
         }
     );
 
-    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../../rendering/shaders/gizmos_lines.wgsl"));
+    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("lines.wgsl"));
 
     let pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("line_gizmos_pipeline_layout"),
