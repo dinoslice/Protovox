@@ -15,18 +15,7 @@ use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::world_gen::WorldGenerator;
 
-pub fn startup() -> Workload {
-    (
-        args::parse_env,
-        rendering::initialize,
-        initialize_local_player,
-        initialize_gameplay_systems.after_all(initialize_local_player),
-        initialize_networking.after_all(args::parse_env),
-        set_window_title,
-    ).into_sequential_workload()
-}
-
-fn initialize_local_player(mut storages: AllStoragesViewMut) {
+pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     let aspect = storages
         .borrow::<UniqueView<GraphicsContext>>()
         .expect("unable to borrow graphics context")
@@ -74,7 +63,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(WorldGenerator::new(50));
 }
 
-fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
+pub fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
     if storages.run(is_hosted) {
         storages.add_unique(ServerHandler::new(None));
     } else if storages.run(is_multiplayer_client) {
@@ -86,6 +75,6 @@ fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView
     }
 }
 
-fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {
+pub fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {
     g_ctx.window.set_title(&format!("voxel game: {}", *env))
 }
