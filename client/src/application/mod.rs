@@ -18,35 +18,27 @@ mod resize;
 pub mod delta_time;
 pub mod exit;
 mod core_workloads;
-mod build_workloads;
+mod plugin_manager;
 
 pub use capture_state::CaptureState;
 use dino_plugins::engine::DinoEnginePlugin;
+use plugin_manager::PluginManager;
 use crate::networking::server_connection::client_process_network_events_multiplayer;
 use crate::networking::server_handler::server_process_network_events;
 
 
 pub fn run_game() {
+    run(
+        PluginManager::new()
+            .with(&VoxelEngine)
+    );
+}
+
+pub fn run(plugin_manager: PluginManager) {
     // initialize world and workloads
     let world = World::new();
 
-    let plugins = [&VoxelEngine as &dyn DinoEnginePlugin];
-
-    build_workloads::build_startup(plugins)
-        .add_to_world(&world)
-        .expect("failed to add workload");
-
-    build_workloads::build_update(plugins, client_process_network_events_multiplayer, server_process_network_events)
-        .add_to_world(&world)
-        .expect("failed to add workload");
-
-    build_workloads::build_render(plugins)
-        .add_to_world(&world)
-        .expect("failed to add workload");
-
-    build_workloads::build_shutdown(plugins)
-        .add_to_world(&world)
-        .expect("failed to add workload");
+    plugin_manager.build_into(&world);
 
     world.add_workload(startup_core);
     world.add_workload(update_core);

@@ -1,8 +1,51 @@
-use shipyard::{IntoWorkload, IntoWorkloadSystem, Workload, WorkloadModificator};
+use std::ops::Deref;
+use shipyard::{IntoWorkload, IntoWorkloadSystem, Workload, WorkloadModificator, World};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase};
 use crate::environment::{is_hosted, is_multiplayer_client};
+use crate::networking::server_connection::client_process_network_events_multiplayer;
+use crate::networking::server_handler::server_process_network_events;
 
-pub fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
+pub struct PluginManager {
+    plugins: Vec<&'static dyn DinoEnginePlugin>
+}
+
+impl PluginManager {
+    pub fn new() -> Self {
+        Self { plugins: vec![] }
+    }
+
+    pub fn add(&mut self, plugin: &'static dyn DinoEnginePlugin) {
+        self.plugins.push(plugin);
+    }
+
+    // builder pattern version
+    pub fn with(mut self, plugin: &'static dyn DinoEnginePlugin) -> Self {
+        self.add(plugin);
+        self
+    }
+
+    pub fn build_into(&self, world: &World) {
+        let plugins = self.plugins.iter().map(Deref::deref);
+
+        build_startup(plugins.clone())
+            .add_to_world(&world)
+            .expect("failed to add workload");
+
+        build_update(plugins.clone(), client_process_network_events_multiplayer, server_process_network_events)
+            .add_to_world(&world)
+            .expect("failed to add workload");
+
+        build_render(plugins.clone())
+            .add_to_world(&world)
+            .expect("failed to add workload");
+
+        build_shutdown(plugins.clone())
+            .add_to_world(&world)
+            .expect("failed to add workload");
+    }
+}
+
+fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
     // TODO: macro/func to make the path idents?
     let mut early_startup = Workload::new("engine::early_startup");
 
@@ -23,7 +66,7 @@ pub fn build_startup<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlu
         .rename("engine::startup")
 }
 
-pub fn build_update<'a, CB, CR: 'static, SB, SR: 'static>(
+fn build_update<'a, CB, CR: 'static, SB, SR: 'static>(
     plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>,
     client_process: impl IntoWorkloadSystem<CB, CR> + 'static,
     server_process: impl IntoWorkloadSystem<SB, SR> + 'static,
@@ -84,7 +127,7 @@ pub fn build_update<'a, CB, CR: 'static, SB, SR: 'static>(
         .rename("engine::update")
 }
 
-pub fn build_render<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
+fn build_render<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
     let mut pre_render = Workload::new("engine::pre_render");
     let mut render = Workload::new("engine::render");
     let mut post_render = Workload::new("engine::post_render");
@@ -108,7 +151,7 @@ pub fn build_render<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlug
         .rename("engine::render")
 }
 
-pub fn build_shutdown<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
+fn build_shutdown<'a>(plugins: impl IntoIterator<Item = &'a dyn DinoEnginePlugin>) -> Workload {
     let mut shutdown = Workload::new("engine::shutdown");
 
     for w in plugins.into_iter()
