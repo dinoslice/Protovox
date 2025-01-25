@@ -64,18 +64,20 @@ impl Label for IdentPath {
 #[macro_export]
 macro_rules! path {
     ($($segment:tt)::+) => {{
-        IdentPath::new(&[
+        $crate::path::IdentPath::new(&[
             $(
                 path!(@internal $segment)
             ),*
         ]).expect("macro forces at least one ident")
     }};
     (@internal $segment:ident) => {
-        stringify!($segment).ck().expect("invalid ident")
+        <_ as ::strck::IntoCk>::ck(&stringify!($segment)).expect("invalid ident")
     };
-    (@internal { $expr:expr }) => {
+    (@internal { $expr:expr }) => {{
+        use $crate::Identifiable;
+
         $expr.identifier()
-    };
+    }};
     () => {
         compile_error!("at least one segment required")
     }
