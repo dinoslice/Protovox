@@ -22,8 +22,6 @@ pub mod egui;
 
 pub use egui::EguiRenderer;
 
-pub use render::render;
-
 pub fn initialize() -> Workload {
     (
         (
