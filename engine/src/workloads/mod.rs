@@ -172,6 +172,7 @@ impl DinoEnginePlugin for VoxelEngine {
         EnginePluginMetadata {
             name: "voxel_engine".ck().expect("valid name"),
             version: env!("CARGO_PKG_VERSION"),
+            dependencies: &[],
         }
     }
 }

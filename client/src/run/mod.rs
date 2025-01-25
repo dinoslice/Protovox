@@ -26,6 +26,11 @@ pub fn run(plugin_manager: PluginManager) {
     // initialize world and workloads
     let world = World::new();
 
+    if let Some(dep) = plugin_manager.first_unmet_dependency() {
+        error!(r#"One or more plugins depends on "{dep}", which isn't loaded."#);
+        return;
+    }
+
     plugin_manager.build_into(&world, client);
 
     world.add_workload(startup_core);

@@ -1,7 +1,9 @@
 use std::ops::Deref;
+use itertools::Itertools;
 use shipyard::{IntoWorkload, IntoWorkloadSystem, Workload, WorkloadModificator, World};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase};
 use dino_plugins::{path, Identifiable};
+use dino_plugins::ident::Ident;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::networking::server_connection::client_process_network_events_multiplayer;
 use crate::networking::server_handler::server_process_network_events;
@@ -43,6 +45,23 @@ impl PluginManager {
         build_shutdown(plugins, ident)
             .add_to_world(&world)
             .expect("failed to add workload");
+    }
+
+    pub fn first_unmet_dependency(&self) -> Option<&'static Ident> { // TODO: use something like type_id?
+        let loaded = self.plugins
+            .iter()
+            .map(|pl| pl.identifier())
+            .collect_vec();
+
+        self.plugins
+            .iter()
+            .flat_map(|pl|
+                pl.metadata()
+                    .dependencies
+                    .iter()
+                    .map(|pl| pl.identifier())
+            )
+            .find(|id| !loaded.contains(id))
     }
 }
 
