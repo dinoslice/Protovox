@@ -21,4 +21,4 @@ pub mod looking_at_block;
 pub mod last_world_interaction;
 pub mod gamemode;
 
-pub use workloads::dino::VoxelEngine;
+pub use workloads::VoxelEngine;
