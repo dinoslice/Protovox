@@ -16,7 +16,7 @@ use crate::rendering::{/*gizmos, */render}; // TODO(gizmos)
 use crate::rendering::render::{block_outline, submit_rendered_frame, world};
 use crate::workloads::shutdown::disconnect_connected_players;
 use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, set_window_title};
-use crate::workloads::update::{client_apply_block_updates, debug_draw_hitbox_gizmos, generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
+use crate::workloads::update::{client_apply_block_updates, /*debug_draw_hitbox_gizmos, TODO(gizmos) */ generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
 
 mod startup;
 mod update;
@@ -115,7 +115,7 @@ impl DinoEnginePlugin for VoxelEngine {
             generate_chunks.run_if(is_hosted),
             server_apply_block_updates.run_if(is_hosted),
             client_apply_block_updates.run_if(is_multiplayer_client),
-            debug_draw_hitbox_gizmos,
+            // debug_draw_hitbox_gizmos,
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
             place_break_blocks.skip_if(local_player_is_gamemode_spectator),
