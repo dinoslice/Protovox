@@ -6,13 +6,6 @@ use crate::environment::is_hosted;
 use crate::events::KickedByServer;
 use crate::networking::server_handler::ServerHandler;
 
-pub fn shutdown() -> Workload {
-    (
-        // -- SHUTDOWN -- //
-        disconnect_connected_players.run_if(is_hosted),
-    ).into_sequential_workload()
-}
-
 pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>) {
     let tx = &server_handler.tx;
     

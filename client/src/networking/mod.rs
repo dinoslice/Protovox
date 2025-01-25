@@ -20,44 +20,6 @@ pub mod server_handler;
 pub mod keep_alive;
 pub mod server_connection;
 
-pub fn update_networking_server() -> Workload {
-    (
-        // -- NETWORKING SERVER PRE RECV -- //
-        server_process_network_events,
-        // -- NETWORKING SERVER POST RECV -- //
-        (
-            server_broadcast_chunks,
-            server_broadcast_block_updates,
-            server_process_client_connection_req,
-            server_update_client_transform,
-            server_request_client_settings,
-            server_process_render_dist_update,
-            server_handle_client_chunk_reqs,
-            server_send_keep_alive,
-        ).into_workload()
-    ).into_sequential_workload()
-}
-
-pub fn update_networking_client() -> Workload {
-    (
-        // -- NETWORKING CLIENT PRE RECV -- //
-        (
-            client_send_block_updates
-        ).into_workload(),
-        
-        client_process_network_events_multiplayer,
-
-        // -- NETWORKING CLIENT POST RECV -- //
-        (
-            client_handle_kicked_by_server,
-            client_acknowledge_connection_success,
-            client_update_position,
-            client_request_chunks_from_server,
-            client_send_settings,
-        ).into_workload(),
-    ).into_sequential_workload()
-}
-
 pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_block_update_evt: View<BlockUpdateEvent>) {
     let tx = &server_connection.tx;
     let server_addr = server_connection.server_addr;

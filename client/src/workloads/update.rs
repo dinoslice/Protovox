@@ -22,39 +22,6 @@ use crate::rendering::gizmos;
 use crate::rendering::gizmos::{BoxGizmo, GizmoLifetime, GizmoStyle};
 use crate::world_gen::WorldGenerator;
 
-pub fn update() -> Workload {
-    (
-        // -- INPUT -- // TODO: custom input handling?
-        process_input,
-        // -- EARLY UPDATE -- //
-        process_physics,
-        reset_mouse_manager_state,
-        get_generated_chunks.run_if(is_hosted),
-        networking::update_networking_server.run_if(is_hosted),
-        networking::update_networking_client.run_if(is_multiplayer_client),
-        // -- LATE UPDATE -- //
-        chunk_manager_update_and_request,
-        generate_chunks.run_if(is_hosted),
-        server_apply_block_updates.run_if(is_hosted),
-        client_apply_block_updates.run_if(is_multiplayer_client),
-        debug_draw_hitbox_gizmos,
-        spawn_multiplayer_player,
-        raycast.skip_if(local_player_is_gamemode_spectator),
-        place_break_blocks.skip_if(local_player_is_gamemode_spectator),
-        gizmos::update,
-    ).into_sequential_workload()
-}
-
-pub fn process_input() -> Workload {
-    (
-        apply_camera_input,
-        process_movement,
-        toggle_gamemode,
-        adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
-        scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
-    ).into_workload()
-}
-
 pub fn toggle_gamemode(
     input: UniqueView<InputManager>,
     v_local_player: View<LocalPlayer>,
