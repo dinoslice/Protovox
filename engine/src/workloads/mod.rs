@@ -1,6 +1,7 @@
 use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload};
-use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use strck::IntoCk;
+use dino_plugins::{path, Identifiable};
 use crate::{args, rendering};
 use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
@@ -88,8 +89,10 @@ impl DinoEnginePlugin for VoxelEngine {
     }
 
     fn networking_server_pre_recv(&self) -> Option<Workload> {
+        let path = path!({self}::{ EnginePhase::NetworkingServerPreRecv });
+
         (
-            || tracing::trace!("voxel_engine::networking_server_pre_recv"),
+            move || tracing::trace!("{path}"),
         )
             .into_workload()
             .into()
@@ -137,20 +140,24 @@ impl DinoEnginePlugin for VoxelEngine {
     }
 
     fn render(&self) -> Option<Workload> {
+        let plugin = self.identifier();
+
         (
             // -- RENDER -- //
-            world::render_world.tag("voxel_game::render::render_world"),
+            world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
             // render::gizmos::render_line_gizmos, TODO(gizmos)
             block_outline::render_block_outline,
-            render::egui::render_egui.tag("voxel_game::render::render_ui"), // -- RENDER UI -- //
-            submit_rendered_frame.tag("voxel_game::render::submit_frame"), // TODO: make these identifiers better, [] as Label?
+            render::egui::render_egui.tag(path!({plugin}::{EnginePhase::Render}::render_egui)), // -- RENDER UI -- //
+            submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()
     }
 
     fn post_render(&self) -> Option<Workload> {
+        let path = path!({self}::{ EnginePhase::PostRender });
+
         (
-            || tracing::trace!("voxel_engine::post_render"),
+            move || tracing::trace!("{path}"),
         )
             .into_workload()
             .into()

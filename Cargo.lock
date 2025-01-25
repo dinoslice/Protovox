@@ -526,10 +526,12 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dino_plugins",
  "engine",
  "gizmos",
  "nalgebra-glm",
  "shipyard",
+ "strck",
  "tracing",
  "tracing-subscriber",
  "visual_debug",

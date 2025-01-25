@@ -23,7 +23,7 @@ impl Invariant for DinoIdent {
     fn check(str: &str) -> Result<(), Self::Error> {
         fn check_inner(res: Result<&str, unicode::Error>) -> Result<(), DinoIdentError> {
             match res {
-                Ok(str) => match str.chars().find(|&c| !c.is_alphanumeric() && c != '_') {
+                Ok(str) => match str.chars().find(|&c| !c.is_ascii_alphanumeric() && c != '_') {
                     Some(invalid) => Err(DinoIdentError::InvalidChar(invalid)),
                     None => Ok(())
                 }
