@@ -1,0 +1,10 @@
+[package]
+name = "networking"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true
