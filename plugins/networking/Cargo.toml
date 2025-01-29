@@ -5,6 +5,11 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
+hashbrown = "0.15.2"
+shipyard = { workspace = true }
+serde = { workspace = true }
+postcard = { version = "1.0.10", features = ["alloc", "use-std"] }
+flate2 = "1.0.33"
 
 [lints]
 workspace = true

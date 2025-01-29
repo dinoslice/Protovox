@@ -1923,6 +1923,13 @@ dependencies = [
 [[package]]
 name = "networking"
 version = "0.1.0"
+dependencies = [
+ "flate2",
+ "hashbrown 0.15.2",
+ "postcard",
+ "serde",
+ "shipyard",
+]
 
 [[package]]
 name = "new_debug_unreachable"
