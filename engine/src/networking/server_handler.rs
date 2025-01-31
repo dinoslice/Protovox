@@ -4,8 +4,10 @@ use std::time::Duration;
 use bimap::BiHashMap;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut, ViewMut};
+use networking::{PacketRegistry, RuntimePacket};
 use packet::PacketHeader;
+use crate::components::{LocalPlayer, Transform};
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
 
@@ -107,7 +109,19 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                                 tracing::debug!("Successfully connected client from {addr:?}!");
                             }
                         }
-                        Some(id) => add_packet(payload, id, &mut storages),
+                        Some(id) => {
+                            if let Some(type_id) = PacketRegistry::identifier_from(payload) {
+                                let opt = storages
+                                    .borrow::<UniqueView<PacketRegistry>>()
+                                    .expect("registry to be initialized")
+                                    .deserializer_for_id(type_id);
+
+                                if let Some((_, deserializer)) = opt {
+                                    deserializer(payload, id, &mut storages)
+                                        .expect("didn't fail");
+                                }
+                            }
+                        }
                     }
                 }
                 SocketEvent::Connect(addr) => {

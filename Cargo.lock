@@ -934,6 +934,7 @@ dependencies = [
  "laminar",
  "nalgebra",
  "nalgebra-glm",
+ "networking",
  "noise",
  "packet",
  "packet_derive",

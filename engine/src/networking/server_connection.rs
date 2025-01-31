@@ -4,6 +4,7 @@ use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
+use networking::PacketRegistry;
 use packet::Packet as _;
 use crate::events;
 
@@ -74,7 +75,20 @@ pub fn client_process_network_events_multiplayer(mut storages: AllStoragesViewMu
         match evt {
             SocketEvent::Packet(packet) => {
                 assert_eq!(packet.addr(), addr);
-                add_packet(packet.payload(), &mut storages);
+
+                let payload = packet.payload();
+
+                if let Some(type_id) = PacketRegistry::identifier_from(payload) {
+                    let opt = storages
+                        .borrow::<UniqueView<PacketRegistry>>()
+                        .expect("registry to be initialized")
+                        .deserializer_for_id(type_id);
+
+                    if let Some((deserializer, _)) = opt {
+                        let _id = deserializer(payload, &mut storages)
+                            .expect("didn't fail");
+                    }
+                }
             }
             SocketEvent::Connect(addr) => {
                 tracing::debug!("something just connected to the client, {addr:?}");
