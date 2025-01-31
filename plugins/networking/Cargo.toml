@@ -10,6 +10,7 @@ shipyard = { workspace = true }
 serde = { workspace = true }
 postcard = { version = "1.0.10", features = ["alloc", "use-std"] }
 flate2 = "1.0.33"
+tracing = { workspace = true }
 
 [lints]
 workspace = true

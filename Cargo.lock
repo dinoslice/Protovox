@@ -1929,6 +1929,7 @@ dependencies = [
  "postcard",
  "serde",
  "shipyard",
+ "tracing",
 ]
 
 [[package]]
