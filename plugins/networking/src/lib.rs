@@ -110,3 +110,12 @@ pub trait RuntimePacket {
 
 // TODO: remove this impl once we fix it
 impl<T: Serialize + DeserializeOwned> RuntimePacket for T {}
+
+#[derive(Clone, Debug, Component)]
+pub struct EventBus<T: Sync + Send + 'static>(pub Vec<T>);
+
+impl<T: Sync + Send + 'static> Default for EventBus<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
