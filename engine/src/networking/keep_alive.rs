@@ -19,7 +19,7 @@ pub fn server_send_keep_alive(mut last_keep_alive: UniqueOrDefaultViewMut<LastKe
     let tx = &server_handler.tx;
 
     let id = registry
-        .identifier_of::<KeepAlive>()
+        .identifier_of()
         .expect("should be registered");
 
     if last_keep_alive.0.elapsed() > Duration::from_secs(5) {

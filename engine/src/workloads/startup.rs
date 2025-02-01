@@ -74,7 +74,7 @@ pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<
         };
 
         let connection_request_ser_id = registry
-            .identifier_of::<ConnectionRequest>()
+            .identifier_of()
             .expect("should be registered");
 
         storages.add_unique(ServerConnection::bind(addr, connection_request_ser_id));

@@ -11,7 +11,7 @@ pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>
     let tx = &server_handler.tx;
 
     let id = registry
-        .identifier_of::<KickedByServer>()
+        .identifier_of()
         .expect("should be registered");
     
     let kick_packet = KickedByServer("Server closed".into())

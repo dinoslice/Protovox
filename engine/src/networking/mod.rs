@@ -26,7 +26,7 @@ pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>
     let server_addr = server_connection.server_addr;
 
     let id = registry
-        .identifier_of::<BlockUpdateEvent>()
+        .identifier_of()
         .expect("should be registered");
     
     for evt in (&v_block_update_evt).iter() {
@@ -46,7 +46,7 @@ pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>,
     let tx = &server_handler.tx;
 
     let type_id = registry
-        .identifier_of::<BlockUpdateEvent>()
+        .identifier_of()
         .expect("should be registered");
     
     for (&addr, &id) in &server_handler.clients {
@@ -85,7 +85,7 @@ pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>,
 
 pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionRequest>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>) {
     let type_id = registry
-        .identifier_of::<ConnectionSuccess>()
+        .identifier_of()
         .expect("should be registered");
 
     vm_conn_req.retain(|id, _| {
@@ -113,7 +113,7 @@ pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionR
 
 pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>) {
     let type_id = registry
-        .identifier_of::<ClientSettingsRequestEvent>()
+        .identifier_of()
         .expect("should be registered");
 
     vm_client_settings_req.retain(|id, evt| {
@@ -140,7 +140,7 @@ pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<Client
 
 pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
     let id = registry
-        .identifier_of::<RenderDistanceUpdateEvent>()
+        .identifier_of()
         .expect("should be registered");
 
     if vm_client_settings_req.drain().next().is_some() {
@@ -175,7 +175,7 @@ pub fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<Connec
 
 pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>) {
     let id = registry
-        .identifier_of::<ClientTransformUpdate>()
+        .identifier_of()
         .expect("should be registered");
 
     let transform = (&local_player, &vm_transform)
@@ -207,7 +207,7 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
     let sender = &server_handler.tx;
 
     let type_id = registry
-        .identifier_of::<ChunkGenEvent>()
+        .identifier_of()
         .expect("should be registered");
 
     for (id, events) in (&mut reqs).iter().with_id() {
@@ -237,7 +237,7 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
 
 pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>) {
     let id = registry
-        .identifier_of::<ClientChunkRequest>()
+        .identifier_of()
         .expect("should be registered");
 
     let sender = &server_connection.tx;
@@ -259,7 +259,7 @@ pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>
 
 pub fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>, v_local_player: View<LocalPlayer>) {
     let type_id = registry
-        .identifier_of::<ChunkGenEvent>()
+        .identifier_of()
         .expect("should be registered");
 
     let sender = &server_handler.tx;
