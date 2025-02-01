@@ -125,7 +125,11 @@ pub trait RuntimePacket {
         }
     }
 
-    fn serialize<const C: bool>(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
+    fn serialize_uncompressed_with_id(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
+        self.serialize_with_id::<false>(id)
+    }
+
+    fn serialize_with_id<const C: bool>(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
         let mut buffer = id.to_le_bytes().to_vec();
 
         if C {
