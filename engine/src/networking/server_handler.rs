@@ -84,10 +84,16 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                         None => {
                             tracing::debug!("received packet from new address");
 
-                            let Some(PacketType::ConnectionRequest) = PacketType::from_buffer(payload) else {
+                            let conn_req_id = storages
+                                .borrow::<UniqueView<PacketRegistry>>()
+                                .expect("registry to be initialized")
+                                .identifier_of::<ConnectionRequest>()
+                                .expect("packet to be registered");
+
+                            if Some(conn_req_id) != PacketRegistry::identifier_from(payload) {
                                 tracing::warn!("First packet received from {:?} was not ConnectionRequest", addr);
                                 continue;
-                            };
+                            }
 
                             let id = storages.add_entity((
                                 ConnectionRequest,

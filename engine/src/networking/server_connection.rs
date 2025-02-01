@@ -4,7 +4,7 @@ use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
-use networking::PacketRegistry;
+use networking::{PacketRegistry, RuntimePacket, TypeIdentifier};
 use packet::Packet as _;
 use crate::events;
 
@@ -16,7 +16,7 @@ pub struct ServerConnection {
 }
 
 impl ServerConnection {
-    pub fn bind(server_addr: impl Into<SocketAddr>) -> Self {
+    pub fn bind(server_addr: impl Into<SocketAddr>, connection_request_ser_id: TypeIdentifier) -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
@@ -39,7 +39,9 @@ impl ServerConnection {
 
         let connection_req = Packet::reliable_ordered(
             server_addr,
-            events::ConnectionRequest.serialize_packet().expect("packet serialization failed"),
+            events::ConnectionRequest
+                .serialize_uncompressed_with_id(connection_request_ser_id)
+                .expect("packet serialization failed"),
             None, // TODO: configure stream ids
         );
 

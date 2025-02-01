@@ -1,16 +1,21 @@
 use laminar::Packet;
-use shipyard::{SystemModificator, UniqueViewMut};
+use shipyard::{SystemModificator, UniqueView, UniqueViewMut};
 use shipyard::{IntoWorkload, Workload};
+use networking::{PacketRegistry, RuntimePacket};
 use packet::Packet as _;
 use crate::environment::is_hosted;
-use crate::events::KickedByServer;
+use crate::events::{ClientTransformUpdate, KickedByServer};
 use crate::networking::server_handler::ServerHandler;
 
-pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>) {
+pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>, registry: UniqueView<PacketRegistry>) {
     let tx = &server_handler.tx;
+
+    let id = registry
+        .identifier_of::<KickedByServer>()
+        .expect("should be registered");
     
     let kick_packet = KickedByServer("Server closed".into())
-        .serialize_packet()
+        .serialize_uncompressed_with_id(id)
         .expect("packet serialization failed");
     
     for addr in server_handler.clients.left_values() {

@@ -16,7 +16,7 @@ use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 use crate::rendering::render;
 use crate::rendering::render::{block_outline, submit_rendered_frame, world};
 use crate::workloads::shutdown::disconnect_connected_players;
-use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, set_window_title};
+use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, register_packets, set_window_title};
 use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
 
 mod startup;
@@ -41,6 +41,7 @@ impl DinoEnginePlugin for VoxelEngine {
     fn late_startup(&self) -> Option<Workload> {
         (
             initialize_gameplay_systems,
+            register_packets,
             initialize_networking,
             set_window_title,
         )
