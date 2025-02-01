@@ -1,6 +1,9 @@
+mod type_id;
+
 use std::any;
 use std::any::TypeId;
 use std::io::Read;
+use std::num::NonZeroU16;
 use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
@@ -12,7 +15,7 @@ use shipyard::{AllStorages, Component, EntityId, Unique, ViewMut};
 type DeserializerClient = fn(&[u8], &mut AllStorages) -> Option<EntityId>;
 type DeserializerServer = fn(&[u8], EntityId, &mut AllStorages) -> Option<()>; // TODO: errors
 
-pub type TypeIdentifier = u16; // TODO: switch to NonZeroU16 for niche value optimization, wrapper type to eliminate incorrect usage, rename *Header
+pub type TypeIdentifier = NonZeroU16; // TODO: switch to NonZeroU16 for niche value optimization, wrapper type to eliminate incorrect usage, rename *Header
 // TODO: add phantom type to public api to force correctness
 
 #[derive(Debug, Default, Clone, Unique)]
@@ -57,12 +60,12 @@ impl PacketRegistry {
             }
         };
 
-
-        let id = self.map.len();
-
         self.map.push((deserializer_client, deserializer_server));
 
-        let prev = self.ids.insert(type_id, id as _);
+        let id = NonZeroU16::new(self.map.len() as _)
+            .expect("shouldn't be nonzero");
+
+        let prev = self.ids.insert(type_id, id);
 
         debug_assert_eq!(prev, None, "if there was something previously here, it should've been caught earlier by the guard if statement");
 
@@ -77,7 +80,7 @@ impl PacketRegistry {
 
     pub fn deserializer_for_id(&self, type_id: TypeIdentifier) -> Option<(DeserializerClient, DeserializerServer)> {
         self.map
-            .get(type_id as usize)
+            .get(type_id.get() as usize - 1)
             .copied()
     }
 
@@ -88,7 +91,7 @@ impl PacketRegistry {
     pub fn client_consume_packet_into(&self, bytes: &[u8], storages: &mut AllStorages) -> Option<EntityId> { // TODO: type state
         let id = Self::identifier_from(bytes)?; // err: malformed data
 
-        let deserializer= self.map.get(id as usize)?.0; // err: unregistered type
+        let deserializer= self.deserializer_for_id(id)?.0; // err: unregistered type
 
         deserializer(bytes, storages) // err: deserialization error
     }
@@ -96,7 +99,7 @@ impl PacketRegistry {
     pub fn server_consume_packet_into(&self, bytes: &[u8], entity_id: EntityId, storages: &mut AllStorages) -> Option<()> {
         let id = Self::identifier_from(bytes)?; // err: malformed data
 
-        let deserializer= self.map.get(id as usize)?.1; // err: unregistered type
+        let deserializer= self.deserializer_for_id(id)?.1; // err: unregistered type
 
         deserializer(bytes, entity_id, storages) // err: deserialization error
     }
@@ -106,7 +109,11 @@ impl PacketRegistry {
             .try_into()
             .ok()?;
 
-        Some(u16::from_le_bytes(first_two_bytes))
+        Some(
+            u16::from_le_bytes(first_two_bytes)
+                .try_into()
+                .ok()?
+        )
     }
 }
 
@@ -130,7 +137,7 @@ pub trait RuntimePacket {
     }
 
     fn serialize_with_id<const C: bool>(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
-        let mut buffer = id.to_le_bytes().to_vec();
+        let mut buffer = id.get().to_le_bytes().to_vec();
 
         if C {
             let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
