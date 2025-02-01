@@ -15,13 +15,12 @@ use shipyard::{AllStorages, Component, EntityId, Unique, ViewMut};
 type DeserializerClient = fn(&[u8], &mut AllStorages) -> Option<EntityId>;
 type DeserializerServer = fn(&[u8], EntityId, &mut AllStorages) -> Option<()>; // TODO: errors
 
-pub type TypeIdentifier = NonZeroU16; // TODO: switch to NonZeroU16 for niche value optimization, wrapper type to eliminate incorrect usage, rename *Header
-// TODO: add phantom type to public api to force correctness
+pub use type_id::{PacketIdentifier, UntypedPacketIdentifier};
 
 #[derive(Debug, Default, Clone, Unique)]
 pub struct PacketRegistry { // TODO: only needs one of DeserializerClient or DeserializerServer
     map: Vec<(DeserializerClient, DeserializerServer)>, // TypeIdentifier -> Deserializer
-    ids: HashMap<TypeId, TypeIdentifier>,
+    ids: HashMap<TypeId, UntypedPacketIdentifier>,
 }
 
 impl PacketRegistry {
@@ -32,6 +31,9 @@ impl PacketRegistry {
     // TODO: custom error
     // returns whether the packet is already registered
     pub fn register<T: RuntimePacket + DeserializeOwned + Component, const C: bool, const B: bool>(&mut self) -> bool {
+        assert_eq!(size_of::<UntypedPacketIdentifier>(), size_of::<u16>());
+        assert_eq!(size_of::<UntypedPacketIdentifier>(), size_of::<PacketIdentifier<T>>());
+
         let type_id = TypeId::of::<T>();
 
         if self.ids.contains_key(&type_id) {
@@ -65,61 +67,46 @@ impl PacketRegistry {
         let id = NonZeroU16::new(self.map.len() as _)
             .expect("shouldn't be nonzero");
 
-        let prev = self.ids.insert(type_id, id);
+        let prev = self.ids.insert(type_id, UntypedPacketIdentifier(id));
 
         debug_assert_eq!(prev, None, "if there was something previously here, it should've been caught earlier by the guard if statement");
 
         false
     }
 
-    pub fn identifier_of<T: 'static>(&self) -> Option<TypeIdentifier> {
+    pub fn identifier_of<T: 'static>(&self) -> Option<PacketIdentifier<T>> {
         self.ids
             .get(&TypeId::of::<T>())
             .copied()
+            .map(UntypedPacketIdentifier::add_type)
     }
 
-    pub fn deserializer_for_id(&self, type_id: TypeIdentifier) -> Option<(DeserializerClient, DeserializerServer)> {
+    pub fn deserializer_for_untyped_id(&self, type_id: UntypedPacketIdentifier) -> Option<(DeserializerClient, DeserializerServer)> {
         self.map
-            .get(type_id.get() as usize - 1)
+            .get(type_id.0.get() as usize - 1)
             .copied()
     }
 
     pub fn deserializer_for_ty<T: 'static>(&self) -> Option<(DeserializerClient, DeserializerServer)> {
-        self.deserializer_for_id(self.identifier_of::<T>()?)
+        self.deserializer_for_untyped_id(self.identifier_of::<T>()?.untyped)
     }
 
-    pub fn client_consume_packet_into(&self, bytes: &[u8], storages: &mut AllStorages) -> Option<EntityId> { // TODO: type state
-        let id = Self::identifier_from(bytes)?; // err: malformed data
-
-        let deserializer= self.deserializer_for_id(id)?.0; // err: unregistered type
-
-        deserializer(bytes, storages) // err: deserialization error
-    }
-
-    pub fn server_consume_packet_into(&self, bytes: &[u8], entity_id: EntityId, storages: &mut AllStorages) -> Option<()> {
-        let id = Self::identifier_from(bytes)?; // err: malformed data
-
-        let deserializer= self.deserializer_for_id(id)?.1; // err: unregistered type
-
-        deserializer(bytes, entity_id, storages) // err: deserialization error
-    }
-
-    pub fn identifier_from(bytes: &[u8]) -> Option<TypeIdentifier> {
-        let first_two_bytes = bytes.get(..size_of::<TypeIdentifier>())?
+    pub fn untyped_identifier_from(bytes: &[u8]) -> Option<UntypedPacketIdentifier> {
+        let first_two_bytes = bytes.get(..size_of::<UntypedPacketIdentifier>())?
             .try_into()
             .ok()?;
 
-        Some(
-            u16::from_le_bytes(first_two_bytes)
-                .try_into()
-                .ok()?
-        )
+        let inner = u16::from_le_bytes(first_two_bytes)
+            .try_into()
+            .ok()?;
+
+        Some(UntypedPacketIdentifier(inner))
     }
 }
 
 pub trait RuntimePacket {
     fn deserialize<const C: bool>(bytes: &[u8]) -> Option<Self> where Self: DeserializeOwned {
-        const ID_SIZE: usize = size_of::<TypeIdentifier>();
+        const ID_SIZE: usize = size_of::<UntypedPacketIdentifier>();
 
         if C {
             let mut z = ZlibDecoder::new(bytes.get(ID_SIZE..)?);
@@ -132,12 +119,12 @@ pub trait RuntimePacket {
         }
     }
 
-    fn serialize_uncompressed_with_id(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
+    fn serialize_uncompressed_with_id(&self, id: PacketIdentifier<Self>) -> Option<Vec<u8>> where Self: Serialize {
         self.serialize_with_id::<false>(id)
     }
 
-    fn serialize_with_id<const C: bool>(&self, id: TypeIdentifier) -> Option<Vec<u8>> where Self: Serialize {
-        let mut buffer = id.get().to_le_bytes().to_vec();
+    fn serialize_with_id<const C: bool>(&self, id: PacketIdentifier<Self>) -> Option<Vec<u8>> where Self: Serialize {
+        let mut buffer = id.untyped.0.get().to_le_bytes().to_vec();
 
         if C {
             let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());

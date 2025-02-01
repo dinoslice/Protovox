@@ -4,7 +4,7 @@ use laminar::Packet;
 use packet::Packet as _;
 use shipyard::{AllStoragesView, EntitiesView, EntitiesViewMut, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use game::chunk::data::ChunkData;
-use networking::{PacketRegistry, RuntimePacket, TypeIdentifier};
+use networking::{PacketIdentifier, PacketRegistry, RuntimePacket};
 use crate::application::exit::ExitRequested;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
@@ -277,7 +277,7 @@ pub fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform:
     }
 }
 
-fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, id: TypeIdentifier, gen_evt: &ChunkGenEvent) {
+fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, id: PacketIdentifier<ChunkGenEvent>, gen_evt: &ChunkGenEvent) {
     let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_with_id::<true>(id).expect("packet serialization failed"));
 
     if sender.try_send(p).is_err() {

@@ -4,9 +4,9 @@ use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
-use networking::{PacketRegistry, RuntimePacket, TypeIdentifier};
+use networking::{PacketIdentifier, PacketRegistry, RuntimePacket};
 use packet::Packet as _;
-use crate::events;
+use crate::events::ConnectionRequest;
 
 #[derive(Unique)]
 pub struct ServerConnection {
@@ -16,7 +16,7 @@ pub struct ServerConnection {
 }
 
 impl ServerConnection {
-    pub fn bind(server_addr: impl Into<SocketAddr>, connection_request_ser_id: TypeIdentifier) -> Self {
+    pub fn bind(server_addr: impl Into<SocketAddr>, packet_id: PacketIdentifier<ConnectionRequest>) -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
@@ -39,8 +39,8 @@ impl ServerConnection {
 
         let connection_req = Packet::reliable_ordered(
             server_addr,
-            events::ConnectionRequest
-                .serialize_uncompressed_with_id(connection_request_ser_id)
+            ConnectionRequest
+                .serialize_uncompressed_with_id(packet_id)
                 .expect("packet serialization failed"),
             None, // TODO: configure stream ids
         );
@@ -80,11 +80,11 @@ pub fn client_process_network_events_multiplayer(mut storages: AllStoragesViewMu
 
                 let payload = packet.payload();
 
-                if let Some(type_id) = PacketRegistry::identifier_from(payload) {
+                if let Some(type_id) = PacketRegistry::untyped_identifier_from(payload) {
                     let opt = storages
                         .borrow::<UniqueView<PacketRegistry>>()
                         .expect("registry to be initialized")
-                        .deserializer_for_id(type_id);
+                        .deserializer_for_untyped_id(type_id);
 
                     if let Some((deserializer, _)) = opt {
                         let _id = deserializer(payload, &mut storages)

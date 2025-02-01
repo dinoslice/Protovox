@@ -90,7 +90,7 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                                 .identifier_of::<ConnectionRequest>()
                                 .expect("packet to be registered");
 
-                            if Some(conn_req_id) != PacketRegistry::identifier_from(payload) {
+                            if Some(conn_req_id.untyped) != PacketRegistry::untyped_identifier_from(payload) {
                                 tracing::warn!("First packet received from {:?} was not ConnectionRequest", addr);
                                 continue;
                             }
@@ -116,11 +116,11 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                             }
                         }
                         Some(id) => {
-                            if let Some(type_id) = PacketRegistry::identifier_from(payload) {
+                            if let Some(type_id) = PacketRegistry::untyped_identifier_from(payload) {
                                 let opt = storages
                                     .borrow::<UniqueView<PacketRegistry>>()
                                     .expect("registry to be initialized")
-                                    .deserializer_for_id(type_id);
+                                    .deserializer_for_untyped_id(type_id);
 
                                 if let Some((_, deserializer)) = opt {
                                     deserializer(payload, id, &mut storages)
