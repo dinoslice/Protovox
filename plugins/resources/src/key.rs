@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use thiserror::Error;
-use crate::r#type::ResourceType;
+use crate::resource_type::ResourceType;
 
 #[derive(Error, Debug)]
 pub enum ResourceKeyParseFail {
@@ -13,7 +13,7 @@ pub enum ResourceKeyParseFail {
     InvalidDomain
 }
 
-#[derive(Clone)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct ResourceKey<T: ResourceType> {
     id: String,
     key: String,

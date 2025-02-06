@@ -1,10 +1,10 @@
 use serde::Deserialize;
-use proc_types::block_parse;
+use proc_types::{block};
 use resources::{ResourceKey, ResourceType};
-use crate::Texture;
+use crate::{texture, Texture};
 
 pub struct Block {
-    texture: ResourceKey<Texture>,
+    pub texture: ResourceKey<Texture>,
 }
 
 impl ResourceType for Block {
@@ -12,5 +12,3 @@ impl ResourceType for Block {
         "block"
     }
 }
-
-const Test: Block = block!("assets/blocks/test.json");

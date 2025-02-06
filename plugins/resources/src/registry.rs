@@ -2,7 +2,7 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use shipyard::Unique;
 use crate::key::ResourceKey;
-use crate::r#type::ResourceType;
+use crate::resource_type::ResourceType;
 
 #[derive(Default, Unique)]
 pub struct Registry {
@@ -33,5 +33,48 @@ impl Registry {
 
     pub fn get_mut_unchecked<T: ResourceType + 'static>(&mut self, key: &ResourceKey<T>) -> &mut T {
         self.get_mut(key).unwrap_or_else(|| panic!("No data existed in the registry for the ResourceKey '{}'", key))
+    }
+
+    pub fn iter<T: ResourceType + 'static>(&self) -> impl Iterator<Item=(ResourceKey<T>, &T)> {
+        self.storage
+            .get(&TypeId::of::<T>())
+            .unwrap()
+            .iter()
+            .map(|(k, v)| (k.try_into().unwrap(), v.downcast_ref::<T>().unwrap()))
+    }
+
+    pub fn iter_mut<T: ResourceType + 'static>(&mut self) -> impl Iterator<Item = (ResourceKey<T>, &mut T)> {
+        self.storage
+            .get_mut(&TypeId::of::<T>())
+            .unwrap()
+            .iter_mut()
+            .map(|(k, v)| (k.try_into().unwrap(), v.downcast_mut::<T>().unwrap()))
+    }
+}
+
+struct Block {
+    id: usize,
+    name: String,
+}
+impl ResourceType for Block {
+    fn resource_name() -> &'static str {
+        "block"
+    }
+}
+
+pub fn test() {
+    let mut registry = Registry::default();
+    registry.register(ResourceKey::new("test", "test_block"), Block { id: 0, name: "test_block".to_string() });
+    for (key, data) in registry.iter::<Block>() {
+        println!("key: {}, data: {} {}", key, data.id, data.name);
+    }
+
+    for (_, data) in registry.iter_mut::<Block>() {
+        data.id = 1;
+        data.name = "test_block_test2".to_string();
+    }
+
+    for (key, data) in registry.iter::<Block>() {
+        println!("key: {}, data: {} {}", key, data.id, data.name);
     }
 }

@@ -9,6 +9,7 @@ workspace = true
 
 [features]
 custom_types = []
+full = [ "custom_types" ]
 
 [dependencies]
 dino_plugins = { path = "../../dino_plugins" }

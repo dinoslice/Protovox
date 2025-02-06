@@ -1,17 +1,16 @@
-mod r#type;
+mod resource_type;
 mod key;
-
-#[cfg(feature = "custom_types")]
 mod registry;
 
-use shipyard::{AllStoragesView, IntoWorkload, Workload, WorkloadModificator};
+use shipyard::{AllStoragesView, IntoWorkload, Workload};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 pub use registry::Registry;
 pub use key::ResourceKey;
+pub use registry::test;
 
 #[cfg(feature = "custom_types")]
-pub use r#type::ResourceType;
+pub use resource_type::ResourceType;
 
 fn create_registry(storages: AllStoragesView) {
     storages.add_unique(Registry::default());

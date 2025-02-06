@@ -6,7 +6,7 @@ macro_rules! texture {
     ($path:expr) => {
         $crate::texture::Texture {
             atlas_id: 0,
-            image: load_from_memory(include_bytes!($path)).expect("Failed to load texture from bytes."),
+            image: image::load_from_memory(include_bytes!($path)).unwrap(),
         }
     };
 }

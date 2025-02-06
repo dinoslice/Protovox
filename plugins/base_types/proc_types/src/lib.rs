@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro::Span;
 use std::fs;
 use std::path::PathBuf;
+use image::load_from_memory;
 use quote::quote;
 use serde::Deserialize;
 use syn::{parse_macro_input, LitStr};
@@ -26,8 +27,10 @@ pub fn block(input: TokenStream) -> TokenStream {
     let texture = block.texture;
 
     let expanded = quote! {
-        $crate::block::Block {
-            texture: resources::ResourceKey::<$crate::texture::Texture>::try_from(#texture).expect("Failed to parse the block"),
+        {
+            crate::block::Block {
+                texture: resources::ResourceKey::<crate::texture::Texture>::try_from(&#texture.to_string()).expect("Failed to parse the block"),
+            }
         }
     };
 

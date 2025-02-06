@@ -2372,7 +2372,7 @@ dependencies = [
 name = "proc_types"
 version = "0.1.0"
 dependencies = [
- "proc-macro2",
+ "image",
  "quote",
  "serde",
  "serde_json",
