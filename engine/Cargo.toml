@@ -10,7 +10,7 @@ winit = "0.29.15" # temporarily using older version, switch to newer version lat
 egui = "0.28.1"
 egui-wgpu = { version = "0.28.1",features = ["winit"] }
 egui-winit = { version = "0.28.1", features = ["arboard", "links", "wayland", "x11"], default-features = false }
-image = { version = "0.25.5", features = ["jpeg", "png"] }
+image = { workspace = true }
 rgb = "0.8.50"
 
 # networking

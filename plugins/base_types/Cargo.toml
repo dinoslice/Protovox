@@ -1,0 +1,17 @@
+[package]
+name = "base_types"
+version = "1.0.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+dino_plugins = { path = "../../dino_plugins" }
+strck = "1.0.0"
+image = { workspace = true }
+shipyard = { workspace = true }
+resources = { path = "../resources", features = ["custom_types"] }
+serde = { workspace = true }
+proc_types = { path = "proc_types" }
+
+[lints]
+workspace = true
