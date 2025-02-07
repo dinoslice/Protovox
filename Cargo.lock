@@ -890,6 +890,18 @@ dependencies = [
 [[package]]
 name = "egui_system"
 version = "0.1.0"
+dependencies = [
+ "dino_plugins",
+ "egui",
+ "egui-wgpu",
+ "egui-winit",
+ "engine",
+ "shipyard",
+ "strck",
+ "tracing",
+ "wgpu",
+ "winit",
+]
 
 [[package]]
 name = "either"

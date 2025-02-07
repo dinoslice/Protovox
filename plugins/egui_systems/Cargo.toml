@@ -5,6 +5,17 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
+dino_plugins = { path = "../../dino_plugins" }
+strck = "1.0.0"
+engine = { path = "../../engine" }
+shipyard = { workspace = true }
+tracing = "0.1.40"
+
+wgpu = "0.20.1"
+winit = "0.29.15" # temporarily using older version, switch to newer version later
+egui = "0.28.1"
+egui-wgpu = { version = "0.28.1",features = ["winit"] }
+egui-winit = { version = "0.28.1", features = ["arboard", "links", "wayland", "x11"], default-features = false }
 
 [lints]
 workspace = true
