@@ -1,4 +1,4 @@
-use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload};
+use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
@@ -32,7 +32,7 @@ impl DinoEnginePlugin for VoxelEngine {
     fn early_startup(&self) -> Option<Workload> {
         (
             args::parse_env,
-            rendering::initialize,
+            rendering::initialize.tag(path!({self}::{EnginePhase::EarlyStartup}::rendering::initialize)),
             initialize_local_player,
         )
             .into_sequential_workload()
