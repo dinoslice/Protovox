@@ -5,7 +5,6 @@ use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 
 pub mod world;
 pub mod block_outline;
-pub mod egui;
 
 #[derive(Unique)]
 pub struct RenderContext {

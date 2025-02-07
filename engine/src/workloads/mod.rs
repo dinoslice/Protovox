@@ -146,7 +146,6 @@ impl DinoEnginePlugin for VoxelEngine {
             // -- RENDER -- //
             world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
             block_outline::render_block_outline,
-            render::egui::render_egui.tag(path!({plugin}::{EnginePhase::Render}::render_egui)), // -- RENDER UI -- //
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()
