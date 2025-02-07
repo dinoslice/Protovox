@@ -33,6 +33,10 @@ pub fn is_captured(capture: UniqueView<CaptureState>) -> bool {
     capture.is_captured()
 }
 
+pub fn is_not_captured(capture: UniqueView<CaptureState>) -> bool {
+    !capture.is_captured()
+}
+
 pub fn toggle_captured(g_ctx: UniqueView<GraphicsContext>, mut capture_state: UniqueViewMut<CaptureState>, mut input: UniqueViewMut<InputManager>) {
     match capture_state.toggle(&g_ctx.window) {
         Some(false) => input.reset_all(),

@@ -4,8 +4,7 @@ use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::PhysicalKey;
 use engine::application::capture_state::CaptureState;
 use engine::input::InputManager;
-use engine::rendering::EguiRenderer;
-use engine::rendering::graphics_context::GraphicsContext;
+use engine::input::last_frame_events::LastFrameEvents;
 
 pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut input: UniqueViewMut<InputManager>) {
     if capture.is_captured() {
@@ -13,11 +12,12 @@ pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut in
     }
 }
 
-pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>, mut egui_renderer: UniqueViewMut<EguiRenderer>, g_ctx: UniqueView<GraphicsContext>, capture: UniqueView<CaptureState>) -> bool {
+pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>, mut last_frame_events: UniqueViewMut<LastFrameEvents>, capture: UniqueView<CaptureState>) -> bool {
     if !capture.is_captured() {
-        egui_renderer.handle_input(&g_ctx.window, event);
         return false;
     }
+
+    last_frame_events.0.push(event.clone());
     
     match event {
         WindowEvent::KeyboardInput {

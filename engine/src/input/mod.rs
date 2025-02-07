@@ -4,6 +4,7 @@ use crate::input::mouse_manager::MouseManager;
 
 pub mod action_map;
 pub mod mouse_manager;
+pub mod last_frame_events;
 
 #[derive(Debug, Unique)]
 pub struct InputManager {
