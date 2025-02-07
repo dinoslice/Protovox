@@ -888,7 +888,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui_system"
+name = "egui_systems"
 version = "0.1.0"
 dependencies = [
  "dino_plugins",
