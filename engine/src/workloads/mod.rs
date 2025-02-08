@@ -43,6 +43,7 @@ impl DinoEnginePlugin for VoxelEngine {
             initialize_gameplay_systems,
             initialize_networking,
             set_window_title,
+            crate::base_types::block::model,
         )
             .into_sequential_workload()
             .into()

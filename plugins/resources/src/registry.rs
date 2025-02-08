@@ -11,6 +11,10 @@ pub struct Registry {
 
 impl Registry {
     pub fn register<T: ResourceType + 'static>(&mut self, key: ResourceKey<T>, data: T) {
+        if !data.is_valid(self) {
+            return;
+        }
+
         let inner = self.storage.entry(TypeId::of::<T>()).or_default();
         inner.insert(key.to_string(), Box::new(data));
     }

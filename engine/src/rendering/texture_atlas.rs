@@ -1,4 +1,5 @@
-use shipyard::{AllStoragesView, Unique, UniqueView};
+use shipyard::{AllStoragesView, Unique, UniqueView, UniqueViewMut};
+use resources::Registry;
 use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;
 
@@ -10,7 +11,11 @@ pub struct TextureAtlas {
     pub bind_group_layout: wgpu::BindGroupLayout,
 }
 
-pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+pub fn initialize_texture_atlas(mut registry: UniqueViewMut<Registry>, g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
+    for (_, texture) in registry.iter_mut::<crate::base_types::texture::Texture>() {
+
+    }
+
     // 4. load textures into bind group
     let texture = Texture::from_bytes(&g_ctx.device, &g_ctx.queue, include_bytes!("../../assets/texture_atlas.png"), "texture_atlas.png")
         .expect("atlas didn't exist");

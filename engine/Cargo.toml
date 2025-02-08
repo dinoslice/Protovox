@@ -44,6 +44,7 @@ rayon = "1.10.0"
 # plugins
 dino_plugins = { path = "../dino_plugins" }
 strck = "1.0.0"
+resources = { path = "../plugins/resources", features = ["custom_types"] }
 
 # loaded plugins
 #gizmos = { path = "../plugins/gizmos" }
@@ -56,6 +57,7 @@ noise = "0.9.0"
 # math
 nalgebra = { workspace = true }
 nalgebra-glm = { workspace = true }
+serde_json = "1.0.138"
 
 [lints]
 workspace = true

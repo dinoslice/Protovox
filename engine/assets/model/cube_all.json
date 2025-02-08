@@ -1,0 +1,11 @@
+{
+  "parent": "engine:cube",
+  "textures": {
+    "front": "#all",
+    "back": "#all",
+    "top": "#all",
+    "bottom": "#all",
+    "left": "#all",
+    "right": "#all"
+  }
+}
