@@ -3,6 +3,7 @@ use game::block::face_type::FaceType;
 use game::chunk::BLOCKS_PER_CHUNK;
 use game::chunk::data::ChunkData;
 use game::chunk::pos::ChunkPos;
+use resources::Registry;
 use crate::rendering::face_data::FaceData;
 
 // TODO: generational arena?
@@ -12,7 +13,7 @@ pub struct ChunkMesh {
 
 impl ChunkMesh {
     // TODO: optimize this
-    pub fn from_chunk(chunk: &ChunkData) -> Self {
+    pub fn from_chunk(chunk: &ChunkData, registry: &Registry) -> Self {
         let mut faces = Vec::new();
 
         for pos in 0..BLOCKS_PER_CHUNK {

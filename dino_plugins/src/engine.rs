@@ -5,6 +5,7 @@ use crate::ident::Ident;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum EnginePhase {
+    ResourceCollection,
     EarlyStartup,
     LateStartup,
     Input,
@@ -26,6 +27,7 @@ impl Identifiable for EnginePhase {
         use EnginePhase as P;
 
         let res = match self {
+            P::ResourceCollection => "register_resources".ck(),
             P::EarlyStartup => "early_startup".ck(),
             P::LateStartup => "late_startup".ck(),
             P::Input => "input".ck(),
@@ -59,6 +61,10 @@ impl Identifiable for EnginePluginMetadata {
 }
 
 pub trait DinoEnginePlugin: DinoPlugin<&'static Ident, EnginePhase, Workload, EnginePluginMetadata> {
+    fn register_resources(&self) -> Option<Workload> {
+        None
+    }
+
     fn early_startup(&self) -> Option<Workload> {
         None
     }
@@ -129,6 +135,7 @@ impl<T: DinoEnginePlugin> DinoPlugin<&'static Ident, EnginePhase, Workload, Engi
         use EnginePhase as P;
 
         match phase {
+            P::ResourceCollection => self.register_resources(),
             P::EarlyStartup => self.early_startup(),
             P::LateStartup => self.late_startup(),
             P::Input => self.input(),

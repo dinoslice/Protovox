@@ -8,7 +8,7 @@ pub mod input;
 pub mod camera;
 mod workloads;
 mod events;
-mod world_gen;
+pub mod world_gen;
 
 pub mod chunks;
 pub mod networking;

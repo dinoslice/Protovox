@@ -28,6 +28,12 @@ mod shutdown;
 pub struct VoxelEngine;
 
 impl DinoEnginePlugin for VoxelEngine {
+    fn register_resources(&self) -> Option<Workload> {
+        crate::base_types::block::model
+            .into_sequential_workload()
+            .into()
+    }
+
     fn early_startup(&self) -> Option<Workload> {
         (
             args::parse_env,

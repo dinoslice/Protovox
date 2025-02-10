@@ -1,3 +1,4 @@
+use std::num::NonZeroU32;
 use shipyard::{AllStoragesView, Unique, UniqueView, UniqueViewMut};
 use resources::Registry;
 use crate::rendering::texture::Texture;
@@ -12,13 +13,16 @@ pub struct TextureAtlas {
 }
 
 pub fn initialize_texture_atlas(mut registry: UniqueViewMut<Registry>, g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
-    for (_, texture) in registry.iter_mut::<crate::base_types::texture::Texture>() {
+    let mut images = Vec::new();
+    let mut id = 0;
 
+    for (_, texture) in registry.iter_mut::<crate::base_types::texture::Texture>() {
+        images.push(&texture.image);
+        texture.atlas_id = id;
+        id += 1;
     }
 
-    // 4. load textures into bind group
-    let texture = Texture::from_bytes(&g_ctx.device, &g_ctx.queue, include_bytes!("../../assets/texture_atlas.png"), "texture_atlas.png")
-        .expect("atlas didn't exist");
+    let texture = Texture::from_images(&g_ctx.device, &g_ctx.queue, &images, Some("texture_atlas"));
 
     // bind group -> data constant through one draw call
     let bind_group_layout =
@@ -32,7 +36,7 @@ pub fn initialize_texture_atlas(mut registry: UniqueViewMut<Registry>, g_ctx: Un
                         view_dimension: wgpu::TextureViewDimension::D2, // _2d
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
-                    count: None,
+                    count: Some(NonZeroU32::new(images.len().max(1) as u32).unwrap()),
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,

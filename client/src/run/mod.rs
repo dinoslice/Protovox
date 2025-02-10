@@ -15,6 +15,7 @@ use core_workloads::{startup_core, update_core};
 use strck::IntoCk;
 use dino_plugins::engine::EnginePhase;
 use dino_plugins::path;
+use resources::Registry;
 
 mod core_workloads;
 mod input;
@@ -25,6 +26,8 @@ pub fn run(plugin_manager: PluginManager) {
 
     // initialize world and workloads
     let world = World::new();
+
+    world.add_unique(Registry::default());
 
     if let Some(dep) = plugin_manager.first_unmet_dependency() {
         error!(r#"One or more plugins depends on "{dep}", which isn't loaded."#);
@@ -49,6 +52,9 @@ pub fn run(plugin_manager: PluginManager) {
     world.add_unique(GraphicsContext::new(window));
 
     world.run_workload(startup_core)
+        .expect("TODO: panic message");
+
+    world.run_workload(path!({client}::register_resources))
         .expect("TODO: panic message");
 
     world.run_workload(path!({client}::startup))

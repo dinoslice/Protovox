@@ -30,6 +30,10 @@ impl PluginManager {
     pub fn build_into(&self, world: &World, ident: impl Identifiable + Clone) {
         let plugins = self.plugins.iter().map(Deref::deref);
 
+        build_helper(plugins.clone(), ident.clone(), EnginePhase::ResourceCollection)
+            .add_to_world(&world)
+            .expect("failed to add workload");
+
         build_startup(plugins.clone(), ident.clone())
             .add_to_world(&world)
             .expect("failed to add workload");

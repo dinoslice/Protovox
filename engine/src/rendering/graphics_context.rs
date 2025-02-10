@@ -45,7 +45,7 @@ impl GraphicsContext {
         // device is an open connection to gpu, queue executes command buffers
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
-                required_features: wgpu::Features::empty() | wgpu::Features::PUSH_CONSTANTS, // what additional features of the GPU are needed
+                required_features: wgpu::Features::empty() | wgpu::Features::PUSH_CONSTANTS | wgpu::Features::TEXTURE_BINDING_ARRAY, // what additional features of the GPU are needed
                 required_limits: wgpu::Limits {
                     max_push_constant_size: std::mem::size_of::<ChunkLocation>() as u32,
                     .. Default::default()

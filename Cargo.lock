@@ -543,6 +543,7 @@ dependencies = [
  "engine",
  "gizmos",
  "nalgebra-glm",
+ "resources",
  "shipyard",
  "strck",
  "tracing",
