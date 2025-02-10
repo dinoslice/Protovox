@@ -10,15 +10,15 @@ pub trait DuringEgui {
 impl DuringEgui for WorkloadSystem {
     fn order_egui(self) -> WorkloadSystem {
         self
-            .before_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_start))
-            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_end))
+            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_start))
+            .before_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_end))
     }
 }
 
 impl DuringEgui for Workload {
     fn order_egui(self) -> Workload {
         self
-            .before_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_start))
-            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_end))
+            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_start))
+            .before_all(path!({EguiSystemsPlugin}::{EnginePhase::Render}::render_end))
     }
 }
