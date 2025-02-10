@@ -13,7 +13,7 @@ pub struct ChunkMesh {
 
 impl ChunkMesh {
     // TODO: optimize this
-    pub fn from_chunk(chunk: &ChunkData, registry: &Registry) -> Self {
+    pub fn from_chunk(chunk: &ChunkData) -> Self {
         let mut faces = Vec::new();
 
         for pos in 0..BLOCKS_PER_CHUNK {

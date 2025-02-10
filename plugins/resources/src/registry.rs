@@ -56,6 +56,7 @@ impl Registry {
     }
 }
 
+#[derive(Clone)]
 struct Block {
     id: usize,
     name: String,

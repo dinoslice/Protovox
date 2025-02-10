@@ -118,7 +118,7 @@ impl ResourceType for Block {
         "model"
     }
 
-    fn is_valid(&self, registry: &mut Registry) -> bool {
+    fn is_valid(&self, _registry: &mut Registry) -> bool {
         // TODO: check the parent thing if each of the keys for the textures match to a part of the parent/parent's parent/so on
         true
     }
@@ -169,7 +169,7 @@ impl ModelElementTexture {
 }
 
 #[derive(Deserialize)]
-struct ModelJson {
+pub struct ModelJson {
     parent: Option<String>,
     elements: Option<Vec<ModelElementJson>>,
     textures: Option<HashMap<String, String>>
@@ -186,7 +186,7 @@ impl Into<Block> for ModelJson {
 }
 
 #[derive(Deserialize)]
-struct ModelElementJson {
+pub struct ModelElementJson {
     from: [f32; 3],
     to: [f32; 3],
     front: Option<ModelElementTextureJson>,
@@ -213,7 +213,7 @@ impl Into<ModelElement> for ModelElementJson {
 }
 
 #[derive(Deserialize)]
-struct ModelElementTextureJson {
+pub struct ModelElementTextureJson {
     uv: Option<[u32; 4]>,
     texture: String,
 }
@@ -227,6 +227,7 @@ impl Into<ModelElementTexture> for ModelElementTextureJson {
     }
 }
 
+#[macro_export]
 macro_rules! model {
     ($path:expr) => {
         {

@@ -1,7 +1,7 @@
 {
   "parent": "engine:cube",
   "textures": {
-    "front": "#all",
+    "front": "#b",
     "back": "#all",
     "top": "#all",
     "bottom": "#all",
