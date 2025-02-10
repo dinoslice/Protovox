@@ -529,6 +529,7 @@ dependencies = [
  "dino_plugins",
  "egui_systems",
  "engine",
+ "game_ui",
  "gizmos",
  "nalgebra-glm",
  "shipyard",

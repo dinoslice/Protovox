@@ -20,6 +20,7 @@ strck = "1.0.0"
 gizmos = { path = "../plugins/gizmos" }
 visual_debug = { path = "../plugins/visual_debug" }
 egui_systems = { path = "../plugins/egui_systems" }
+game_ui = { path = "../plugins/game_ui" }
 
 [lints]
 workspace = true
