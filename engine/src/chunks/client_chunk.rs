@@ -1,4 +1,4 @@
-use game::chunk::data::ChunkData;
+use crate::game::chunk::data::ChunkData;
 
 pub struct ClientChunk {
     pub data: ChunkData,

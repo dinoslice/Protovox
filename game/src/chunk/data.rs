@@ -5,7 +5,7 @@ use crate::chunk::BLOCKS_PER_CHUNK;
 use crate::chunk::location::ChunkLocation;
 use crate::chunk::pos::ChunkPos;
 
-pub type ChunkBlocks = [Block; BLOCKS_PER_CHUNK];
+pub type ChunkBlocks = [ResourceKey<BLOCKS_PER_CHUNK>; BLOCKS_PER_CHUNK];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChunkData {

@@ -1,10 +1,10 @@
 use glm::Vec3;
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
-use game::block::Block;
-use game::location::WorldLocation;
 use crate::application::delta_time::LastDeltaTime;
+use crate::base_types::AIR;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, Hitbox, IsOnGround, Transform, Velocity};
+use crate::game::location::WorldLocation;
 
 // TODO: optimize this function & fix issue of skipping through blocks if moving too fast
 pub fn move_with_collision(
@@ -33,8 +33,8 @@ pub fn move_with_collision(
                     for z in min_floor.z..=max_floor.z {
                         let world_loc = WorldLocation(Vec3::new(x as f32, y as f32, z as f32));
                         
-                        if let Some(&block) = world.get_block_ref(&world_loc.into()) {
-                            if block != Block::Air {
+                        if let Some(&ref block) = world.get_block_ref(&world_loc.into()) {
+                            if block.clone() != AIR.clone() {
                                 return Some(true);
                             }
                         } else {

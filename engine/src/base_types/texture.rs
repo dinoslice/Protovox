@@ -1,7 +1,7 @@
 use image::{load_from_memory, DynamicImage};
-use resources::ResourceType;
+use resources::{ResourceKey, ResourceType};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Texture {
     pub atlas_id: usize,
     pub image: DynamicImage,
@@ -10,6 +10,12 @@ pub struct Texture {
 impl ResourceType for Texture {
     fn resource_name() -> &'static str {
         "texture"
+    }
+    fn default_resource() -> ResourceKey<Self>
+    where
+        Self: Sized,
+    {
+        ResourceKey::new("engine", "cobblestone")
     }
 }
 

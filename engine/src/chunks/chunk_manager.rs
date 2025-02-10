@@ -4,16 +4,17 @@ use glm::IVec3;
 use hashbrown::HashMap;
 use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use wgpu::util::DeviceExt;
-use game::block::Block;
-use game::chunk::location::ChunkLocation;
-use game::location::BlockLocation;
+use resources::{Registry, ResourceKey};
 use crate::application::delta_time::LastDeltaTime;
+use crate::base_types::block::Block;
 use crate::chunks::client_chunk::{BakeState, ClientChunk};
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::chunk_mesh::ChunkMesh;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
+use crate::game::chunk::location::ChunkLocation;
+use crate::game::location::BlockLocation;
 use crate::render_distance::RenderDistance;
 
 const REQ_TIMEOUT: f32 = 5.0;
@@ -77,7 +78,7 @@ impl ChunkManager {
         self.recently_requested_gen.clear();
     }
 
-    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext) -> Vec<ChunkGenRequestEvent> {
+    pub fn update_and_resize(&mut self, center: &ChunkLocation, delta_time: Duration, received_chunks: impl IntoIterator<Item = ChunkGenEvent>, render_dist: &RenderDistance, g_ctx: &GraphicsContext, registry: &Registry) -> Vec<ChunkGenRequestEvent> {
         let delta_time_sec = delta_time.as_secs_f32();
 
         self.recently_requested_gen.retain(|_, t| {
@@ -125,7 +126,7 @@ impl ChunkManager {
             .filter(|(_, cc)| cc.bake == BakeState::NeedsBaking)
             .take(self.max_bakes_per_frame)
         {
-            let baked = ChunkMesh::from_chunk(&chunk.data).faces;
+            let baked = ChunkMesh::from_chunk(&chunk.data, registry).faces;
 
             tracing::trace!("Finished baking chunk at {:?}", &chunk.data.location);
 
@@ -182,7 +183,7 @@ impl ChunkManager {
         self.loaded.get_mut(location)
     }
 
-    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
+    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&ResourceKey<Block>> {
         let (loc, pos) = block_loc.as_chunk_parts();
 
         self
@@ -192,7 +193,7 @@ impl ChunkManager {
             .get(pos.0 as usize)
     }
 
-    pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
+    pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut ResourceKey<Block>> {
         let (loc, pos) = block_loc.as_chunk_parts();
 
         self
@@ -202,18 +203,18 @@ impl ChunkManager {
             .get_mut(pos.0 as usize)
     }
     
-    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: ResourceKey<Block>) -> Option<ResourceKey<Block>> {
         let block_mut = self.get_block_mut(block_loc)?;
+
+        let prev = block_mut.clone();
         
-        let prev = *block_mut;
-        
-        if prev != new {
+        if prev.clone() != new {
             *block_mut = new;
 
             self.get_chunk_mut(&block_loc.into())?.set_dirty()
         }
         
-        Some(prev)
+        Some(prev.clone())
     }
 
     pub fn loaded_locations(&self) -> Vec<&ChunkLocation> {
@@ -247,7 +248,8 @@ pub fn chunk_manager_update_and_request(
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
 
     v_render_dist: View<RenderDistance>,
-    v_transform: View<Transform>
+    v_transform: View<Transform>,
+    registry: UniqueView<Registry>
 ) {
     let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &vm_local_player)
         .iter()
@@ -256,7 +258,7 @@ pub fn chunk_manager_update_and_request(
 
     let recv = chunk_gen_event.drain();
 
-    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx);
+    let reqs = chunk_mgr.update_and_resize(&transform.get_loc(), delta_time.0, recv, render_dist, &g_ctx, &registry);
     
     if !reqs.is_empty() {
         entities.bulk_add_entity(&mut vm_chunk_gen_req_evt, reqs);

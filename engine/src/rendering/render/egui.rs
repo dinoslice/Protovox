@@ -1,5 +1,5 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
-use game::block::Block;
+use resources::ResourceKey;
 use crate::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use crate::gamemode::Gamemode;
 use crate::networking::server_handler::ServerHandler;
@@ -77,8 +77,7 @@ pub fn render_egui(
 
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
                             Gamemode::Survival => {
-                                let hotbar_text = match held_block.0 {
-                                    Block::Air => "None".into(),
+                                let hotbar_text = match held_block.0.clone() {
                                     b => format!("{b:?}"),
                                 };
                                 

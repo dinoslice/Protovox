@@ -1,6 +1,5 @@
-use game::chunk::pos::ChunkPos;
-pub use game::block::face_type::FaceType;
-pub use game::block::TextureId;
+use crate::game::chunk::pos::ChunkPos;
+use crate::game::face_type::{FaceType, TextureId};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

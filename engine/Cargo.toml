@@ -50,7 +50,7 @@ resources = { path = "../plugins/resources", features = ["custom_types"] }
 #gizmos = { path = "../plugins/gizmos" }
 
 # game
-game = { path = "../game" }
+#game = { path = "../game" }
 splines = { path = "../splines" }
 noise = "0.9.0"
 
@@ -58,6 +58,8 @@ noise = "0.9.0"
 nalgebra = { workspace = true }
 nalgebra-glm = { workspace = true }
 serde_json = "1.0.138"
+num-traits = "0.2.19"
+serde-big-array = "0.5.1"
 
 [lints]
 workspace = true

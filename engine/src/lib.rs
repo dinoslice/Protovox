@@ -23,5 +23,6 @@ pub mod looking_at_block;
 pub mod last_world_interaction;
 pub mod gamemode;
 pub mod base_types;
+pub mod game;
 
 pub use workloads::VoxelEngine;

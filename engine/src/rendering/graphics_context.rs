@@ -3,7 +3,7 @@ use pollster::FutureExt;
 use shipyard::Unique;
 use tracing::debug;
 use winit::window::Window;
-use game::chunk::location::ChunkLocation;
+use crate::game::chunk::location::ChunkLocation;
 
 // TODO: fix visibility
 #[derive(Unique)]

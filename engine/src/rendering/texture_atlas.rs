@@ -33,7 +33,7 @@ pub fn initialize_texture_atlas(mut registry: UniqueViewMut<Registry>, g_ctx: Un
                     visibility: wgpu::ShaderStages::FRAGMENT, // use this bind group in the fragment shader
                     ty: wgpu::BindingType::Texture { // it's a texture, texture_2d<f32> in shader
                         multisampled: false,
-                        view_dimension: wgpu::TextureViewDimension::D2, // _2d
+                        view_dimension: wgpu::TextureViewDimension::D2Array, // _2d
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
                     count: Some(NonZeroU32::new(images.len().max(1) as u32).unwrap()),

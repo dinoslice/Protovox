@@ -941,7 +941,6 @@ dependencies = [
  "egui",
  "egui-wgpu",
  "egui-winit",
- "game",
  "hashbrown 0.15.2",
  "image",
  "itertools 0.13.0",
@@ -949,6 +948,7 @@ dependencies = [
  "nalgebra",
  "nalgebra-glm",
  "noise",
+ "num-traits",
  "packet",
  "packet_derive",
  "pollster",
@@ -957,6 +957,7 @@ dependencies = [
  "resources",
  "rgb",
  "serde",
+ "serde-big-array",
  "serde_json",
  "shipyard",
  "splines",
@@ -2643,6 +2644,7 @@ name = "resources"
 version = "1.0.0"
 dependencies = [
  "dino_plugins",
+ "serde",
  "shipyard",
  "strck",
  "thiserror 2.0.3",

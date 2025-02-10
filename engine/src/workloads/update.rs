@@ -2,14 +2,16 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
-use game::block::Block;
-use game::location::BlockLocation;
+use resources::{Registry, ResourceKey};
+use crate::base_types::AIR;
+use crate::base_types::block::Block;
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
+use crate::game::location::BlockLocation;
 use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
 use crate::input::{reset_mouse_manager_state, InputManager};
@@ -59,18 +61,24 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
+pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>, registry: UniqueView<Registry>) {
     let scroll = input.mouse_manager.scroll.floor() as i32;
     
     let (_, held) = (&v_local_player, &mut vm_held_block).iter()
         .next()
         .expect("local player should have held block");
 
-    let curr_block = held.0 as u16 as i32;
+    let mut idx = 0;
+    for (i, (key, _)) in registry.iter::<Block>().enumerate() {
+        if &key == &held.0 {
+            idx = i;
+            break;
+        }
+    }
+
+    let new_block = registry.iter::<Block>().nth(idx).and_then(|(k, _)| Some(k)).unwrap_or_else(|| registry.iter::<Block>().nth(0).and_then(|(k, _)| Some(k)).unwrap_or(AIR.clone()));
     
-    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
-    
-    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
+    held.0 = new_block;
 }
 
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
@@ -142,25 +150,25 @@ pub fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
     
-    should_place &= held.0.placeable();
+    should_place &= true;
 
-    let mut update_block = |pos: BlockLocation, block: Block| {
-        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
+    let mut update_block = |pos: BlockLocation, block: ResourceKey<Block>| {
+        chunk_mgr.modify_block(&pos, block.clone()); // TODO: only create event now, modify world later?
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
     };
 
     if should_place && should_break {
-        update_block(hit_block.clone(), held.0);
+        update_block(hit_block.clone(), held.0.clone());
     } else if should_break {
-        update_block(hit_block.clone(), Block::Air);
+        update_block(hit_block.clone(), AIR.clone());
     } else if should_place {
         if let Some(prev_air) = prev_air {
             let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                update_block(prev_air.clone(), held.0);
+                update_block(prev_air.clone(), held.0.clone());
             }
         }
     }

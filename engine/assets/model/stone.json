@@ -1,6 +1,6 @@
 {
   "parent": "engine:cube_all",
   "textures": {
-    "all": "engine:cobblestone"
+    "all": "engine:stone"
   }
 }

@@ -56,14 +56,23 @@ impl Registry {
     }
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 struct Block {
     id: usize,
     name: String,
 }
+
+
 impl ResourceType for Block {
     fn resource_name() -> &'static str {
         "block"
+    }
+
+    fn default_resource() -> ResourceKey<Self>
+    where
+        Self: Sized,
+    {
+        ResourceKey::new("engine", "cobblestone")
     }
 }
 

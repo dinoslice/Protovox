@@ -1,6 +1,6 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
-use game::chunk::location::ChunkLocation;
 use crate::components::LocalPlayer;
+use crate::game::chunk::location::ChunkLocation;
 use crate::looking_at_block::LookingAtBlock;
 use crate::rendering::block_outline::BlockOutlineRenderState;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;

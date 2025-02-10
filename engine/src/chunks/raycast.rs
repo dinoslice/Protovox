@@ -1,7 +1,7 @@
 use glm::Vec3;
-use game::block::Block;
-use game::location::{BlockLocation, WorldLocation};
+use crate::base_types::AIR;
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::game::location::{BlockLocation, WorldLocation};
 
 #[derive(Debug, Clone)]
 pub struct BlockRaycastResult {
@@ -25,7 +25,7 @@ impl ChunkManager {
             // TODO: should I early return if the chunk doesn't exist? or should you be able to raycast through it?
             let block = self.get_block_ref(&block_loc)?;
 
-            if *block != Block::Air {
+            if block.clone() != AIR.clone() {
                 return Some(BlockRaycastResult {
                     hit_block: block_loc,
                     prev_air,

@@ -1,0 +1,11 @@
+{
+  "parent": "engine:cube",
+  "textures": {
+    "front": "engine:grass_side",
+    "back": "engine:grass_side",
+    "left": "engine:grass_side",
+    "right": "engine:grass_side",
+    "top": "engine:grass",
+    "bottom": "engine:dirt"
+  }
+}

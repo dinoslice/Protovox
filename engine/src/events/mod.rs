@@ -2,13 +2,15 @@ pub mod render_distance;
 pub mod event_bus;
 
 use serde::{Deserialize, Serialize};
-use game::chunk::{data::ChunkData, location::ChunkLocation};
 use shipyard::Component;
-use game::block::Block;
-use game::location::{BlockLocation, WorldLocation};
 use packet_derive::Packet;
 use packet::Packet;
+use resources::ResourceKey;
+use crate::base_types::block::Block;
 use crate::components::Transform;
+use crate::game::chunk::data::ChunkData;
+use crate::game::chunk::location::ChunkLocation;
+use crate::game::location::{BlockLocation, WorldLocation};
 pub use crate::networking::types::PacketType;
 use crate::render_distance::RenderDistance;
 
@@ -23,7 +25,7 @@ pub struct ChunkGenEvent(pub ChunkData);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::BlockUpdateEvent)]
-pub struct BlockUpdateEvent(pub BlockLocation, pub Block);
+pub struct BlockUpdateEvent(pub BlockLocation, pub ResourceKey<Block>);
 
 #[derive(Debug, Component, Packet, Serialize, Deserialize)]
 #[packet_type(PacketType::ClientInformationRequestEvent)]

@@ -5,14 +5,18 @@ use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
-use game::{block::Block, chunk::{data::ChunkData, location::ChunkLocation, pos::ChunkPos, CHUNK_SIZE}};
 use noise::{NoiseFn, Perlin};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use shipyard::Unique;
-use game::location::BlockLocation;
 use splines::easings::InOutSine;
 use splines::Spline;
+use crate::base_types::{COBBLESTONE, DEBUG, DIRT, GRASS};
 use crate::events::ChunkGenEvent;
+use crate::game::chunk::CHUNK_SIZE;
+use crate::game::chunk::data::ChunkData;
+use crate::game::chunk::location::ChunkLocation;
+use crate::game::chunk::pos::ChunkPos;
+use crate::game::location::BlockLocation;
 use crate::world_gen::params::WorldGenParams;
 
 pub type SineSpline = Spline<InOutSine>;
@@ -121,12 +125,12 @@ impl WorldGenerator {
 
                     match height as i32 - block_y {
                         0 => match block_y.cmp(&water_level) {
-                            Ordering::Greater | Ordering::Equal => out.set_block(pos, Block::Grass),
-                            Ordering::Less => out.set_block(pos, Block::Dirt),
+                            Ordering::Greater | Ordering::Equal => out.set_block(pos, GRASS.clone()),
+                            Ordering::Less => out.set_block(pos, DIRT.clone()),
                         }
-                        1..4 => out.set_block(pos, Block::Dirt),
-                        4.. => out.set_block(pos, Block::Cobblestone),
-                        _ if block_y <= water_level => out.set_block(pos, Block::Debug), // TODO: make water block
+                        1..4 => out.set_block(pos, DIRT.clone()),
+                        4.. => out.set_block(pos, COBBLESTONE.clone()),
+                        _ if block_y <= water_level => out.set_block(pos, DEBUG.clone()), // TODO: make water block
                         _ => {}, // AIR
                     }
                 }

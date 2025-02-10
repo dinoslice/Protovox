@@ -3,13 +3,13 @@ use crossbeam::channel::Sender;
 use laminar::Packet;
 use packet::Packet as _;
 use shipyard::{AllStoragesView, EntitiesView, EntitiesViewMut, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload};
-use game::chunk::data::ChunkData;
 use crate::application::exit::ExitRequested;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientChunkRequest, ClientSettingsRequestEvent, ClientTransformUpdate, ConnectionRequest, ConnectionSuccess, KickedByServer};
 use crate::events::event_bus::EventBus;
 use crate::events::render_distance::RenderDistanceUpdateEvent;
+use crate::game::chunk::data::ChunkData;
 use crate::networking::keep_alive::server_send_keep_alive;
 use crate::networking::server_connection::{client_process_network_events_multiplayer, ServerConnection};
 use crate::networking::server_handler::{server_process_network_events, ServerHandler};
@@ -191,7 +191,7 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
                 Some(cc) => {
                     use std::mem;
 
-                    assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
+                    assert_eq!(size_of::<ChunkData>(), size_of::<ChunkGenEvent>());
 
                     let gen_evt = unsafe { mem::transmute::<&ChunkData, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 

@@ -1,16 +1,22 @@
 use std::collections::HashMap;
 use serde::Deserialize;
 use shipyard::UniqueViewMut;
-use game::block::face_type::FaceType;
 use resources::{Registry, ResourceKey, ResourceType};
 use crate::base_types::{COBBLESTONE, COBBLESTONE_T, DIRT, DIRT_T};
 use crate::base_types::texture::Texture;
+use crate::game::face_type::FaceType;
 use crate::texture;
 
 #[derive(Debug, Clone)]
 pub enum ModelTextureType {
     ChildDefined(String),
     TextureResource(ResourceKey<Texture>),
+}
+
+impl Default for ModelTextureType {
+    fn default() -> Self {
+        ModelTextureType::TextureResource(ResourceKey::default())
+    }
 }
 
 impl Into<ModelTextureType> for String {
@@ -28,7 +34,7 @@ impl Into<ModelTextureType> for String {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Block {
     parent: Option<ResourceKey<Block>>,
     elements: Option<Vec<ModelElement>>,
@@ -122,9 +128,16 @@ impl ResourceType for Block {
         // TODO: check the parent thing if each of the keys for the textures match to a part of the parent/parent's parent/so on
         true
     }
+
+    fn default_resource() -> ResourceKey<Self>
+    where
+        Self: Sized,
+    {
+        ResourceKey::new("engine", "cobblestone")
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ModelElement {
     from: [f32; 3],
     to: [f32; 3],
@@ -152,7 +165,7 @@ impl ModelElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ModelElementTexture {
     uv: Option<[u32; 4]>,
     texture: ModelTextureType,

@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
 use thiserror::Error;
+use serde::{Deserialize, Serialize};
 use crate::resource_type::ResourceType;
 
 #[derive(Error, Debug)]
@@ -13,11 +14,29 @@ pub enum ResourceKeyParseFail {
     InvalidDomain
 }
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Serialize, Deserialize)]
 pub struct ResourceKey<T: ResourceType> {
     id: String,
     key: String,
     _phantom: PhantomData<T>
+}
+
+impl<T: ResourceType> PartialEq for ResourceKey<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.key == other.key
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        self.id != other.id || self.key != other.key
+    }
+}
+
+impl<T: ResourceType> Eq for ResourceKey<T> {}
+
+impl<T: ResourceType> Default for ResourceKey<T> {
+    fn default() -> Self {
+        T::default_resource()
+    }
 }
 
 impl<T: ResourceType> ResourceKey<T> {
