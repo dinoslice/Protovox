@@ -1,3 +1,4 @@
+use egui_systems::EguiSystemsPlugin;
 use engine::application::plugin_manager::PluginManager;
 use engine::VoxelEngine;
 use gizmos::GizmosPlugin;
@@ -11,5 +12,6 @@ fn main() {
             .with(&VoxelEngine)
             .with(&GizmosPlugin)
             .with(&VisualDebugPlugin)
+            .with(&EguiSystemsPlugin)
     );
 }
