@@ -6,6 +6,7 @@ use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 use egui_systems::CurrentEguiFrame;
 use engine::networking::server_handler::ServerHandler;
 use egui_systems::DuringEgui;
+use game::block::Block;
 
 extern crate nalgebra_glm as glm;
 
@@ -43,82 +44,79 @@ pub fn game_ui(
 ) {
     let ctx = egui_frame.ctx();
 
-    egui::Window::new("test")
-        .show(ctx, |ui| ui.label("hello"));
+    let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
 
-    // let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
-    //
-    // let (_, local_transform, velocity, held_block, gamemode, spec_speed) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed)
-    //     .iter()
-    //     .next()
-    //     .expect("LocalPlayer didn't have transform & held block");
-    //
-    // let mut other_pos = (!&v_local_player, &v_entity, &v_transform).iter()
-    //     .map(|e| &e.2.position)
-    //     .peekable();
-    //
-    // egui::Window::new("Entities")
-    //     .default_open(true)
-    //     .show(ctx, |ui| {
-    //         ui.heading("LocalPlayer");
-    //         ui.label(vec3_fmt("Position", &local_transform.position));
-    //         ui.label(vec3_fmt("Velocity", &velocity.0));
-    //
-    //         if other_pos.peek().is_some() {
-    //             ui.heading("Entities");
-    //
-    //             for pos in other_pos {
-    //                 ui.label(vec3_fmt("Position", pos));
-    //             }
-    //         }
-    //     });
-    //
-    // if let Some(server_handler) = opt_server_handler {
-    //     egui::Window::new("ServerHandler")
-    //         .default_open(true)
-    //         .show(ctx, |ui| {
-    //             ui.label(format!("Address: {}", server_handler.local_addr));
-    //         });
-    // }
-    //
-    // egui::Area::new("hotbar_box".into())
-    //     .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, 0.0))
-    //     .show(ctx, |ui| {
-    //         egui::Frame::none()
-    //             .fill(ui.visuals().window_fill())
-    //             .rounding(5.0)
-    //             .outer_margin(egui::Margin::same(5.0))
-    //             .inner_margin(egui::Margin::same(5.0))
-    //             .show(ui, |ui| {
-    //                 ui.style_mut()
-    //                     .text_styles
-    //                     .get_mut(&egui::TextStyle::Body)
-    //                     .expect("style to exist")
-    //                     .size = 17.5;
-    //
-    //
-    //
-    //                 ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
-    //                     Gamemode::Survival => {
-    //                         let hotbar_text = match held_block.0 {
-    //                             Block::Air => "None".into(),
-    //                             b => format!("{b:?}"),
-    //                         };
-    //
-    //                         ui.label(hotbar_text);
-    //                     }
-    //                     Gamemode::Spectator => {
-    //                         ui.label(format!("Speed: {:.2}", spec_speed.curr_speed));
-    //                     }
-    //                 });
-    //             });
-    //     });
-    //
-    // // reticle
-    // ctx.layer_painter(egui::LayerId::background())
-    //     .circle_filled(
-    //         ctx.screen_rect().center(),
-    //         2.5,
-    //         egui::Color32::from_rgba_premultiplied(192, 192, 192, 128),
-    //     );
+    let (_, local_transform, velocity, held_block, gamemode, spec_speed) = (&v_local_player, &v_transform, &v_velocity, &v_held_block, &v_gamemode, &v_spectator_speed)
+        .iter()
+        .next()
+        .expect("LocalPlayer didn't have transform & held block");
+
+    let mut other_pos = (!&v_local_player, &v_entity, &v_transform).iter()
+        .map(|e| &e.2.position)
+        .peekable();
+
+    egui::Window::new("Entities")
+        .default_open(true)
+        .show(ctx, |ui| {
+            ui.heading("LocalPlayer");
+            ui.label(vec3_fmt("Position", &local_transform.position));
+            ui.label(vec3_fmt("Velocity", &velocity.0));
+
+            if other_pos.peek().is_some() {
+                ui.heading("Entities");
+
+                for pos in other_pos {
+                    ui.label(vec3_fmt("Position", pos));
+                }
+            }
+        });
+
+    if let Some(server_handler) = opt_server_handler {
+        egui::Window::new("ServerHandler")
+            .default_open(true)
+            .show(ctx, |ui| {
+                ui.label(format!("Address: {}", server_handler.local_addr));
+            });
+    }
+
+    egui::Area::new("hotbar_box".into())
+        .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, 0.0))
+        .show(ctx, |ui| {
+            egui::Frame::none()
+                .fill(ui.visuals().window_fill())
+                .rounding(5.0)
+                .outer_margin(egui::Margin::same(5.0))
+                .inner_margin(egui::Margin::same(5.0))
+                .show(ui, |ui| {
+                    ui.style_mut()
+                        .text_styles
+                        .get_mut(&egui::TextStyle::Body)
+                        .expect("style to exist")
+                        .size = 17.5;
+
+
+
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
+                        Gamemode::Survival => {
+                            let hotbar_text = match held_block.0 {
+                                Block::Air => "None".into(),
+                                b => format!("{b:?}"),
+                            };
+
+                            ui.label(hotbar_text);
+                        }
+                        Gamemode::Spectator => {
+                            ui.label(format!("Speed: {:.2}", spec_speed.curr_speed));
+                        }
+                    });
+                });
+        });
+
+    // reticle
+    ctx.layer_painter(egui::LayerId::background())
+        .circle_filled(
+            ctx.screen_rect().center(),
+            2.5,
+            egui::Color32::from_rgba_premultiplied(192, 192, 192, 128),
+        );
 }
