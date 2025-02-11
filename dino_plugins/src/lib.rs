@@ -5,7 +5,7 @@ pub mod ident;
 pub mod path;
 
 pub trait DinoPlugin<I, P: Identifiable<I>, W, M: Identifiable<I>> {
-    fn instructions(&self, phase: P) -> Option<W> {
+    fn instructions(&self, _phase: P) -> Option<W> {
         None
     }
 

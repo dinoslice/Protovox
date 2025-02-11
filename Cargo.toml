@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "engine",
     "dino_plugins",
-    "game",
     "packet",
     "packet_derive",
     "splines",

@@ -29,7 +29,7 @@ pub struct VoxelEngine;
 
 impl DinoEnginePlugin for VoxelEngine {
     fn register_resources(&self) -> Option<Workload> {
-        crate::base_types::block::model
+        crate::base_types::register_engine_resources
             .into_sequential_workload()
             .into()
     }
@@ -49,7 +49,6 @@ impl DinoEnginePlugin for VoxelEngine {
             initialize_gameplay_systems,
             initialize_networking,
             set_window_title,
-            crate::base_types::block::model,
         )
             .into_sequential_workload()
             .into()

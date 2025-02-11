@@ -1,8 +1,10 @@
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 use std::time::Duration;
 use glm::IVec3;
 use hashbrown::HashMap;
 use shipyard::{EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
+use tracing::debug;
 use wgpu::util::DeviceExt;
 use resources::{Registry, ResourceKey};
 use crate::application::delta_time::LastDeltaTime;
@@ -251,6 +253,7 @@ pub fn chunk_manager_update_and_request(
     v_transform: View<Transform>,
     registry: UniqueView<Registry>
 ) {
+
     let (transform, render_dist, ..) = (&v_transform, &v_render_dist, &vm_local_player)
         .iter()
         .next()

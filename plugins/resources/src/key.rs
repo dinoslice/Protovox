@@ -1,8 +1,9 @@
+use crate::resource_type::ResourceType;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Formatter};
 use std::marker::PhantomData;
+use std::sync::Arc;
 use thiserror::Error;
-use serde::{Deserialize, Serialize};
-use crate::resource_type::ResourceType;
 
 #[derive(Error, Debug)]
 pub enum ResourceKeyParseFail {
@@ -14,60 +15,60 @@ pub enum ResourceKeyParseFail {
     InvalidDomain
 }
 
+pub type ResourceKey<T: ResourceType + Sized> = Arc<ResourceIdent<T>>;
+
 #[derive(Clone, Hash, Serialize, Deserialize)]
-pub struct ResourceKey<T: ResourceType> {
-    id: String,
-    key: String,
+pub struct ResourceIdent<T: ResourceType + Sized> {
+    data: Box<str>,
     _phantom: PhantomData<T>
 }
 
-impl<T: ResourceType> PartialEq for ResourceKey<T> {
+impl<T: ResourceType> PartialEq for ResourceIdent<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.key == other.key
+        self.id() == other.id() && self.key() == other.key()
     }
 
     fn ne(&self, other: &Self) -> bool {
-        self.id != other.id || self.key != other.key
+        self.id() != other.id() || self.key() != other.key()
     }
 }
 
-impl<T: ResourceType> Eq for ResourceKey<T> {}
+impl<T: ResourceType> Eq for ResourceIdent<T> {}
 
-impl<T: ResourceType> Default for ResourceKey<T> {
+impl<T: ResourceType> Default for ResourceIdent<T> {
     fn default() -> Self {
         T::default_resource()
     }
 }
 
-impl<T: ResourceType> ResourceKey<T> {
-    pub fn new(id: impl Into<String>, key: impl Into<String>) -> ResourceKey<T> {
+impl<T: ResourceType> ResourceIdent<T> {
+    pub fn new(id: impl Into<String>, key: impl Into<String>) -> ResourceIdent<T> {
         Self {
-            id: id.into(),
-            key: key.into(),
+            data: format!("{}:{}", id.into(), key.into()).into_boxed_str(),
             _phantom: PhantomData::<T>
         }
     }
     
-    pub fn id(&self) -> &String {
-        &self.id
+    pub fn id(&self) -> String {
+        self.data.split(":").nth(0).unwrap().to_string()
     }
     
-    pub fn key(&self) -> &String {
-        &self.key
+    pub fn key(&self) -> String {
+        self.data.split(":").nth(1).unwrap().to_string()
     }
 }
 
-impl<T: ResourceType> Display for ResourceKey<T> {
+impl<T: ResourceType> Display for ResourceIdent<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}/{}", self.id, T::resource_name(), self.key)
+        write!(f, "{}:{}/{}", self.id(), T::resource_name(), self.key())
     }
 }
-impl<T: ResourceType> Debug for ResourceKey<T> {
+impl<T: ResourceType> Debug for ResourceIdent<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ResourceKey<{}> {{ {}, {} }}", T::resource_name(), self.id, self.key)
+        write!(f, "ResourceKey<{}> {{ {}, {} }}", T::resource_name(), self.id(), self.key())
     }
 }
-impl<T: ResourceType> TryFrom<&String> for ResourceKey<T> {
+impl<T: ResourceType> TryFrom<&String> for ResourceIdent<T> {
     type Error = ResourceKeyParseFail;
 
     fn try_from(value: &String) -> Result<Self, Self::Error> {
@@ -83,8 +84,7 @@ impl<T: ResourceType> TryFrom<&String> for ResourceKey<T> {
         
         match domain_split.len() { 
             1 => Ok(Self {
-                id: id_split[0].into(),
-                key: domain_split[0].into(),
+                data: format!("{}:{}", id_split[0], domain_split[0]).into_boxed_str(),
                 _phantom: PhantomData::<T>
             }),
             2 => {
@@ -92,8 +92,7 @@ impl<T: ResourceType> TryFrom<&String> for ResourceKey<T> {
                     Err(ResourceKeyParseFail::InvalidDomain)
                 } else {
                     Ok(Self {
-                        id: id_split[0].into(),
-                        key: domain_split[1].into(),
+                        data: format!("{}:{}", id_split[0], domain_split[1]).into_boxed_str(),
                         _phantom: PhantomData::<T>
                     })
                 }

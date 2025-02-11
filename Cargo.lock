@@ -1086,20 +1086,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game"
-version = "0.1.0"
-dependencies = [
- "nalgebra",
- "nalgebra-glm",
- "num-traits",
- "serde",
- "serde-big-array",
- "shipyard",
- "strum",
- "thiserror 2.0.3",
-]
-
-[[package]]
 name = "gethostname"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,5 +1,6 @@
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use shipyard::UniqueViewMut;
+use tracing::debug;
 use resources::ResourceKey;
 use crate::base_types::block::Block;
 use crate::base_types::texture::Texture;
@@ -13,13 +14,13 @@ pub mod texture;
 macro_rules! generate_keys {
     ($($resource:ident $name:ident = $gen:expr),* $(,)?) => {
         $(
-            pub const $name: LazyLock<ResourceKey<$resource>> = LazyLock::new(|| $gen);
+            pub const $name: LazyLock<Arc<ResourceKey<$resource>>> = LazyLock::new(|| Arc::new($gen));
         )*
     };
 }
 
 generate_keys!(
-    Block COBBLESTONE = ResourceKey::new("engine", "cobblestone"),
+    Block COBBLESTONE = ResourceIdent::new("engine", "cobblestone"),
     Texture COBBLESTONE_T = ResourceKey::new("engine", "cobblestone"),
 
     Block DIRT = ResourceKey::new("engine", "dirt"),
@@ -42,22 +43,28 @@ generate_keys!(
 );
 
 pub fn register_engine_resources(mut registry: UniqueViewMut<Registry>) {
-    registry.register(COBBLESTONE.clone(), model!("../../assets/model/cobblestone.json"));
+    registry.register(COBBLESTONE, model!("../../assets/model/cobblestone.json"));
+    registry.register(COBBLESTONE_T, texture!("../../assets/texture/cobblestone.png"));
     registry.register(ResourceKey::new("engine", "cube"), model!("../../assets/model/cube.json"));
     registry.register(ResourceKey::new("engine", "cube_all"), model!("../../assets/model/cube_all.json"));
-    registry.register(SELECTION_OUTLINE.clone(), texture!("../../assets/texture/selection.png"));
+    registry.register(SELECTION_OUTLINE, texture!("../../assets/texture/selection.png"));
 
-    registry.register(DEBUG.clone(), model!("../../assets/model/debug.json"));
-    registry.register(DEBUG_BLUE.clone(), texture!("../../assets/texture/debug_blue.png"));
-    registry.register(DEBUG_RED.clone(), texture!("../../assets/texture/debug_red.png"));
-    registry.register(DEBUG_GREEN.clone(), texture!("../../assets/texture/debug_green.png"));
+    registry.register(DIRT, model!("../../assets/model/dirt.json"));
+    registry.register(DIRT_T, texture!("../../assets/texture/dirt.png"));
 
-    registry.register(STONE.clone(), model!("../../assets/model/stone.json"));
-    registry.register(STONE_T.clone(), texture!("../../assets/texture/stone.png"));
+    registry.register(DEBUG, model!("../../assets/model/debug.json"));
+    registry.register(DEBUG_BLUE, texture!("../../assets/texture/debug_blue.png"));
+    registry.register(DEBUG_RED, texture!("../../assets/texture/debug_red.png"));
+    registry.register(DEBUG_GREEN, texture!("../../assets/texture/debug_green.png"));
 
-    registry.register(GRASS.clone(), model!("../../assets/model/grass.json"));
-    registry.register(GRASS_SIDE.clone(), texture!("../../assets/texture/grass_side.png"));
-    registry.register(GRASS_T.clone(), texture!("../../assets/texture/grass.png"));
+    registry.register(STONE, model!("../../assets/model/stone.json"));
+    registry.register(STONE_T, texture!("../../assets/texture/stone.png"));
+
+    registry.register(GRASS, model!("../../assets/model/grass.json"));
+    registry.register(GRASS_SIDE, texture!("../../assets/texture/grass_side.png"));
+    registry.register(GRASS_T, texture!("../../assets/texture/grass.png"));
+
+    debug!("Registered base engine types")
 }
 
 pub fn test() {

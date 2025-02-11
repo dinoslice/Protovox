@@ -1,5 +1,6 @@
 use std::array;
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View};
+use tracing::debug;
 use resources::Registry;
 use crate::base_types::SELECTION_OUTLINE;
 use crate::components::LocalPlayer;

@@ -1,5 +1,6 @@
 use glm::Vec3;
 use shipyard::{IntoIter, UniqueView, View, ViewMut};
+use tracing::debug;
 use crate::application::delta_time::LastDeltaTime;
 use crate::base_types::AIR;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -17,6 +18,7 @@ pub fn move_with_collision(
 
     delta_time: UniqueView<LastDeltaTime>,
 ) {
+
     for (hitbox, transform, vel, _, is_on_ground) in (&vm_hitbox, &mut vm_transform, &mut vm_velocity, &vm_entity, &mut vm_is_on_ground).iter() {
         let half_hitbox = hitbox.0 * 0.5;
 

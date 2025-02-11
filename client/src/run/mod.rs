@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Instant;
 use shipyard::{UniqueView, World};
 use tracing::error;
 use wgpu::SurfaceError;
@@ -7,13 +6,12 @@ use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use engine::application::{capture_state, delta_time};
+use engine::application::capture_state;
 use engine::application::exit::{request_exit, ExitRequested};
 use engine::application::plugin_manager::PluginManager;
 use engine::rendering::graphics_context::GraphicsContext;
 use core_workloads::{startup_core, update_core};
 use strck::IntoCk;
-use dino_plugins::engine::EnginePhase;
 use dino_plugins::path;
 use resources::Registry;
 

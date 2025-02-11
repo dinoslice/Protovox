@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use shipyard::UniqueView;
 use resources::Registry;
 use crate::base_types::AIR;
@@ -22,22 +23,22 @@ impl ChunkMesh {
 
             let block = chunk.get_block(pos);
 
-            if block == AIR.clone() {
+            if block == AIR.deref() {
                 continue;
             }
 
             for ft in FaceType::ALL {
                 if let Some(adj) = pos.adjacent_to_face(ft) {
-                    if chunk.get_block(adj) != AIR.clone() {
+                    if chunk.get_block(adj) != AIR.deref() {
                         continue;
                     }
                 }
 
-                let tex = registry.get(&block).unwrap();
+                let tex = registry.get(&block).expect(format!("block {} did not have an associated model", block).as_str());
                 let tex = tex.get_texture(ft, registry);
-                let tex = registry.get(&tex).unwrap();
+                let tex = registry.get(&tex).and_then(|tex| Some(tex.atlas_id)).unwrap_or_default();
 
-                faces.push(FaceData::new(pos, ft, tex.atlas_id));
+                faces.push(FaceData::new(pos, ft, tex));
             }
         }
 
@@ -48,12 +49,12 @@ impl ChunkMesh {
     pub fn from_chunk_unoptimized(chunk: &ChunkData, registry: &Registry) -> Self {
         let non_air_block_count = chunk.blocks
             .iter()
-            .filter(|b| **b != AIR.clone())
+            .filter(|b| **b != *AIR)
             .count();
 
         let mut faces = Vec::with_capacity(non_air_block_count);
 
-        for (pos, block) in chunk.blocks.iter().enumerate().filter(|(_, b)| **b != AIR.clone()) {
+        for (pos, block) in chunk.blocks.iter().enumerate().filter(|(_, b)| **b != *AIR) {
             assert_eq!(chunk.blocks.len(), u16::MAX as usize + 1, "size of ChunkBlocks changed");
             let pos = pos.try_into().expect("index should fit into u16");
 

@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use shipyard::{Unique, UniqueView};
+use tracing::debug;
 
 #[derive(Unique, PartialEq, Eq, Debug, Hash, strum::Display)]
 pub enum Environment {

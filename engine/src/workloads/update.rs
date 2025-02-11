@@ -1,7 +1,10 @@
+use std::thread::sleep;
+use std::time::Duration;
 use glm::Vec3;
 use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
 use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
+use tracing::debug;
 use resources::{Registry, ResourceKey};
 use crate::base_types::AIR;
 use crate::base_types::block::Block;
@@ -11,6 +14,7 @@ use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, 
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
+use crate::game::chunk::data::ChunkData;
 use crate::game::location::BlockLocation;
 use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
 use crate::input::action_map::Action;
