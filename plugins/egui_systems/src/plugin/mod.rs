@@ -29,6 +29,8 @@ impl DinoEnginePlugin for EguiSystemsPlugin {
             render_end.tag(path!({self}::{EnginePhase::Render}::render_end)),
         )
             .into_sequential_workload()
+            .after_all(path!({VoxelEngine}::{EnginePhase::Render}::render_world))
+            .before_all(path!({VoxelEngine}::{EnginePhase::Render}::submit_rendered_frame))
             .into()
     }
 
