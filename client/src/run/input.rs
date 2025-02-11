@@ -13,11 +13,11 @@ pub fn mouse_motion(delta: (f64, f64), capture: UniqueView<CaptureState>, mut in
 }
 
 pub fn input(event: &WindowEvent, mut input_manager: UniqueViewMut<InputManager>, mut last_frame_events: UniqueViewMut<LastFrameEvents>, capture: UniqueView<CaptureState>) -> bool {
+    last_frame_events.0.push(event.clone());
+
     if !capture.is_captured() {
         return false;
     }
-
-    last_frame_events.0.push(event.clone());
     
     match event {
         WindowEvent::KeyboardInput {

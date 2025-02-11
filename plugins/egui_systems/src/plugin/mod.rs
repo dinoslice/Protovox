@@ -1,8 +1,8 @@
-
-use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, Workload, WorkloadModificator};
+use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use dino_plugins::path;
+use engine::input::last_frame_events::LastFrameEvents;
 use engine::rendering::graphics_context::GraphicsContext;
 use engine::VoxelEngine;
 use crate::renderer::EguiRenderer;
@@ -17,6 +17,12 @@ impl DinoEnginePlugin for EguiSystemsPlugin {
     fn early_startup(&self) -> Option<Workload> {
         initialize_renderer
             .after_all(path!({VoxelEngine}::{EnginePhase::EarlyStartup}::rendering::initialize))
+            .into_workload()
+            .into()
+    }
+
+    fn late_update(&self) -> Option<Workload> {
+        process_events
             .into_workload()
             .into()
     }
@@ -45,4 +51,12 @@ impl DinoEnginePlugin for EguiSystemsPlugin {
 
 fn initialize_renderer(g_ctx: UniqueView<GraphicsContext>, all_storages: AllStoragesView) {
     all_storages.add_unique(EguiRenderer::new(&g_ctx.device, g_ctx.config.format, None, 1, &g_ctx.window))
+}
+
+fn process_events(g_ctx: UniqueView<GraphicsContext>, last_frame_events: UniqueView<LastFrameEvents>, mut egui_renderer: UniqueViewMut<EguiRenderer>) {
+    let window = &g_ctx.window;
+
+    for evt in &last_frame_events.0 {
+        egui_renderer.handle_input(window, evt);
+    }
 }

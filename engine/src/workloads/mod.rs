@@ -122,7 +122,6 @@ impl DinoEnginePlugin for VoxelEngine {
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
             place_break_blocks.skip_if(local_player_is_gamemode_spectator),
-            clear_last_frame_events,
         ).into_sequential_workload()
             .into()
     }

@@ -5,7 +5,7 @@ use engine::application::CaptureState;
 use engine::application::delta_time::LastDeltaTime;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
-use engine::input::last_frame_events::LastFrameEvents;
+use engine::input::last_frame_events::{clear_last_frame_events, LastFrameEvents};
 use engine::input::mouse_manager::MouseManager;
 use engine::rendering::graphics_context::GraphicsContext;
 
@@ -29,6 +29,11 @@ pub fn update_core() -> Workload {
         update_input_manager,
         toggle_fullscreen,
     ).into_workload()
+}
+
+pub fn post_update_core() -> Workload {
+    clear_last_frame_events
+        .into_workload()
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
