@@ -1,0 +1,18 @@
+[package]
+name = "debug_ui"
+version  = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+dino_plugins = { path = "../../dino_plugins" }
+strck = "1.0.0"
+engine = { path = "../../engine" }
+game = { path = "../../game" }
+shipyard = { workspace = true }
+egui_systems = { path = "../egui_systems" }
+egui = "0.28.1"
+nalgebra-glm = { workspace = true }
+
+[lints]
+workspace = true

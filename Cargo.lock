@@ -782,6 +782,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "debug_ui"
+version = "0.1.0"
+dependencies = [
+ "dino_plugins",
+ "egui",
+ "egui_systems",
+ "engine",
+ "game",
+ "nalgebra-glm",
+ "shipyard",
+ "strck",
+]
+
+[[package]]
 name = "dino_plugins"
 version = "0.1.0"
 dependencies = [
