@@ -17,9 +17,6 @@ mod texture_atlas;
 pub mod sized_buffer;
 pub mod block_outline;
 pub mod world;
-pub mod egui;
-
-pub use egui::EguiRenderer;
 
 pub fn initialize() -> Workload {
     (
@@ -30,6 +27,5 @@ pub fn initialize() -> Workload {
         ).into_workload(),
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
-        egui::initialize_egui_renderer,
     ).into_sequential_workload()
 }

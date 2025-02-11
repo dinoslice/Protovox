@@ -11,7 +11,7 @@ use engine::application::{capture_state, delta_time};
 use engine::application::exit::{request_exit, ExitRequested};
 use engine::application::plugin_manager::PluginManager;
 use engine::rendering::graphics_context::GraphicsContext;
-use core_workloads::{startup_core, update_core};
+use core_workloads::{startup_core, update_core, post_update_core};
 use strck::IntoCk;
 use dino_plugins::engine::EnginePhase;
 use dino_plugins::path;
@@ -35,6 +35,7 @@ pub fn run(plugin_manager: PluginManager) {
 
     world.add_workload(startup_core);
     world.add_workload(update_core);
+    world.add_workload(post_update_core);
 
     // create window and event loop
     let event_loop = EventLoopBuilder::new().build()
@@ -74,6 +75,9 @@ pub fn run(plugin_manager: PluginManager) {
 
                         world.run_workload(path!({client}::update))
                             .expect("TODO: failed to run update workload");
+
+                        world.run_workload(post_update_core)
+                            .expect("TODO: panic message");
 
                         if let Err(err) = world.run_workload(path!({client}::render)) {
                             match err

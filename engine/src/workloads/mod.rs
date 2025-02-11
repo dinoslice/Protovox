@@ -1,4 +1,4 @@
-use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload};
+use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
@@ -6,6 +6,7 @@ use crate::{args, rendering};
 use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::gamemode::local_player_is_gamemode_spectator;
+use crate::input::last_frame_events::clear_last_frame_events;
 use crate::input::reset_mouse_manager_state;
 use crate::networking::{client_acknowledge_connection_success, client_handle_kicked_by_server, client_request_chunks_from_server, client_send_block_updates, client_send_settings, client_update_position, server_broadcast_block_updates, server_broadcast_chunks, server_handle_client_chunk_reqs, server_process_client_connection_req, server_process_render_dist_update, server_request_client_settings, server_update_client_transform};
 use crate::networking::keep_alive::server_send_keep_alive;
@@ -31,7 +32,7 @@ impl DinoEnginePlugin for VoxelEngine {
     fn early_startup(&self) -> Option<Workload> {
         (
             args::parse_env,
-            rendering::initialize,
+            rendering::initialize.tag(path!({self}::{EnginePhase::EarlyStartup}::rendering::initialize)),
             initialize_local_player,
         )
             .into_sequential_workload()
@@ -144,7 +145,6 @@ impl DinoEnginePlugin for VoxelEngine {
             // -- RENDER -- //
             world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
             block_outline::render_block_outline,
-            render::egui::render_egui.tag(path!({plugin}::{EnginePhase::Render}::render_egui)), // -- RENDER UI -- //
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()
