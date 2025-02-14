@@ -139,3 +139,16 @@ fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
         KeepAlive => false,
     });
 }
+
+impl egui::Widget for &ServerConnection {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        use egui::*;
+
+        let mut response = ui.allocate_response(Vec2::ZERO, Sense::hover());
+
+        response |= ui.heading("Server Connection");
+        response |= ui.label(format!("{}", self.server_addr));
+
+        response
+    }
+}
