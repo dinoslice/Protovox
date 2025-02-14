@@ -526,6 +526,7 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "debug_ui",
  "dino_plugins",
  "egui_systems",
  "engine",

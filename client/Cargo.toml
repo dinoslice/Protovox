@@ -21,6 +21,7 @@ gizmos = { path = "../plugins/gizmos" }
 visual_debug = { path = "../plugins/visual_debug" }
 egui_systems = { path = "../plugins/egui_systems" }
 game_ui = { path = "../plugins/game_ui" }
+debug_ui = { path = "../plugins/debug_ui" }
 
 [lints]
 workspace = true

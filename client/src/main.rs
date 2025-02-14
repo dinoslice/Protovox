@@ -1,3 +1,4 @@
+use debug_ui::DebugUiPlugin;
 use egui_systems::EguiSystemsPlugin;
 use engine::application::plugin_manager::PluginManager;
 use engine::VoxelEngine;
@@ -15,5 +16,6 @@ fn main() {
             .with(&VisualDebugPlugin)
             .with(&EguiSystemsPlugin)
             .with(&GameUiPlugin)
+            .with(&DebugUiPlugin)
     );
 }
