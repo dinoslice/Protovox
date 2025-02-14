@@ -207,3 +207,23 @@ fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
         ClientTransformUpdate =>,
     });
 }
+
+impl egui::Widget for &ServerHandler {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        use egui::*;
+
+        let mut response = ui.allocate_response(Vec2::ZERO, Sense::hover());
+
+        response |= ui.label(format!("Address: {}", self.local_addr));
+
+        if !self.clients.is_empty() {
+            ui.collapsing("Clients", |ui| {
+                for (addr, id) in &self.clients {
+                    response |= ui.label(format!("{addr} -> {id:?}"));
+                }
+            });
+        }
+
+        response
+    }
+}
