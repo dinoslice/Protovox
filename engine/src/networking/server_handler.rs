@@ -214,6 +214,8 @@ impl egui::Widget for &ServerHandler {
 
         let mut response = ui.allocate_response(Vec2::ZERO, Sense::hover());
 
+        response |= ui.heading("Server Handler");
+
         response |= ui.label(format!("Address: {}", self.local_addr));
 
         if !self.clients.is_empty() {

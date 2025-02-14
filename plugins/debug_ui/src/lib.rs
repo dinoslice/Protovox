@@ -31,8 +31,7 @@ fn egui(
     if let Some(server_handler) = opt_server_handler {
         egui::Window::new("Debug")
             .show(egui_frame.ctx(), |ui| {
-                ui.heading("Server Handler");
-                ui.add(server_handler.as_ref());
+                ui.add(server_handler.as_ref())
             });
     }
 }
