@@ -269,6 +269,40 @@ pub fn chunk_manager_update_and_request(
     chunk_mgr.unload_chunks(player_info_vec);
 }
 
+impl egui::Widget for &mut ChunkManager {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        use egui::*;
+
+        let mut dont_bake_ct = 0;
+        let mut needs_baking_ct = 0;
+        let mut baked_ct = 0;
+
+        for val in self.loaded.values() {
+            match val.bake {
+                BakeState::DontBake => dont_bake_ct += 1,
+                BakeState::NeedsBaking => needs_baking_ct += 1,
+                BakeState::Baked => baked_ct += 1,
+            }
+        }
+
+        let mut response = ui.allocate_response(Vec2::ZERO, Sense::hover());
+
+        response |= ui.heading("Chunk Manager");
+
+        response |= ui.label(
+            format!(
+                "Baked: {baked_ct}\nNeeds Baking: {needs_baking_ct}\nDon't Bake: {dont_bake_ct}\nTotal: {}",
+                dont_bake_ct + needs_baking_ct + baked_ct)
+        );
+
+        if ui.button("Drop all chunks").clicked() {
+            self.reset();
+        }
+
+        response
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use glm::IVec3;

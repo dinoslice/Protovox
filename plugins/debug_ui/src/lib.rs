@@ -1,7 +1,8 @@
-use shipyard::{IntoWorkload, UniqueView, Workload};
+use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 use egui_systems::{CurrentEguiFrame, DuringEgui, EguiSystemsPlugin};
+use engine::chunks::chunk_manager::ChunkManager;
 use engine::networking::server_connection::ServerConnection;
 use engine::networking::server_handler::ServerHandler;
 use engine::VoxelEngine;
@@ -29,6 +30,8 @@ fn egui(
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
     opt_server_connection: Option<UniqueView<ServerConnection>>,
+
+    mut chunk_manager: UniqueViewMut<ChunkManager>,
 ) {
     egui::Window::new("Debug")
         .show(egui_frame.ctx(), |ui| {
@@ -39,5 +42,7 @@ fn egui(
             if let Some(server_connection) = opt_server_connection {
                 ui.add(server_connection.as_ref());
             }
+
+            ui.add(chunk_manager.as_mut());
         });
 }
