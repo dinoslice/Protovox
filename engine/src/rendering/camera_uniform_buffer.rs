@@ -1,8 +1,8 @@
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, View};
-use wgpu::util::DeviceExt;
 use crate::camera::Camera;
 use crate::components::{LocalPlayer, Transform};
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::shader_cam::ShaderCam;
 
 #[derive(Unique)]
 pub struct CameraUniformBuffer {
@@ -13,18 +13,14 @@ pub struct CameraUniformBuffer {
 
 impl CameraUniformBuffer {
     pub fn new(g_ctx: &GraphicsContext) -> Self {
-        Self::new_with_initial_buffer(g_ctx, &[[0.0; 4]; 4])
-    }
-
-    // TODO: don't initialize?
-    pub fn new_with_initial_buffer(g_ctx: &GraphicsContext, initial_uniform: &[[f32; 4]; 4]) -> Self {
         // buffer to hold the camera matrix
-        let buffer = g_ctx.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
+        let buffer = g_ctx.device.create_buffer(
+            &wgpu::BufferDescriptor {
                 label: Some("camera_uniform_buffer"),
-                contents: bytemuck::cast_slice(initial_uniform),
                 // use the buffer in a uniform in a bind group, copy_dst -> it can be written to in bind group
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                size: size_of::<ShaderCam>() as _,
+                mapped_at_creation: false,
             }
         );
 
@@ -34,7 +30,7 @@ impl CameraUniformBuffer {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX, // only need the camera in the vertex shader
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform, // var<uniform> in wgsl
                             has_dynamic_offset: false,
@@ -65,8 +61,8 @@ impl CameraUniformBuffer {
         }
     }
 
-    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &[[f32; 4]; 4]) {
-        g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(uniform));
+    pub fn update_buffer(&self, g_ctx: &GraphicsContext, uniform: &ShaderCam) {
+        g_ctx.queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(uniform));
     }
 }
 
@@ -86,5 +82,7 @@ pub fn update_camera_uniform_buffer(
         .next()
         .expect("TODO: local player did not have camera to render to");
 
-    cam_uniform_buffer.update_buffer(&g_ctx, &render_cam.as_uniform(transform));
+    let shader_cam = ShaderCam::from_camera_and_transform(render_cam, transform).expect("view & proj matrices should be invertible");
+
+    cam_uniform_buffer.update_buffer(&g_ctx, &shader_cam);
 }

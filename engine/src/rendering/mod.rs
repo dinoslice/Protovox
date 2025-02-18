@@ -17,6 +17,8 @@ mod texture_atlas;
 pub mod sized_buffer;
 pub mod block_outline;
 pub mod world;
+pub mod shader_cam;
+pub mod skybox;
 
 pub fn initialize() -> Workload {
     (
@@ -25,6 +27,7 @@ pub fn initialize() -> Workload {
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,
         ).into_workload(),
+        skybox::initialize_skybox,
         world::initialize_world_render_state,
         initialize_block_outline_render_state,
     ).into_sequential_workload()

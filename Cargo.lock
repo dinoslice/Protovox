@@ -782,6 +782,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_more"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "dino_plugins"
 version = "0.1.0"
 dependencies = [
@@ -1090,6 +1110,7 @@ dependencies = [
 name = "game"
 version = "0.1.0"
 dependencies = [
+ "derive_more",
  "nalgebra",
  "nalgebra-glm",
  "num-traits",
@@ -1889,6 +1910,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26aecdf64b707efd1310e3544d709c5c0ac61c13756046aaaba41be5c4f66a3b"
 dependencies = [
  "approx",
+ "bytemuck",
  "matrixmultiply",
  "nalgebra-macros",
  "num-complex",
@@ -3350,7 +3372,9 @@ version = "0.1.0"
 dependencies = [
  "dino_plugins",
  "engine",
+ "game",
  "gizmos",
+ "nalgebra-glm",
  "shipyard",
  "strck",
 ]

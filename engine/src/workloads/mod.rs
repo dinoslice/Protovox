@@ -143,6 +143,7 @@ impl DinoEnginePlugin for VoxelEngine {
 
         (
             // -- RENDER -- //
+            render::skybox::render_skybox,
             world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
             block_outline::render_block_outline,
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),

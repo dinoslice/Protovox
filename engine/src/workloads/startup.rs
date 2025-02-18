@@ -34,7 +34,7 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
         Velocity::default(),
         PlayerSpeed::default(),
         Camera {
-            offset: Vec3::new(0.0, 0.5, 0.0),
+            offset: Vec3::new(0.0, 0.5, 0.0), // TODO: spawning in in free space causes gravity to not work
             perspective: Perspective3::new(
                 aspect,
                 70.0f32.to_radians(),
@@ -59,7 +59,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
         .next()
         .expect("TODO: local player with transform should exist");
 
-    storages.add_unique(ChunkManager::new_with_expected_render_distance(6, render_dist));
+    storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
 }
 

@@ -31,7 +31,7 @@ pub fn update_block_outline_buffer(
 
     let chunk_pos = ChunkPos::from(&raycast.hit_block);
 
-    const BLOCK_OUTLINE_TEXTURE_ID: TextureId = 5;
+    const BLOCK_OUTLINE_TEXTURE_ID: TextureId = 4;
 
     let faces: [_; 6] = array::from_fn(|ty| FaceData::new(chunk_pos, FaceType::ALL[ty], BLOCK_OUTLINE_TEXTURE_ID));
 

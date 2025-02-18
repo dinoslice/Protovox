@@ -10,6 +10,8 @@ strck = "1.0.0"
 engine = { path = "../../engine" }
 shipyard = { workspace = true }
 gizmos = { path = "../gizmos" }
+game = { path = "../../game" }
+nalgebra-glm = { workspace = true }
 
 [lints]
 workspace = true

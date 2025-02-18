@@ -45,7 +45,7 @@ pub struct PointGizmo {
 
 pub type GizmoColor = Rgb<f32>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct GizmoStyle {
     pub stroke_color: GizmoColor,
     // pub stroke_width: f32, TODO: figure out how to draw line thickness
@@ -62,7 +62,7 @@ impl GizmoStyle {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum GizmoLifetime {
     SingleFrame,
     Persistent(Duration)
