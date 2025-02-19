@@ -17,6 +17,9 @@ type DeserializerServer = fn(&[u8], EntityId, &mut AllStorages) -> Option<()>; /
 
 pub use type_id::{PacketIdentifier, UntypedPacketIdentifier};
 
+// TODO(urgent): need to make sure identifiers are synced between client and server?
+// packets are order dependent? maybe send over hash? reserve Id of 1 for this packet?
+// if not synced, try to fix or kick player if not possible
 #[derive(Debug, Default, Clone, Unique)]
 pub struct PacketRegistry { // TODO: only needs one of DeserializerClient or DeserializerServer
     map: Vec<(DeserializerClient, DeserializerServer)>, // TypeIdentifier -> Deserializer
