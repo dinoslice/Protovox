@@ -52,6 +52,7 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
         "debug_red",
         "debug_green",
         "debug_blue",
+        "log",
     ];
 
     let loaded_textures = textures.map(|key| {

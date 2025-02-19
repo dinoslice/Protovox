@@ -49,7 +49,7 @@ impl Block {
                 FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
                 FaceType::Front | FaceType::Back => DEBUG_GREEN,
             },
-            Block::Log => DEBUG_RED,
+            Block::Log => LOG,
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => DEBUG_RED,
         };

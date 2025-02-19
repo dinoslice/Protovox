@@ -8,3 +8,4 @@ pub const BLOCK_OUTLINE: TextureId = 4;
 pub const DEBUG_RED: TextureId = 5;
 pub const DEBUG_GREEN: TextureId = 6;
 pub const DEBUG_BLUE: TextureId = 7;
+pub const LOG: TextureId = 8;
