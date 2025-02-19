@@ -1,6 +1,16 @@
 [workspace]
 resolver = "2"
-members = ["client", "game", "packet", "packet_derive", "splines"]
+members = [
+    "engine",
+    "dino_plugins",
+    "game",
+    "packet",
+    "packet_derive",
+    "splines",
+    "client",
+
+    "plugins/*"
+]
 
 [workspace.package]
 name = "voxel_game"
@@ -9,12 +19,13 @@ edition = "2021"
 authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 
 [workspace.dependencies]
-nalgebra = { version = "0.33.2", features = ["serde-serialize"] }
+nalgebra = { version = "0.33.2", features = ["serde-serialize", "bytemuck"] }
 nalgebra-glm = "0.19.0"
 thiserror = "2.0.3"
 shipyard = "0.7.4"
 strum = { version = "0.26.3", features = ["derive", "strum_macros"] }
 serde = { version = "1.0.209", features = ["derive"] }
+tracing = "0.1.40"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
