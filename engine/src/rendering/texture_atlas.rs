@@ -1,39 +1,11 @@
 use std::fs;
 use std::num::NonZeroU32;
-use egui::epaint;
 use shipyard::{AllStoragesView, Unique, UniqueView};
-use game::texture_ids::TextureId;
 use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
-pub struct EguiTextureAtlasViews(Box<[epaint::TextureId]>);
-
-impl EguiTextureAtlasViews {
-    pub fn from_texture_atlas(texture_atlas: &TextureAtlas, g_ctx: &GraphicsContext, egui_renderer: &mut egui_wgpu::Renderer) -> Self {
-        let mut texture_ids = Vec::new();
-
-        for i in 0..texture_atlas.num_textures {
-            let view = texture_atlas.texture_atlas.texture.create_view(&wgpu::TextureViewDescriptor {
-                dimension: Some(wgpu::TextureViewDimension::D2),
-                base_array_layer: i as _,
-                .. Default::default()
-            });
-
-            texture_ids.push(egui_renderer.register_native_texture(&g_ctx.device, &view, wgpu::FilterMode::Nearest));
-        }
-
-        Self(texture_ids.into())
-    }
-
-    pub fn get_from_texture_id(&self, id: TextureId) -> Option<epaint::TextureId> {
-        self.0.get(id as usize).copied()
-    }
-}
-
-#[derive(Unique)]
 pub struct TextureAtlas {
-    #[allow(dead_code)]
     pub texture_atlas: Texture,
     pub bind_group: wgpu::BindGroup,
     pub bind_group_layout: wgpu::BindGroupLayout,

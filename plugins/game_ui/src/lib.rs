@@ -9,6 +9,7 @@ use egui_systems::DuringEgui;
 use game::block::Block;
 
 extern crate nalgebra_glm as glm;
+mod egui_views;
 
 pub struct GameUiPlugin;
 
