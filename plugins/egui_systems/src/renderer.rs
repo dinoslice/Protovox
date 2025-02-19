@@ -1,4 +1,4 @@
-use egui::Context;
+use egui::{epaint, Context};
 use egui_wgpu::Renderer;
 use egui_winit::State;
 use shipyard::Unique;
@@ -7,8 +7,8 @@ use winit::window::Window;
 
 #[derive(Unique)]
 pub struct EguiRenderer {
-    pub state: State,
-    pub renderer: Renderer,
+    pub(crate) state: State,
+    pub(crate) renderer: Renderer,
 }
 
 impl EguiRenderer {
@@ -47,5 +47,9 @@ impl EguiRenderer {
 
     pub fn handle_input(&mut self, window: &Window, event: &WindowEvent) {
         let _ = self.state.on_window_event(window, event);
+    }
+    
+    pub fn register_native_texture(&mut self, device: &wgpu::Device, texture: &wgpu::TextureView, texture_filter: wgpu::FilterMode) -> epaint::TextureId {
+        self.renderer.register_native_texture(device, texture, texture_filter)
     }
 }
