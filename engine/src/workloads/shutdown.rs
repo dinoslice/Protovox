@@ -1,10 +1,7 @@
 use laminar::Packet;
-use shipyard::{SystemModificator, UniqueView, UniqueViewMut};
-use shipyard::{IntoWorkload, Workload};
+use shipyard::{UniqueView, UniqueViewMut};
 use networking::{PacketRegistry, RuntimePacket};
-use packet::Packet as _;
-use crate::environment::is_hosted;
-use crate::events::{ClientTransformUpdate, KickedByServer};
+use crate::events::KickedByServer;
 use crate::networking::server_handler::ServerHandler;
 
 pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>, registry: UniqueView<PacketRegistry>) {

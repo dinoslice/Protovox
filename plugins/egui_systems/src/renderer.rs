@@ -1,10 +1,9 @@
 use egui::Context;
-use egui_wgpu::{Renderer, ScreenDescriptor};
+use egui_wgpu::Renderer;
 use egui_winit::State;
-use shipyard::{AllStoragesView, Unique, UniqueView};
+use shipyard::Unique;
 use winit::event::WindowEvent;
 use winit::window::Window;
-use engine::rendering::graphics_context::GraphicsContext;
 
 #[derive(Unique)]
 pub struct EguiRenderer {

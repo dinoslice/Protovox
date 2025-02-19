@@ -52,8 +52,8 @@ pub fn decompose_box_gizmos(mut entities: EntitiesViewMut, mut vm_box_gizmos: Vi
         let map = edges.into_iter().map(|(start, end)| LineGizmo {
             start: corners[start],
             end: corners[end],
-            style: style.clone(),
-            lifetime: lifetime.clone(),
+            style,
+            lifetime,
         });
 
         entities.bulk_add_entity(&mut vm_line_gizmos, map);

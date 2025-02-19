@@ -1,14 +1,12 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
 use game::block::Block;
 use networking::PacketRegistry;
 use crate::camera::Camera;
-use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
-use crate::events::ConnectionRequest;
 use crate::gamemode::Gamemode;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;

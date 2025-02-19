@@ -1,25 +1,20 @@
 use glm::Vec3;
-use crate::chunks::chunk_manager::{ChunkManager, chunk_manager_update_and_request};
-use shipyard::{IntoWorkload, UniqueView, UniqueViewMut, Workload, SystemModificator, ViewMut, IntoIter, View, EntitiesViewMut, WorkloadModificator, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
+use crate::chunks::chunk_manager::ChunkManager;
+use shipyard::{UniqueView, UniqueViewMut, ViewMut, IntoIter, View, EntitiesViewMut, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
 use game::block::Block;
-use game::chunk::CHUNK_SIZE;
-use game::chunk::location::ChunkLocation;
-use game::location::{BlockLocation, WorldLocation};
+use game::location::{BlockLocation};
 use crate::camera::Camera;
 use crate::chunks::raycast::BlockRaycastResult;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
-use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
-use crate::gamemode::{local_player_is_gamemode_spectator, Gamemode};
+use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
-use crate::input::{reset_mouse_manager_state, InputManager};
+use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
-use crate::networking;
-use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
-use crate::physics::{collision, process_physics};
+use crate::physics::{collision};
 use crate::world_gen::WorldGenerator;
 
 pub fn toggle_gamemode(

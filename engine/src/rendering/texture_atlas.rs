@@ -1,6 +1,5 @@
 use std::fs;
 use std::num::NonZeroU32;
-use std::path::PathBuf;
 use shipyard::{AllStoragesView, Unique, UniqueView};
 use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;

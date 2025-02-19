@@ -5,7 +5,6 @@ use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
 use networking::{PacketIdentifier, PacketRegistry, RuntimePacket};
-use packet::Packet as _;
 use crate::events::ConnectionRequest;
 
 #[derive(Unique)]

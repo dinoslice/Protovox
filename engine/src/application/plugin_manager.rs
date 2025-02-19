@@ -8,13 +8,14 @@ use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::networking::server_connection::client_process_network_events_multiplayer;
 use crate::networking::server_handler::server_process_network_events;
 
+#[derive(Default)]
 pub struct PluginManager {
     plugins: Vec<&'static dyn DinoEnginePlugin>
 }
 
 impl PluginManager {
     pub fn new() -> Self {
-        Self { plugins: vec![] }
+        Self::default()
     }
 
     pub fn add(&mut self, plugin: &'static dyn DinoEnginePlugin) {
@@ -31,19 +32,19 @@ impl PluginManager {
         let plugins = self.plugins.iter().map(Deref::deref);
 
         build_startup(plugins.clone(), ident.clone())
-            .add_to_world(&world)
+            .add_to_world(world)
             .expect("failed to add workload");
 
         build_update(plugins.clone(), ident.clone(), client_process_network_events_multiplayer, server_process_network_events)
-            .add_to_world(&world)
+            .add_to_world(world)
             .expect("failed to add workload");
 
         build_render(plugins.clone(), ident.clone())
-            .add_to_world(&world)
+            .add_to_world(world)
             .expect("failed to add workload");
 
         build_shutdown(plugins, ident)
-            .add_to_world(&world)
+            .add_to_world(world)
             .expect("failed to add workload");
     }
 

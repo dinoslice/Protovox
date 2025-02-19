@@ -78,7 +78,7 @@ impl ChunkManager {
             // not calculating bake state here anymore, since it's done in the next section
 
             for ft in FaceType::ALL {
-                let neighbor_loc = ChunkLocation(&data.location.0 + ft.as_vector());
+                let neighbor_loc = ChunkLocation(data.location.0 + ft.as_vector());
 
                 self.loaded.get_mut(&neighbor_loc).map(ClientChunk::set_dirty);
             }
@@ -116,7 +116,7 @@ impl ChunkManager {
             .take(self.max_bakes_per_frame)
         {
             // TODO change this iterator to a collected iterator iterating over location or a immutable iterator?
-            let mesher = ChunkMeshContext::from_manager(&self, &chunk.data);
+            let mesher = ChunkMeshContext::from_manager(self, &chunk.data);
 
             let faces = mesher.faces();
 

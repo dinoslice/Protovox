@@ -78,7 +78,7 @@ impl Texture {
         );
 
 
-        for (i, image) in images.into_iter().enumerate() {
+        for (i, image) in images.iter().enumerate() {
             let rgba = image.to_rgba8();
 
             queue.write_texture(

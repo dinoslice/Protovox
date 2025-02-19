@@ -4,12 +4,9 @@ use std::time::Duration;
 use bimap::BiHashMap;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut, ViewMut};
-use networking::{PacketRegistry, RuntimePacket};
-use packet::PacketHeader;
-use crate::components::{LocalPlayer, Transform};
-use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
-use crate::events::event_bus::EventBus;
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut};
+use networking::PacketRegistry;
+use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest};
 
 #[derive(Unique)]
 pub struct ServerHandler {

@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Instant;
 use shipyard::{UniqueView, World};
 use tracing::error;
 use wgpu::SurfaceError;
@@ -7,13 +6,12 @@ use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use engine::application::{capture_state, delta_time};
+use engine::application::capture_state;
 use engine::application::exit::{request_exit, ExitRequested};
 use engine::application::plugin_manager::PluginManager;
 use engine::rendering::graphics_context::GraphicsContext;
 use core_workloads::{startup_core, update_core, post_update_core};
 use strck::IntoCk;
-use dino_plugins::engine::EnginePhase;
 use dino_plugins::path;
 
 mod core_workloads;
@@ -64,9 +62,7 @@ pub fn run(plugin_manager: PluginManager) {
                 ref event,
                 window_id,
             } if world.borrow::<UniqueView<GraphicsContext>>()
-                .map_or(false, |g_ctx|
-                    g_ctx.window.id() == window_id
-                )
+                .is_ok_and(|g_ctx| g_ctx.window.id() == window_id)
             => if !world.run_with_data(input::input, event) {
                 match event {
                     WindowEvent::RedrawRequested => { // TODO: check to ensure it's the same window

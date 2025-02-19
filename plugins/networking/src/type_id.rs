@@ -9,10 +9,7 @@ pub struct PacketIdentifier<T: ?Sized> {
 
 impl<T> Clone for PacketIdentifier<T> {
     fn clone(&self) -> Self {
-        Self {
-            untyped: self.untyped.clone(),
-            ty: Default::default(),
-        }
+        *self
     }
 }
 
@@ -25,7 +22,7 @@ impl UntypedPacketIdentifier {
     pub(crate) fn add_type<T>(self) -> PacketIdentifier<T>  {
         PacketIdentifier {
             untyped: self,
-            ty: PhantomData::default(),
+            ty: PhantomData,
         }
     }
 }

@@ -43,9 +43,7 @@ impl Label for IdentPath {
     }
 
     fn dyn_eq(&self, other: &dyn Label) -> bool {
-        other.as_any()
-            .downcast_ref::<Self>()
-            .map_or(false, |other| self == other)
+        other.as_any().downcast_ref() == Some(self)
     }
 
     fn dyn_hash(&self, mut state: &mut dyn Hasher) {
@@ -74,7 +72,7 @@ macro_rules! path {
         <_ as ::strck::IntoCk>::ck(&stringify!($segment)).expect("invalid ident")
     };
     (@internal { $expr:expr }) => {{
-        use $crate::Identifiable;
+        #[allow(unused_imports)] use $crate::Identifiable;
 
         $expr.identifier()
     }};

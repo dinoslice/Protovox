@@ -54,7 +54,7 @@ impl<'a> ChunkMeshContext<'a> {
                 match pos.adjacent_to_face(ft) {
                     // in range
                     Ok(adj) => {
-                        if !adj_is_air(&self.center, adj) {
+                        if !adj_is_air(self.center, adj) {
                             continue;
                         }
                     }
