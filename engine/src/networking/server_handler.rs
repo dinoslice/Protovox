@@ -4,8 +4,10 @@ use std::time::Duration;
 use bimap::BiHashMap;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Socket, SocketEvent};
-use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueViewMut, ViewMut};
+use shipyard::{AllStoragesViewMut, EntityId, Unique, UniqueView, UniqueViewMut, ViewMut};
+use networking::{PacketRegistry, RuntimePacket};
 use packet::PacketHeader;
+use crate::components::{LocalPlayer, Transform};
 use crate::events::{ClientInformationRequestEvent, ClientSettingsRequestEvent, ConnectionRequest, PacketType};
 use crate::events::event_bus::EventBus;
 
@@ -82,10 +84,16 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                         None => {
                             tracing::debug!("received packet from new address");
 
-                            let Some(PacketType::ConnectionRequest) = PacketType::from_buffer(payload) else {
+                            let conn_req_id = storages
+                                .borrow::<UniqueView<PacketRegistry>>()
+                                .expect("registry to be initialized")
+                                .identifier_of::<ConnectionRequest>()
+                                .expect("packet to be registered");
+
+                            if Some(conn_req_id.untyped) != PacketRegistry::untyped_identifier_from(payload) {
                                 tracing::warn!("First packet received from {:?} was not ConnectionRequest", addr);
                                 continue;
-                            };
+                            }
 
                             let id = storages.add_entity((
                                 ConnectionRequest,
@@ -107,7 +115,19 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
                                 tracing::debug!("Successfully connected client from {addr:?}!");
                             }
                         }
-                        Some(id) => add_packet(payload, id, &mut storages),
+                        Some(id) => {
+                            if let Some(type_id) = PacketRegistry::untyped_identifier_from(payload) {
+                                let opt = storages
+                                    .borrow::<UniqueView<PacketRegistry>>()
+                                    .expect("registry to be initialized")
+                                    .deserializer_for_untyped_id(type_id);
+
+                                if let Some((_, deserializer)) = opt {
+                                    deserializer(payload, id, &mut storages)
+                                        .expect("didn't fail");
+                                }
+                            }
+                        }
                     }
                 }
                 SocketEvent::Connect(addr) => {
@@ -134,76 +154,4 @@ pub fn server_process_network_events(mut storages: AllStoragesViewMut) {
             }
         }
     }
-}
-
-fn add_packet(buffer: &[u8], id: EntityId, storages: &mut AllStoragesViewMut) {
-    use crate::networking::types::PacketType;
-    use packet::{PacketHeader, Packet};
-
-    macro_rules! register_packets {
-        ($bytes:expr, $storages:expr, $id:expr, { $($packet:ident => $($modifier:ident)|*),* $(,)? }) => {
-            register_packets!($bytes, $storages, $id, { $($packet => $packet => $($modifier)|*),* });
-        };
-        ($bytes:expr, $storages:expr, $id:expr, { $($packet_type:ident => $packet_struct:ident => $($modifier:ident)|*),* $(,)? }) => {
-            match PacketType::from_buffer($bytes) {
-                Some(ty) => match ty {
-                    $(
-                        #[allow(unused_mut)]
-                        PacketType::$packet_type => {
-                            let mut decompress = false;
-                            let mut use_bus = false;
-
-                            $(
-                                match stringify!( $modifier ) {
-                                    "compressed" => decompress = true,
-                                    "bus" => use_bus = true,
-                                    _ => {}
-                                }
-                            )*
-
-                            let res = match decompress {
-                                true => $packet_struct::decompress_and_deserialize_unchecked($bytes),
-                                false => $packet_struct::deserialize_unchecked($bytes),
-                            };
-
-                            match res {
-                                None => tracing::error!("{ty:?} data was malformed"),
-                                Some(data) => match use_bus {
-                                    false => { $storages.add_component($id, data); }
-                                    true => match storages.borrow::<ViewMut<EventBus<$packet_struct>>>() {
-                                        Ok(mut vm_evt_bus) => match vm_evt_bus.get_or_insert_with(id, Default::default) {
-                                            Some(mut bus) => bus.0.push(data),
-                                            None => tracing::error!("Tried to insert {ty:?} event to {id:?}, but it was dead"),
-                                        },
-                                        Err(_) => tracing::error!("Failed to borrow event bus storage"),
-                                    }
-                                }
-                            };
-                        }
-                    )*
-                    _ => tracing::debug!("Packet {:?} isn't registered", ty),
-                },
-                None => tracing::debug!("Packet ID couldn't be determined"),
-            }
-        };
-    }
-
-    use crate::events::*;
-    use crate::events::render_distance::*;
-
-    register_packets!(buffer, storages, id, {
-        ConnectionRequest =>,
-
-        ClientChunkRequest => bus,
-        
-        BlockUpdateEvent => bus,
-
-        RenderDistanceUpdateEvent =>,
-
-        ClientInformationRequestEvent =>,
-        ClientInformationUpdateEvent =>,
-
-        ClientSettingsUpdateEvent =>,
-        ClientTransformUpdate =>,
-    });
 }

@@ -4,8 +4,9 @@ use std::thread;
 use crossbeam::channel::{Receiver, Sender};
 use laminar::{Packet, Socket, SocketEvent};
 use shipyard::{AllStoragesViewMut, Unique, UniqueView};
+use networking::{PacketIdentifier, PacketRegistry, RuntimePacket};
 use packet::Packet as _;
-use crate::events;
+use crate::events::ConnectionRequest;
 
 #[derive(Unique)]
 pub struct ServerConnection {
@@ -15,7 +16,7 @@ pub struct ServerConnection {
 }
 
 impl ServerConnection {
-    pub fn bind(server_addr: impl Into<SocketAddr>) -> Self {
+    pub fn bind(server_addr: impl Into<SocketAddr>, packet_id: PacketIdentifier<ConnectionRequest>) -> Self {
         let config = laminar::Config {
             max_packet_size: 64 * 1024,
             max_fragments: 64,
@@ -38,7 +39,9 @@ impl ServerConnection {
 
         let connection_req = Packet::reliable_ordered(
             server_addr,
-            events::ConnectionRequest.serialize_packet().expect("packet serialization failed"),
+            ConnectionRequest
+                .serialize_uncompressed_with_id(packet_id)
+                .expect("packet serialization failed"),
             None, // TODO: configure stream ids
         );
 
@@ -74,7 +77,20 @@ pub fn client_process_network_events_multiplayer(mut storages: AllStoragesViewMu
         match evt {
             SocketEvent::Packet(packet) => {
                 assert_eq!(packet.addr(), addr);
-                add_packet(packet.payload(), &mut storages);
+
+                let payload = packet.payload();
+
+                if let Some(type_id) = PacketRegistry::untyped_identifier_from(payload) {
+                    let opt = storages
+                        .borrow::<UniqueView<PacketRegistry>>()
+                        .expect("registry to be initialized")
+                        .deserializer_for_untyped_id(type_id);
+
+                    if let Some((deserializer, _)) = opt {
+                        let _id = deserializer(payload, &mut storages)
+                            .expect("didn't fail");
+                    }
+                }
             }
             SocketEvent::Connect(addr) => {
                 tracing::debug!("something just connected to the client, {addr:?}");
@@ -87,55 +103,4 @@ pub fn client_process_network_events_multiplayer(mut storages: AllStoragesViewMu
             }
         }
     }
-}
-
-fn add_packet(buffer: &[u8], storages: &mut AllStoragesViewMut) {
-    use crate::networking::types::PacketType;
-    use packet::{PacketHeader, Packet as _};
-
-    macro_rules! register_packets {
-            ($bytes:expr, $storages:expr, { $($packet_type:ident => $decompress:expr),* $(,)? }) => {
-                register_packets!($bytes, $storages, { $($packet_type => $packet_type => $decompress),* });
-            };
-            ($bytes:expr, $storages:expr, { $($packet_type:ident => $packet_struct:ident => $decompress:expr),* $(,)? }) => {
-                match PacketType::from_buffer($bytes) {
-                    Some(ty) => match ty {
-                        $(
-                            PacketType::$packet_type => match $decompress {
-                                true => if let Some(packet) = $packet_struct::decompress_and_deserialize_unchecked($bytes) {
-                                    $storages.add_entity(packet);
-                                } else {
-                                    println!("{ty:?} data was malformed");
-                                },
-                                false => if let Some(packet) = $packet_struct::deserialize_unchecked($bytes) {
-                                    $storages.add_entity(packet);
-                                } else {
-                                    println!("{ty:?} data was malformed");
-                                },
-                            }
-                        )*
-                        _ => println!("Packet {:?} isn't registered", ty),
-                    },
-                    None => println!("Packet ID couldn't be determined"),
-                }
-            };
-        }
-
-    use crate::events::*;
-    use crate::events::render_distance::*;
-
-    register_packets!(buffer, storages, {
-        ChunkGenEvent => true,
-
-        RenderDistanceRequestEvent => false,
-        ClientSettingsRequestEvent => false,
-        
-        BlockUpdateEvent => false,
-
-        ConnectionSuccess => false,
-        
-        KickedByServer => false,
-
-        KeepAlive => false,
-    });
 }

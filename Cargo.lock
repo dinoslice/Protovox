@@ -972,6 +972,7 @@ dependencies = [
  "laminar",
  "nalgebra",
  "nalgebra-glm",
+ "networking",
  "noise",
  "packet",
  "packet_derive",
@@ -1972,6 +1973,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c196769dd60fd4f363e11d948139556a344e79d451aeb2fa2fd040738ef7691"
 dependencies = [
  "jni-sys",
+]
+
+[[package]]
+name = "networking"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "hashbrown 0.15.2",
+ "postcard",
+ "serde",
+ "shipyard",
+ "tracing",
 ]
 
 [[package]]

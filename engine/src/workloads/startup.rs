@@ -1,12 +1,14 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
-use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueView, Workload};
+use shipyard::{AllStoragesView, AllStoragesViewMut, IntoWorkload, SystemModificator, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, Workload};
 use game::block::Block;
+use networking::PacketRegistry;
 use crate::camera::Camera;
 use crate::{args, rendering};
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
+use crate::events::ConnectionRequest;
 use crate::gamemode::Gamemode;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
@@ -63,7 +65,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(WorldGenerator::new(50));
 }
 
-pub fn initialize_networking(env: UniqueView<Environment>, storages: AllStoragesView) {
+pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {
     if storages.run(is_hosted) {
         storages.add_unique(ServerHandler::new(None));
     } else if storages.run(is_multiplayer_client) {
@@ -71,8 +73,32 @@ pub fn initialize_networking(env: UniqueView<Environment>, storages: AllStorages
             unreachable!();
         };
 
-        storages.add_unique(ServerConnection::bind(addr))
+        let connection_request_ser_id = registry
+            .identifier_of()
+            .expect("should be registered");
+
+        storages.add_unique(ServerConnection::bind(addr, connection_request_ser_id));
     }
+}
+
+pub fn register_packets(mut registry: UniqueOrDefaultViewMut<PacketRegistry>) {
+    use crate::events::{*, render_distance::*};
+
+    registry.register::<ChunkGenRequestEvent, false, false>();
+    registry.register::<ChunkGenEvent, true, false>();
+    registry.register::<BlockUpdateEvent, false, true>();
+    registry.register::<ClientInformationRequestEvent, false, false>();
+    registry.register::<ClientInformationUpdateEvent, false, false>();
+    registry.register::<ClientSettingsRequestEvent, false, false>();
+    registry.register::<ClientSettingsUpdateEvent, false, false>();
+    registry.register::<ConnectionRequest, false, false>();
+    registry.register::<ConnectionSuccess, false, false>();
+    registry.register::<ClientTransformUpdate, false, false>();
+    registry.register::<ClientChunkRequest, false, true>();
+    registry.register::<KeepAlive, false, false>();
+    registry.register::<KickedByServer, false, false>();
+    registry.register::<RenderDistanceRequestEvent, false, false>();
+    registry.register::<RenderDistanceUpdateEvent, false, false>();
 }
 
 pub fn set_window_title(g_ctx: UniqueView<GraphicsContext>, env: UniqueView<Environment>) {

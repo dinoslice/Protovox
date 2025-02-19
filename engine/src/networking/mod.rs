@@ -4,6 +4,7 @@ use laminar::Packet;
 use packet::Packet as _;
 use shipyard::{AllStoragesView, EntitiesView, EntitiesViewMut, IntoIter, IntoWithId, IntoWorkload, UniqueView, View, ViewMut, Workload};
 use game::chunk::data::ChunkData;
+use networking::{PacketIdentifier, PacketRegistry, RuntimePacket};
 use crate::application::exit::ExitRequested;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{LocalPlayer, Transform};
@@ -20,14 +21,18 @@ pub mod server_handler;
 pub mod keep_alive;
 pub mod server_connection;
 
-pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, v_block_update_evt: View<BlockUpdateEvent>) {
+pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>, v_block_update_evt: View<BlockUpdateEvent>) {
     let tx = &server_connection.tx;
     let server_addr = server_connection.server_addr;
+
+    let id = registry
+        .identifier_of()
+        .expect("should be registered");
     
     for evt in (&v_block_update_evt).iter() {
         let packet = Packet::reliable_unordered(
             server_addr,
-            evt.serialize_packet()
+            evt.serialize_uncompressed_with_id(id)
                 .expect("packet serialization failed")
         );
         
@@ -37,15 +42,19 @@ pub fn client_send_block_updates(server_connection: UniqueView<ServerConnection>
     }
 }
 
-pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, v_block_update_evt: View<BlockUpdateEvent>, v_block_update_evt_bus: View<EventBus<BlockUpdateEvent>>) {
+pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>, v_block_update_evt: View<BlockUpdateEvent>, v_block_update_evt_bus: View<EventBus<BlockUpdateEvent>>) {
     let tx = &server_handler.tx;
+
+    let type_id = registry
+        .identifier_of()
+        .expect("should be registered");
     
     for (&addr, &id) in &server_handler.clients {
         for evt in (&v_block_update_evt).iter() {
             
             let packet = Packet::reliable_unordered(
                 addr,
-                evt.serialize_packet()
+                evt.serialize_uncompressed_with_id(type_id)
                     .expect("packet serialization failed"),
             );
 
@@ -62,7 +71,7 @@ pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>,
             for evt in &bus.0 {
                 let packet = Packet::reliable_unordered(
                     addr,
-                    evt.serialize_packet()
+                    evt.serialize_uncompressed_with_id(type_id)
                         .expect("packet serialization failed"),
                 );
 
@@ -74,7 +83,11 @@ pub fn server_broadcast_block_updates(server_handler: UniqueView<ServerHandler>,
     }
 }
 
-pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionRequest>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionRequest>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>) {
+    let type_id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     vm_conn_req.retain(|id, _| {
         match server_handler.clients.get_by_right(&id) {
             None => {
@@ -82,7 +95,7 @@ pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionR
                 false
             },
             Some(&addr) => {
-                let payload = ConnectionSuccess.serialize_packet().expect("packet serialization failed");
+                let payload = ConnectionSuccess.serialize_uncompressed_with_id(type_id).expect("packet serialization failed");
 
                 let p = Packet::reliable_unordered(addr, payload);
 
@@ -98,7 +111,11 @@ pub fn server_process_client_connection_req(mut vm_conn_req: ViewMut<ConnectionR
     });
 }
 
-pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>) {
+    let type_id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     vm_client_settings_req.retain(|id, evt| {
         match server_handler.clients.get_by_right(&id) {
             None => {
@@ -106,7 +123,7 @@ pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<Client
                 false
             },
             Some(&addr) => {
-                let payload = evt.serialize_packet().expect("packet serialization failed");
+                let payload = evt.serialize_uncompressed_with_id(type_id).expect("packet serialization failed");
 
                 let p = Packet::reliable_unordered(addr, payload);
 
@@ -121,7 +138,11 @@ pub fn server_request_client_settings(mut vm_client_settings_req: ViewMut<Client
     });
 }
 
-pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
+pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRequestEvent>, server_connection: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>, v_local_player: View<LocalPlayer>, v_render_dist: View<RenderDistance>) {
+    let id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     if vm_client_settings_req.drain().next().is_some() {
         let (render_dist, ..) = (&v_render_dist, &v_local_player)
             .iter()
@@ -132,7 +153,7 @@ pub fn client_send_settings(mut vm_client_settings_req: ViewMut<ClientSettingsRe
         let p = Packet::reliable_unordered(
             server_connection.server_addr,
             RenderDistanceUpdateEvent(render_dist.clone())
-                .serialize_packet()
+                .serialize_uncompressed_with_id(id)
                 .expect("packet serialization failed")
         );
 
@@ -152,7 +173,11 @@ pub fn client_acknowledge_connection_success(mut vm_conn_success: ViewMut<Connec
     vm_conn_success.drain().for_each(|evt| tracing::debug!("Received {evt:?}"));
 }
 
-pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>) {
+pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: View<Transform>, server_conn: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>) {
+    let id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     let transform = (&local_player, &vm_transform)
         .iter()
         .next()
@@ -162,7 +187,7 @@ pub fn client_update_position(local_player: View<LocalPlayer>, vm_transform: Vie
     let p = Packet::unreliable_sequenced(
         server_conn.server_addr,
         ClientTransformUpdate(transform.clone())
-            .serialize_packet()
+            .serialize_uncompressed_with_id(id)
             .expect("packet serialization failed"),
         None,
     );
@@ -178,8 +203,12 @@ pub fn server_update_client_transform(mut vm_client_pos_update: ViewMut<ClientTr
     });
 }
 
-pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkRequest>>, mut gen_reqs: ViewMut<ChunkGenRequestEvent>, mut entities: EntitiesViewMut, chunk_mgr: UniqueView<ChunkManager>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>) {
     let sender = &server_handler.tx;
+
+    let type_id = registry
+        .identifier_of()
+        .expect("should be registered");
 
     for (id, events) in (&mut reqs).iter().with_id() {
         let Some(&addr) = server_handler.clients.get_by_right(&id) else {
@@ -195,7 +224,7 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
 
                     let gen_evt = unsafe { mem::transmute::<&ChunkData, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 
-                    send_chunk(sender, addr, gen_evt);
+                    send_chunk(sender, addr, type_id, gen_evt);
                 }
                 None => {
                     // TODO: eventually maybe revert this back to add component
@@ -206,7 +235,11 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
     }
 }
 
-pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>) {
+pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>, server_connection: UniqueView<ServerConnection>, registry: UniqueView<PacketRegistry>) {
+    let id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     let sender = &server_connection.tx;
     let addr = server_connection.server_addr;
 
@@ -214,7 +247,7 @@ pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>
         let p = Packet::reliable_unordered(
             addr,
             req
-                .serialize_packet()
+                .serialize_uncompressed_with_id(id)
                 .expect("packet serialization failed")
         );
 
@@ -224,24 +257,28 @@ pub fn client_request_chunks_from_server(mut reqs: ViewMut<ChunkGenRequestEvent>
     }
 }
 
-pub fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>) {
+pub fn server_broadcast_chunks(v_render_dist: View<RenderDistance>, v_transform: View<Transform>, v_chunk_gen_event: View<ChunkGenEvent>, server_handler: UniqueView<ServerHandler>, registry: UniqueView<PacketRegistry>, v_local_player: View<LocalPlayer>) {
+    let type_id = registry
+        .identifier_of()
+        .expect("should be registered");
+
     let sender = &server_handler.tx;
 
-    for (id, (render_dist, transform)) in (&v_render_dist, &v_transform).iter().with_id() {
+    for (id, (render_dist, transform, _)) in (&v_render_dist, &v_transform, !&v_local_player).iter().with_id() {
         let Some(&addr) = server_handler.clients.get_by_right(&id) else {
             continue;
         };
 
         for evt in v_chunk_gen_event.iter() {
             if ChunkManager::in_render_distance_with(&evt.0.location, &transform.get_loc(), render_dist) {
-                send_chunk(sender, addr, evt);
+                send_chunk(sender, addr, type_id, evt);
             }
         }
     }
 }
 
-fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, gen_evt: &ChunkGenEvent) {
-    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_and_compress_packet().expect("packet serialization failed"));
+fn send_chunk(sender: &Sender<Packet>, client_addr: SocketAddr, id: PacketIdentifier<ChunkGenEvent>, gen_evt: &ChunkGenEvent) {
+    let p = Packet::reliable_unordered(client_addr, gen_evt.serialize_with_id::<true>(id).expect("packet serialization failed"));
 
     if sender.try_send(p).is_err() {
         tracing::debug!("There was an error sending a chunk {:?} to {:?}", gen_evt.0.location, client_addr);
