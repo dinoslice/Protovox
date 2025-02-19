@@ -1,0 +1,13 @@
+[package]
+name = "dino_plugins"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+shipyard = { workspace = true }
+strck = { version = "1.0.0", features = ["ident", "serde"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
