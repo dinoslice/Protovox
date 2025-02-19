@@ -1,12 +1,16 @@
-use shipyard::{IntoIter, IntoWorkload, UniqueView, View, Workload};
+use shipyard::{IntoIter, IntoWorkload, UniqueView, View, Workload, WorkloadModificator};
 use engine::components::{Entity, HeldBlock, LocalPlayer, SpectatorSpeed, Transform, Velocity};
 use engine::gamemode::Gamemode;
 use strck::IntoCk;
-use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
-use egui_systems::CurrentEguiFrame;
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use dino_plugins::path;
+use egui_systems::{CurrentEguiFrame, EguiSystemsPlugin};
 use engine::networking::server_handler::ServerHandler;
 use egui_systems::DuringEgui;
+use engine::inventory::Inventory;
+use engine::VoxelEngine;
 use game::block::Block;
+use crate::egui_views::{initialize_texture_atlas_views, EguiTextureAtlasViews};
 
 extern crate nalgebra_glm as glm;
 mod egui_views;
@@ -14,8 +18,17 @@ mod egui_views;
 pub struct GameUiPlugin;
 
 impl DinoEnginePlugin for GameUiPlugin {
+    fn early_startup(&self) -> Option<Workload> {
+        initialize_texture_atlas_views
+            .into_workload()
+            .after_all(path!({VoxelEngine}::{EnginePhase::EarlyStartup}))
+            .into()
+    }
     fn render(&self) -> Option<Workload> {
-        game_ui
+        (
+            game_ui,
+            inventory,
+        )
             .into_workload()
             .order_egui()
             .into()
@@ -25,11 +38,31 @@ impl DinoEnginePlugin for GameUiPlugin {
             name: "game_ui".ck().expect("valid identifier"),
             version: "0.1.0",
             dependencies: &[
-                &engine::VoxelEngine,
-                &egui_systems::EguiSystemsPlugin,
+                &VoxelEngine,
+                &EguiSystemsPlugin,
             ],
         }
     }
+}
+
+fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+    let (inventory, ..) = (&inventory, &local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+
+    egui::Window::new("Inventory")
+        .default_open(true)
+        .show(egui_frame.ctx(), |ui| {
+            for item in inventory.items() {
+                let id = texture_atlas_views.get_from_texture_id(item.ty.texture_id())
+                    .expect("texture atlas views should have all textures");
+
+                ui.horizontal(|ui| {
+                    ui.image(egui::load::SizedTexture { id, size: egui::vec2(16.0, 16.0) });
+                    ui.label(item.count.to_string())
+                });
+            }
+        });
 }
 
 pub fn game_ui(
