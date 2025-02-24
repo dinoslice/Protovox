@@ -112,3 +112,35 @@ pub struct IsOnGround(pub bool);
 
 #[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
 pub struct HeldBlock(pub Block);
+
+#[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
+pub struct Health {
+    pub curr: f32,
+    pub max: f32,
+}
+
+impl Health {
+    pub fn percentage(&self) -> f32 {
+        self.curr / self.max
+    }
+
+    pub fn percentage_clamped(&self) -> f32 {
+        self.percentage().clamp(0.0, 1.0)
+    }
+}
+
+#[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
+pub struct Mana {
+    pub curr: f32,
+    pub max: f32,
+}
+
+impl Mana {
+    pub fn percentage(&self) -> f32 {
+        self.curr / self.max
+    }
+
+    pub fn percentage_clamped(&self) -> f32 {
+        self.percentage().clamp(0.0, 1.0)
+    }
+}
