@@ -12,6 +12,7 @@ game = { path = "../../game" }
 shipyard = { workspace = true }
 egui_systems = { path = "../egui_systems" }
 egui = "0.28.1"
+wgpu = "0.20.1"
 nalgebra-glm = { workspace = true }
 
 [lints]
