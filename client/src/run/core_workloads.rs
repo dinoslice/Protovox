@@ -15,9 +15,9 @@ pub fn startup_core() -> Workload {
     ).into_workload()
 }
 
-fn initialize_application_systems(storages: AllStoragesView) {
+fn initialize_application_systems(storages: AllStoragesView, g_ctx: UniqueView<GraphicsContext>) {
     storages.add_unique(InputManager::with_mouse_manager(MouseManager::new(0.75, 50.0)));
-    storages.add_unique(CaptureState::default());
+    storages.add_unique(CaptureState::new_with(&g_ctx.window, false).expect("window setting to succeed"));
     storages.add_unique(LastDeltaTime::default());
     storages.add_unique(LastFrameEvents(Vec::new()));
     storages.add_unique(LastRenderInstant(Instant::now()));
