@@ -4,9 +4,11 @@ use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 use egui_systems::CurrentEguiFrame;
 use egui_systems::DuringEgui;
-use game::block::Block;
+use crate::bottom_bar::bottom_bar;
 
 extern crate nalgebra_glm as glm;
+
+mod bottom_bar;
 
 pub struct GameUiPlugin;
 
@@ -14,6 +16,7 @@ impl DinoEnginePlugin for GameUiPlugin {
     fn render(&self) -> Option<Workload> {
         (
             reticle,
+            bottom_bar,
         )
             .into_workload()
             .order_egui()
