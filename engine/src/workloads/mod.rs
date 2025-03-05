@@ -17,7 +17,7 @@ use crate::rendering::render;
 use crate::rendering::render::{block_outline, submit_rendered_frame, world};
 use crate::workloads::shutdown::disconnect_connected_players;
 use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, register_packets, set_window_title};
-use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
+use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, process_block_bar, raycast, scroll_block_bar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
 
 mod startup;
 mod update;
@@ -55,7 +55,8 @@ impl DinoEnginePlugin for VoxelEngine {
             process_movement,
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
-            scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
+            scroll_block_bar.skip_if(local_player_is_gamemode_spectator),
+            process_block_bar,
         )
             .into_sequential_workload()
             .into()

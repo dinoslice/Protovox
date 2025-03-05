@@ -14,10 +14,17 @@ use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::inventory::Inventory;
+use crate::block_bar_display::BlockBarDisplay;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
 use crate::world_gen::WorldGenerator;
+
+pub fn process_block_bar(input: UniqueView<InputManager>, mut block_bar_display: UniqueViewMut<BlockBarDisplay>,) {
+    if input.just_pressed().get_action(Action::ToggleBlockBar) {
+        block_bar_display.toggle();
+    }
+}
 
 pub fn toggle_gamemode(
     input: UniqueView<InputManager>,
@@ -58,18 +65,10 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
+pub fn scroll_block_bar(input: UniqueView<InputManager>, mut block_bar_display: UniqueViewMut<BlockBarDisplay>) {
     let scroll = input.mouse_manager.scroll.floor() as i32;
-    
-    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
-        .next()
-        .expect("local player should have held block");
 
-    let curr_block = held.0 as u16 as i32;
-    
-    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
-    
-    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
+    block_bar_display.scroll(-scroll);
 }
 
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
