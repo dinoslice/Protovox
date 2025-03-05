@@ -1,4 +1,5 @@
 use egui::Align2;
+use egui::load::SizedTexture;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::components::LocalPlayer;
@@ -49,7 +50,15 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                 }
 
                                 ui.centered_and_justified(|ui| {
-                                    ui.label(inv.get(i as usize).map_or(i.to_string(), |it| it.title.clone()));
+                                    if let Some(it) = inv.get(i as usize) {
+                                        let texture = texture_atlas_views
+                                            .get_from_texture_id(it.ty.texture_id())
+                                            .expect("should have a texture");
+
+                                        let size = egui::Vec2::splat(35.0);
+
+                                        ui.image(SizedTexture { id: texture, size });
+                                    }
                                 });
                             }).response;
                         }
