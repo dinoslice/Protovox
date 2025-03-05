@@ -9,6 +9,7 @@ use crate::components::{Entity, GravityAffected, Health, HeldBlock, Hitbox, IsOn
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
 use crate::inventory::Inventory;
+use crate::block_bar_display::BlockBarDisplay;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
 use crate::networking::server_handler::ServerHandler;
@@ -65,6 +66,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
+    storages.add_unique(BlockBarDisplay::Minimized { start: 0, selected: 0 })
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {
