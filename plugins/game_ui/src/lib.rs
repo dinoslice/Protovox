@@ -1,18 +1,27 @@
 use egui::Color32;
-use shipyard::{IntoIter, IntoWorkload, UniqueView, Workload};
+use shipyard::{IntoIter, IntoWorkload, UniqueView, Workload, WorkloadModificator};
 use strck::IntoCk;
-use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
-use egui_systems::CurrentEguiFrame;
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use dino_plugins::path;
+use egui_systems::{CurrentEguiFrame, EguiSystemsPlugin};
 use egui_systems::DuringEgui;
 use crate::bottom_bar::bottom_bar;
+use crate::egui_views::initialize_texture_atlas_views;
 
 extern crate nalgebra_glm as glm;
 
 mod bottom_bar;
+mod egui_views;
 
 pub struct GameUiPlugin;
 
 impl DinoEnginePlugin for GameUiPlugin {
+    fn early_startup(&self) -> Option<Workload> {
+        initialize_texture_atlas_views
+            .into_workload()
+            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer))
+            .into()
+    }
     fn render(&self) -> Option<Workload> {
         (
             reticle,
