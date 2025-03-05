@@ -14,17 +14,10 @@ use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::inventory::Inventory;
-use crate::block_bar_display::BlockBarDisplay;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
 use crate::world_gen::WorldGenerator;
-
-pub fn process_block_bar(input: UniqueView<InputManager>, mut block_bar_display: UniqueViewMut<BlockBarDisplay>,) {
-    if input.just_pressed().get_action(Action::ToggleBlockBar) {
-        block_bar_display.toggle();
-    }
-}
 
 pub fn toggle_gamemode(
     input: UniqueView<InputManager>,
@@ -63,12 +56,6 @@ pub fn toggle_gamemode(
     };
 
     *velocity = Velocity::default();
-}
-
-pub fn scroll_block_bar(input: UniqueView<InputManager>, mut block_bar_display: UniqueViewMut<BlockBarDisplay>) {
-    let scroll = input.mouse_manager.scroll.floor() as i32;
-
-    block_bar_display.scroll(-scroll);
 }
 
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {

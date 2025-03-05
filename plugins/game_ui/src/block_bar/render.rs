@@ -3,7 +3,7 @@ use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::components::LocalPlayer;
 use engine::inventory::Inventory;
-use engine::block_bar_display::BlockBarDisplay;
+use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 
 pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, inv_display: UniqueView<BlockBarDisplay>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {

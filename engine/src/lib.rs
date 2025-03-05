@@ -21,6 +21,5 @@ pub mod looking_at_block;
 pub mod last_world_interaction;
 pub mod gamemode;
 pub mod inventory;
-pub mod block_bar_display;
 
 pub use workloads::VoxelEngine;
