@@ -19,6 +19,7 @@ pub enum Action {
     BreakBlock,
     ToggleGamemode,
     ToggleFullscreen,
+    ToggleBlockBar,
 }
 
 impl ActionMap {
@@ -68,6 +69,7 @@ impl TryFrom<&KeyCode> for Action {
             KC::ShiftLeft => Ok(Self::Sneak),
             KC::F4 => Ok(Self::ToggleGamemode),
             KC::F11 => Ok(Self::ToggleFullscreen),
+            KC::KeyI => Ok(Self::ToggleBlockBar),
             _ => Err(UnmappedAction),
         }
     }
