@@ -5,12 +5,14 @@ use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use dino_plugins::path;
 use egui_systems::{CurrentEguiFrame, EguiSystemsPlugin};
 use egui_systems::DuringEgui;
+use crate::block_bar::block_bar;
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 
 extern crate nalgebra_glm as glm;
 
 mod bottom_bar;
+mod block_bar;
 mod egui_views;
 
 pub struct GameUiPlugin;
@@ -26,6 +28,7 @@ impl DinoEnginePlugin for GameUiPlugin {
         (
             reticle,
             bottom_bar,
+            block_bar,
         )
             .into_workload()
             .order_egui()
