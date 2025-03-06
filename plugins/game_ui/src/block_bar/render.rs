@@ -57,7 +57,32 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
 
                                         let size = egui::Vec2::splat(35.0);
 
-                                        ui.image(SizedTexture { id: texture, size });
+                                        let image_response = ui.image(SizedTexture { id: texture, size });
+
+                                        let painter = ui.painter();
+                                        let rect = image_response.rect;
+
+                                        let text = it.count.to_string();
+                                        let text_pos = rect.right_bottom() - egui::Vec2::splat(10.0);
+
+                                        let font_id = egui::FontId::proportional(16.0);
+
+                                        // shadow
+                                        painter.text(
+                                            text_pos + egui::Vec2::splat(1.2),
+                                            Align2::RIGHT_BOTTOM,
+                                            &text,
+                                            font_id.clone(),
+                                            egui::Color32::BLACK,
+                                        );
+
+                                        painter.text(
+                                            text_pos,
+                                            Align2::RIGHT_BOTTOM,
+                                            text,
+                                            font_id,
+                                            egui::Color32::WHITE,
+                                        );
                                     }
                                 });
                             }).response;
