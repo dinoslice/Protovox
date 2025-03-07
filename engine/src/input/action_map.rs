@@ -20,6 +20,7 @@ pub enum Action {
     ToggleGamemode,
     ToggleFullscreen,
     ToggleBlockBar,
+    GrabLooking,
 }
 
 impl ActionMap {
@@ -84,6 +85,7 @@ impl TryFrom<&MouseButton> for Action {
         match button {
             MB::Left => Ok(Self::BreakBlock),
             MB::Right => Ok(Self::PlaceBlock),
+            MB::Middle => Ok(Self::GrabLooking),
             _ => Err(UnmappedAction),
         }
     }
