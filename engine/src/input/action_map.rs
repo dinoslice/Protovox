@@ -3,7 +3,7 @@ use tinybitset::TinyBitSet;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ActionMap(TinyBitSet<u8, { Action::COUNT.div_ceil(u8::BITS as _) }>);
 
 #[repr(u8)]
