@@ -1,0 +1,87 @@
+use egui::{Align2, Grid, Sense, Vec2};
+use egui::load::SizedTexture;
+use shipyard::{IntoIter, UniqueView, View};
+use egui_systems::CurrentEguiFrame;
+use engine::components::LocalPlayer;
+use engine::inventory::Inventory;
+use crate::egui_views::EguiTextureAtlasViews;
+
+pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+    let (inventory, ..) = (&inventory, &local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+
+    const COLUMNS: usize = 3;
+
+    egui::Area::new("inventory".into())
+        .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
+        .movable(true)
+        .show(egui_frame.ctx(), |ui| {
+            egui::Frame::none()
+                .show(ui, |ui| {
+                    ui.spacing_mut().item_spacing = Vec2::ZERO;
+
+                    Grid::new("inventory_grid")
+                        .show(ui, |ui| {
+                            for (row_idx, row) in inventory.as_slice().chunks(COLUMNS).enumerate() {
+                                for (col_idx, slot) in row.iter().enumerate() {
+                                    let i = row_idx * 3 + col_idx;
+
+                                    egui::Frame::none()
+                                        .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
+                                        .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
+                                        .show(ui, |ui| {
+                                            ui.style_mut()
+                                                .visuals
+                                                .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
+
+                                            ui.set_height(40.0);
+                                            ui.set_width(40.0);
+
+                                            ui.centered_and_justified(|ui| {
+                                                if let Some(it) = slot {
+                                                    let texture = texture_atlas_views
+                                                        .get_from_texture_id(it.ty.texture_id())
+                                                        .expect("should have a texture");
+
+                                                    let size = Vec2::splat(35.0);
+
+                                                    let image_response = ui.image(SizedTexture { id: texture, size });
+
+                                                    let painter = ui.painter();
+                                                    let rect = image_response.rect;
+
+                                                    let text = it.count.to_string();
+                                                    let text_pos = rect.right_bottom() - Vec2::splat(10.0);
+
+                                                    let font_id = egui::FontId::proportional(16.0);
+
+                                                    // shadow
+                                                    painter.text(
+                                                        text_pos + Vec2::splat(1.2),
+                                                        Align2::RIGHT_BOTTOM,
+                                                        &text,
+                                                        font_id.clone(),
+                                                        egui::Color32::BLACK,
+                                                    );
+
+                                                    painter.text(
+                                                        text_pos,
+                                                        Align2::RIGHT_BOTTOM,
+                                                        text,
+                                                        font_id,
+                                                        egui::Color32::WHITE,
+                                                    );
+                                                } else {
+                                                    ui.label(format!("{i}"));
+                                                }
+                                            });
+                                        });
+                                }
+
+                                ui.end_row();
+                            }
+                        });
+                })
+        });
+}

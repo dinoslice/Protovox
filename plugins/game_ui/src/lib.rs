@@ -12,12 +12,14 @@ use crate::block_bar::{create_block_bar_display, process_block_bar, scroll_block
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
+use crate::inventory::inventory;
 
 extern crate nalgebra_glm as glm;
 
 mod bottom_bar;
 mod egui_views;
 mod block_bar;
+mod inventory;
 
 pub struct GameUiPlugin;
 
@@ -50,6 +52,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             reticle,
             bottom_bar,
             block_bar,
+            inventory,
         )
             .into_workload()
             .order_egui()
