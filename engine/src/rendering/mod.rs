@@ -16,9 +16,9 @@ mod texture_atlas;
 
 pub mod sized_buffer;
 pub mod block_outline;
-pub mod world;
 pub mod shader_cam;
 pub mod skybox;
+pub mod entity;
 pub mod math;
 pub mod world;
 
@@ -31,6 +31,7 @@ pub fn initialize() -> Workload {
         ).into_workload(),
         skybox::initialize_skybox,
         world::initialize_world_render_state,
+        entity::initialize_entity_render_state,
         initialize_block_outline_render_state,
     ).into_sequential_workload()
 }

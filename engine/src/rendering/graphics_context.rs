@@ -47,7 +47,7 @@ impl GraphicsContext {
             &wgpu::DeviceDescriptor {
                 required_features: wgpu::Features::empty() | wgpu::Features::PUSH_CONSTANTS | wgpu::Features::TEXTURE_BINDING_ARRAY, // what additional features of the GPU are needed
                 required_limits: wgpu::Limits {
-                    max_push_constant_size: std::mem::size_of::<ChunkLocation>() as u32,
+                    max_push_constant_size: (size_of::<ChunkLocation>() + size_of::<[f32; 6]>()) as u32,
                     .. Default::default()
                 }, // limit properties of the gpu to support different architectures
                 label: None,

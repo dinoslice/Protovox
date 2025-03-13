@@ -4,6 +4,7 @@ use crate::rendering::graphics_context::GraphicsContext;
 pub mod world;
 pub mod block_outline;
 pub mod skybox;
+pub mod entity;
 
 #[derive(Unique)]
 pub struct RenderContext {

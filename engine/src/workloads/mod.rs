@@ -14,7 +14,7 @@ use crate::physics::process_physics;
 use crate::rendering::block_outline::update_block_outline_buffer;
 use crate::rendering::camera_uniform_buffer::update_camera_uniform_buffer;
 use crate::rendering::render;
-use crate::rendering::render::{block_outline, submit_rendered_frame, world};
+use crate::rendering::render::{block_outline, entity, submit_rendered_frame, world};
 use crate::workloads::shutdown::disconnect_connected_players;
 use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, register_packets, set_window_title};
 use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode};
@@ -146,6 +146,7 @@ impl DinoEnginePlugin for VoxelEngine {
             render::skybox::render_skybox,
             world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
             block_outline::render_block_outline,
+            entity::render_entity,
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()
