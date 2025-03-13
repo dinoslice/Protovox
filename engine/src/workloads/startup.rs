@@ -3,6 +3,7 @@ use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
 use game::block::Block;
 use networking::PacketRegistry;
+use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Health, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Mana, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
@@ -57,14 +58,15 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&RenderDistance, &LocalPlayer)>();
+    let iter = &mut storages.iter::<(&RenderDistance, &Inventory, &LocalPlayer)>();
 
-    let (render_dist, ..) = iter.iter()
+    let (render_dist, inventory, ..) = iter.iter()
         .next()
         .expect("TODO: local player with transform should exist");
 
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
+    storages.add_unique(BlockBarFocus::new(inventory.space()));
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {

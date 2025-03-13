@@ -1,12 +1,15 @@
 use egui::{Align2, Grid, Sense, Vec2};
 use egui::load::SizedTexture;
-use shipyard::{IntoIter, UniqueView, View};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use egui_systems::CurrentEguiFrame;
+use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
+use engine::input::action_map::Action;
+use engine::input::InputManager;
 use engine::inventory::Inventory;
 use crate::egui_views::EguiTextureAtlasViews;
 
-pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, mut block_bar_focus: UniqueViewMut<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>, input_manager: UniqueView<InputManager>) {
     let (inventory, ..) = (&inventory, &local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
@@ -27,7 +30,9 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                 for (col_idx, slot) in row.iter().enumerate() {
                                     let i = row_idx * 3 + col_idx;
 
-                                    egui::Frame::none()
+                                    let bar_slot = block_bar_focus.focus.iter().position(|&slot| slot == Some(i));
+
+                                    let response = egui::Frame::none()
                                         .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
                                         .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
                                         .show(ui, |ui| {
@@ -77,6 +82,25 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                                 }
                                             });
                                         });
+
+                                    if response.response.hovered() {
+                                        for (bar_slot, &action) in Action::BLOCK_BAR.iter().enumerate() {
+                                            if input_manager.just_pressed().get_action(action) {
+                                                let slot = block_bar_focus.focus
+                                                    .get_mut(bar_slot)
+                                                    .expect("should be in range");
+
+                                                if *slot == Some(i) {
+                                                    *slot = None;
+                                                } else {
+                                                    *slot = Some(i);
+                                                }
+
+                                                println!("action {action:?}, i: {i} -> {slot:?}");
+                                            }
+                                        }
+                                    }
+
                                 }
 
                                 ui.end_row();
