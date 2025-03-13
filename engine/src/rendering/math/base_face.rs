@@ -1,5 +1,5 @@
 use wgpu::util::DeviceExt;
-use crate::rendering::world::vertex::Vertex;
+use crate::rendering::math::vertex::Vertex;
 use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 

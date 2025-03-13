@@ -19,6 +19,8 @@ pub mod block_outline;
 pub mod world;
 pub mod shader_cam;
 pub mod skybox;
+pub mod math;
+pub mod world;
 
 pub fn initialize() -> Workload {
     (

@@ -1,42 +1,33 @@
-use shipyard::{AllStoragesView, Unique, UniqueView};
-use base_face::initialize_base_face;
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
-use crate::rendering::face_data::FaceData;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::sized_buffer::SizedBuffer;
+use crate::rendering::math::Vertex;
 use crate::rendering::texture::Texture;
-use crate::rendering::texture_atlas::TextureAtlas;
-use vertex::Vertex;
-
-mod vertex;
-mod base_face;
+use shipyard::{AllStoragesView, Unique, UniqueView};
+use crate::rendering::math::initialize_base_face;
+use crate::rendering::sized_buffer::SizedBuffer;
 
 #[derive(Unique)]
-pub struct WorldRenderState {
+pub struct EntityRenderState {
     pub pipeline: wgpu::RenderPipeline,
     pub base_face: SizedBuffer,
 }
 
-pub fn initialize_world_render_state(
+pub fn initialize_entity_render_state(
     g_ctx: UniqueView<GraphicsContext>,
     camera_uniform_buffer: UniqueView<CameraUniformBuffer>,
-    texture_atlas: UniqueView<TextureAtlas>,
     storages: AllStoragesView,
 ) {
-    // 5. pipeline / instructions for GPU
-
-    // loads a shader and returns a handle to the compiled shader
-    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("../../rendering/shaders/world.wgsl"));
+    let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("shaders/entity.wgsl"));
 
     let push_constant_range = wgpu::PushConstantRange {
         stages: wgpu::ShaderStages::VERTEX,
-        range: 0..12,
+        range: 0..36,
     };
 
     // pipeline describes the GPU's actions on a set of data, like a shader program
     let render_pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[&texture_atlas.bind_group_layout, &camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+        bind_group_layouts: &[&camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
         push_constant_ranges: &[push_constant_range],
     });
 
@@ -48,7 +39,7 @@ pub fn initialize_world_render_state(
             entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
-                Vertex::buffer_desc(), FaceData::buffer_desc()
+                Vertex::buffer_desc()
             ],
         },
         fragment: Some(wgpu::FragmentState {
@@ -62,7 +53,7 @@ pub fn initialize_world_render_state(
             })],
         }),
         primitive: wgpu::PrimitiveState { // how to interpret vertices when converting to triangles
-            topology: wgpu::PrimitiveTopology::TriangleStrip, // 3 vert per triangle
+            topology: wgpu::PrimitiveTopology::TriangleList, // 3 vert per triangle
             strip_index_format: None,
             front_face: wgpu::FrontFace::Ccw, // counter-clockwise ordered faces are front
             cull_mode: Some(wgpu::Face::Back), // backface culling
@@ -85,7 +76,5 @@ pub fn initialize_world_render_state(
         multiview: None, // for rendering to array textures
     });
 
-    let base_face = initialize_base_face(&g_ctx);
-
-    storages.add_unique(WorldRenderState { pipeline, base_face });
+    storages.add_unique(EntityRenderState { pipeline, base_face: initialize_base_face(&g_ctx) });
 }
