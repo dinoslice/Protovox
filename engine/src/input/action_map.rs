@@ -20,6 +20,30 @@ pub enum Action {
     ToggleGamemode,
     ToggleFullscreen,
     ToggleBlockBar,
+
+    BlockBar1,
+    BlockBar2,
+    BlockBar3,
+    BlockBar4,
+    BlockBar5,
+    BlockBar6,
+    BlockBar7,
+    BlockBar8,
+    BlockBar9,
+}
+
+impl Action {
+    pub const BLOCK_BAR: [Self; 9] = [
+        Self::BlockBar1,
+        Self::BlockBar2,
+        Self::BlockBar3,
+        Self::BlockBar4,
+        Self::BlockBar5,
+        Self::BlockBar6,
+        Self::BlockBar7,
+        Self::BlockBar8,
+        Self::BlockBar9,
+    ];
 }
 
 impl ActionMap {
@@ -70,6 +94,16 @@ impl TryFrom<&KeyCode> for Action {
             KC::F4 => Ok(Self::ToggleGamemode),
             KC::F11 => Ok(Self::ToggleFullscreen),
             KC::KeyI => Ok(Self::ToggleBlockBar),
+
+            KC::Digit1 => Ok(Self::BlockBar1),
+            KC::Digit2 => Ok(Self::BlockBar2),
+            KC::Digit3 => Ok(Self::BlockBar3),
+            KC::Digit4 => Ok(Self::BlockBar4),
+            KC::Digit5 => Ok(Self::BlockBar5),
+            KC::Digit6 => Ok(Self::BlockBar6),
+            KC::Digit7 => Ok(Self::BlockBar7),
+            KC::Digit8 => Ok(Self::BlockBar8),
+            KC::Digit9 => Ok(Self::BlockBar9),
             _ => Err(UnmappedAction),
         }
     }
