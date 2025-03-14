@@ -1,4 +1,4 @@
-use egui::{Align2, Grid, Sense, Vec2};
+use egui::{Align2, Grid, Vec2};
 use egui::load::SizedTexture;
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use egui_systems::CurrentEguiFrame;
@@ -24,13 +24,13 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing = Vec2::ZERO;
 
+                    let mut selected = Vec::with_capacity(block_bar_focus.focus.len());
+
                     Grid::new("inventory_grid")
                         .show(ui, |ui| {
                             for (row_idx, row) in inventory.as_slice().chunks(COLUMNS).enumerate() {
                                 for (col_idx, slot) in row.iter().enumerate() {
                                     let i = row_idx * 3 + col_idx;
-
-                                    let bar_slot = block_bar_focus.focus.iter().position(|&slot| slot == Some(i));
 
                                     let response = egui::Frame::none()
                                         .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
@@ -83,6 +83,14 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                             });
                                         });
 
+                                    if let Some(i) = block_bar_focus
+                                        .focus
+                                        .iter()
+                                        .position(|&slot| slot == Some(i))
+                                    {
+                                        selected.push((i, response.response.rect));
+                                    }
+
                                     if response.response.hovered() {
                                         for (bar_slot, &action) in Action::BLOCK_BAR.iter().enumerate() {
                                             if input_manager.just_pressed().get_action(action) {
@@ -96,7 +104,12 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                                     *slot = Some(i);
                                                 }
 
-                                                println!("action {action:?}, i: {i} -> {slot:?}");
+                                                block_bar_focus
+                                                    .focus
+                                                    .iter_mut()
+                                                    .enumerate()
+                                                    .filter(|(j, &mut focus)| *j != bar_slot && focus == Some(i))
+                                                    .for_each(|(_, slot)| *slot = None);
                                             }
                                         }
                                     }
@@ -106,6 +119,37 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                 ui.end_row();
                             }
                         });
+
+                    let painter = ui.painter();
+                    let font_id = egui::FontId::proportional(16.0);
+
+                    for (i, rect) in selected {
+                        let i = i + 1;
+
+                        painter.rect_stroke(
+                            rect,
+                            0.0,
+                            egui::Stroke::new(2.0, egui::Color32::LIGHT_RED),
+                        );
+
+                        let text_pos = rect.left_top() + Vec2::splat(2.0);
+
+                        painter.text(
+                            text_pos + Vec2::splat(0.75),
+                            Align2::LEFT_TOP,
+                            i,
+                            font_id.clone(),
+                            egui::Color32::BLACK,
+                        );
+
+                        painter.text(
+                            text_pos,
+                            Align2::LEFT_TOP,
+                            i,
+                            font_id.clone(),
+                            egui::Color32::LIGHT_RED,
+                        );
+                    }
                 })
         });
 }
