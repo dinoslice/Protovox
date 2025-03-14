@@ -2,17 +2,16 @@ use egui::Align2;
 use egui::load::SizedTexture;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
+use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
 use engine::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 
-pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, inv_display: UniqueView<BlockBarDisplay>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, inv_display: UniqueView<BlockBarDisplay>, block_bar_focus: UniqueView<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
     let (inventory, ..) = (&inventory, &local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
-
-    let inv = inventory.items().collect::<Vec<_>>();
 
     const OFFSET: f32 = 10.0;
 
@@ -50,7 +49,19 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                 }
 
                                 ui.centered_and_justified(|ui| {
-                                    if let Some(it) = inv.get(i as usize) {
+                                    if let Some(it) = block_bar_focus
+                                        .focus
+                                        .get(i as usize)
+                                        .expect("inv_display indices are within focus")
+                                        .map(|inv_index|
+                                            inventory
+                                                .as_slice()
+                                                .get(inv_index)
+                                                .expect("focus must be in range of inventory")
+                                                .as_ref()
+                                        )
+                                        .flatten()
+                                    {
                                         let texture = texture_atlas_views
                                             .get_from_texture_id(it.ty.texture_id())
                                             .expect("should have a texture");
@@ -67,7 +78,6 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
 
                                         let font_id = egui::FontId::proportional(16.0);
 
-                                        // shadow
                                         painter.text(
                                             text_pos + egui::Vec2::splat(1.2),
                                             Align2::RIGHT_BOTTOM,

@@ -30,7 +30,7 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                         .show(ui, |ui| {
                             for (row_idx, row) in inventory.as_slice().chunks(COLUMNS).enumerate() {
                                 for (col_idx, slot) in row.iter().enumerate() {
-                                    let i = row_idx * 3 + col_idx;
+                                    let i = row_idx * COLUMNS + col_idx;
 
                                     let response = egui::Frame::none()
                                         .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
