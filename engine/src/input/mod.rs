@@ -40,11 +40,11 @@ impl InputManager {
         self.just_pressed.reset_all();
         
         for (action, state) in self.queue.drain(..) {
-            self.pressed.set_action(action, state);
-            
-            if state {
+            if state && !self.pressed.get_action(action) {
                 self.just_pressed.set_action(action, true);
             }
+
+            self.pressed.set_action(action, state);
         }
     }
     
