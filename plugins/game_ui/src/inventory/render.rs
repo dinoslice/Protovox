@@ -8,11 +8,16 @@ use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::Inventory;
 use crate::egui_views::EguiTextureAtlasViews;
+use crate::inventory::InventoryOpen;
 
-pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, mut block_bar_focus: UniqueViewMut<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>, input_manager: UniqueView<InputManager>) {
+pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, mut block_bar_focus: UniqueViewMut<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>, input_manager: UniqueView<InputManager>, open: UniqueView<InventoryOpen>) {
     let (inventory, ..) = (&inventory, &local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
+
+    if !open.0 {
+        return;
+    }
 
     const COLUMNS: usize = 3;
 

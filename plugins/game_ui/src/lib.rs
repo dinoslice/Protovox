@@ -1,5 +1,5 @@
 use egui::Color32;
-use shipyard::{IntoIter, IntoWorkload, UniqueView, Workload, WorkloadModificator};
+use shipyard::{AllStoragesView, IntoIter, IntoWorkload, UniqueView, Workload, WorkloadModificator};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use dino_plugins::path;
@@ -12,7 +12,7 @@ use crate::block_bar::{create_block_bar_display, process_block_bar, scroll_block
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
-use crate::inventory::inventory;
+use crate::inventory::{inventory, open_inventory, InventoryOpen};
 
 extern crate nalgebra_glm as glm;
 
@@ -25,9 +25,12 @@ pub struct GameUiPlugin;
 
 impl DinoEnginePlugin for GameUiPlugin {
     fn early_startup(&self) -> Option<Workload> {
-        initialize_texture_atlas_views
+        (
+            initialize_texture_atlas_views
+                .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
+            |storages: AllStoragesView| storages.add_unique(InventoryOpen::default()),
+        )
             .into_workload()
-            .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer))
             .into()
     }
 
@@ -42,6 +45,7 @@ impl DinoEnginePlugin for GameUiPlugin {
         (
             scroll_block_bar.skip_if(local_player_is_gamemode_spectator),
             process_block_bar,
+            open_inventory,
         )
             .into_sequential_workload()
             .into()
