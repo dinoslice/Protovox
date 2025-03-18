@@ -36,7 +36,7 @@ pub fn open_inventory(
             open.0 = false;
             open_time.0 = None;
 
-            if !prev_block_bar_state.0 {
+            if prev_block_bar_state.0 { // one ! for toggle, another ! since it tries to toggle block bar
                 block_bar_display.toggle();
             }
         }
