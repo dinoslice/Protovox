@@ -1,3 +1,5 @@
+use std::array;
+
 #[derive(Debug, Clone, shipyard::Unique)]
 pub struct BlockBarFocus {
     // TODO: don't make this public
@@ -8,7 +10,7 @@ pub struct BlockBarFocus {
 impl BlockBarFocus {
     pub fn new(inventory_size: usize) -> Self {
         Self {
-            focus: Default::default(),
+            focus: array::from_fn(Some),
             inventory_size,
         }
     }
