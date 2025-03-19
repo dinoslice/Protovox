@@ -23,7 +23,6 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
 
     egui::Area::new("inventory".into())
         .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
-        .movable(true)
         .show(egui_frame.ctx(), |ui| {
             egui::Frame::none()
                 .show(ui, |ui| {
