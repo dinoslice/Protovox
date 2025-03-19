@@ -97,8 +97,7 @@ pub fn run(plugin_manager: PluginManager) {
                     }
                     WindowEvent::CloseRequested => world.run(request_exit),
                     WindowEvent::Resized(physical_size) => world.run_with_data(resize::resize, *physical_size),
-
-                    WindowEvent::Focused(focused) => world.run_with_data(capture_state::set_from_focus, *focused),
+                    WindowEvent::Focused(focused) if !focused => world.run_with_data(capture_state::set_from_focus, *focused),
                     WindowEvent::KeyboardInput {
                         event: KeyEvent {
                             state: ElementState::Pressed,
