@@ -1,5 +1,7 @@
 use std::time::Instant;
 use shipyard::{AllStoragesView, IntoWorkload, Unique, UniqueView, UniqueViewMut, Workload};
+use winit::event::{ElementState, KeyEvent, WindowEvent};
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::Fullscreen;
 use engine::application::{capture_state, CaptureState};
 use engine::application::delta_time::LastDeltaTime;
@@ -37,12 +39,22 @@ pub fn post_update_core() -> Workload {
         .into_workload()
 }
 
-fn toggle_gui(g_ctx: UniqueView<GraphicsContext>, capture_state: UniqueViewMut<CaptureState>, input: UniqueViewMut<InputManager>) {
-    if !input.just_pressed().get_action(Action::ToggleGui) {
-        return;
+fn toggle_gui(g_ctx: UniqueView<GraphicsContext>, capture_state: UniqueViewMut<CaptureState>, input: UniqueViewMut<InputManager>, last_frame_events: UniqueView<LastFrameEvents>) {
+    if last_frame_events.0.iter()
+        .any(|e| matches!(
+            e,
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    physical_key: PhysicalKey::Code(KeyCode::Escape),
+                    ..
+                },
+                ..
+            }
+        ))
+    {
+        capture_state::toggle_captured(g_ctx, capture_state, input);
     }
-
-    capture_state::toggle_captured(g_ctx, capture_state, input);
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
