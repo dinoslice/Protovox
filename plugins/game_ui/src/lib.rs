@@ -20,6 +20,7 @@ mod bottom_bar;
 mod egui_views;
 mod block_bar;
 mod inventory;
+pub mod gui_bundle;
 
 pub struct GameUiPlugin;
 

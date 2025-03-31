@@ -1,11 +1,11 @@
 mod render;
 
 use std::time::{Duration, Instant};
-use shipyard::{Unique, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut};
+use shipyard::{Unique, UniqueOrDefaultViewMut, UniqueViewMut};
 use engine::input::action_map::Action;
-use engine::input::InputManager;
 pub use render::inventory;
 use crate::block_bar::BlockBarDisplay;
+use crate::gui_bundle::GuiBundle;
 
 #[derive(Unique, Default)]
 pub struct InventoryOpenTime(pub Option<Instant>);
@@ -17,19 +17,19 @@ pub struct InventoryOpen(pub bool);
 pub struct PrevBlockBarState(pub bool);
 
 pub fn open_inventory(
-    input: UniqueView<InputManager>,
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
     mut prev_block_bar_state: UniqueOrDefaultViewMut<PrevBlockBarState>,
+    mut gui_bundle: GuiBundle,
 ) {
-    let pressed = input.pressed().get_action(Action::ToggleBlockBar);
+    let pressed = gui_bundle.input.pressed().get_action(Action::ToggleBlockBar);
 
     if !pressed {
         return;
     }
 
-    let just_pressed = input.just_pressed().get_action(Action::ToggleBlockBar);
+    let just_pressed = gui_bundle.input.just_pressed().get_action(Action::ToggleBlockBar);
 
     if open.0 {
         if just_pressed {
@@ -39,6 +39,8 @@ pub fn open_inventory(
             if prev_block_bar_state.0 { // one ! for toggle, another ! since it tries to toggle block bar
                 block_bar_display.toggle();
             }
+
+            gui_bundle.set_capture(true, false);
         }
     } else {
         if just_pressed {
@@ -54,6 +56,8 @@ pub fn open_inventory(
             if !prev_block_bar_state.0 {
                 block_bar_display.toggle();
             }
+
+            gui_bundle.set_capture(false, false);
         }
     }
 }
