@@ -40,9 +40,15 @@ impl WorldSaver {
     pub fn cache(&mut self, loc: ChunkLocation, data: ChunkData) {
         self.cache_with_duration(loc, data, self.default_cache_time)
     }
-
-    fn on_expiration(&mut self) {
+    
+    pub fn process(&mut self) {
         for (_, (_, cache)) in self.cache.extract_if(|_, (time, _)| Instant::now() >= *time) {
+            self.saver.save(cache);
+        }
+    }
+    
+    pub fn save_all(&mut self) {
+        for (_, (_, cache)) in self.cache.drain() {
             self.saver.save(cache);
         }
     }
