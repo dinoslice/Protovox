@@ -3,17 +3,19 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use shipyard::Unique;
 use game::chunk::data::ChunkData;
 use game::chunk::location::ChunkLocation;
 
+#[derive(Unique)]
 pub struct WorldSaver {
     pub default_cache_time: Duration,
     pub cache: HashMap<ChunkLocation, (Instant, ChunkSaveCache)>,
-    pub saver: Box<dyn ChunkSaver>,
+    pub saver: Box<dyn ChunkSaver + Send + Sync + 'static>,
 }
 
 impl WorldSaver {
-    pub fn new(default_cache_time: Duration, saver: impl ChunkSaver + 'static) -> Self {
+    pub fn new(default_cache_time: Duration, saver: impl ChunkSaver + Send + Sync + 'static) -> Self {
         Self {
             default_cache_time,
             cache: HashMap::default(),
@@ -54,6 +56,12 @@ impl WorldSaver {
     }
 }
 
+impl Default for WorldSaver {
+    fn default() -> Self {
+        Self::new(Duration::from_secs(45), ChunkSaveToFile::new("./world/").expect("path is a directory"))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ChunkSaveCache {
     pub data: ChunkData,
@@ -68,7 +76,9 @@ pub struct ChunkSaveToFile {
 }
 
 impl ChunkSaveToFile {
-    pub fn new(path: PathBuf) -> Option<Self> {
+    pub fn new(path: impl Into<PathBuf>) -> Option<Self> {
+        let path = path.into();
+        
         path.is_dir().then_some(Self { path })
     }
 }
