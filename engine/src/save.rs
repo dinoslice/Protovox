@@ -193,12 +193,7 @@ impl ChunkSaver for ChunkSaveToFile {
     }
 
     fn retrieve(&self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
-        let saved_path = self.path.join(Self::loc_to_file_name(&loc));
-        
-        let Ok(bytes) = fs::read(&saved_path) else {
-            tracing::error!("failed to open & read chunk {loc:?} at {saved_path:?}");
-            return None;
-        };
+        let saved_path = self.path.join(Self::loc_to_file_name(loc));
         
         let bytes = match fs::read(&saved_path) {
             Ok(bytes) => bytes,
