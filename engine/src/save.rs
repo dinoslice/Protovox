@@ -101,7 +101,14 @@ impl ChunkSaveToFile {
     pub fn new(path: impl Into<PathBuf>) -> Option<Self> {
         let path = path.into();
         
-        path.is_dir().then_some(Self { path })
+        // TODO: check to make sure this usage is right
+        match fs::create_dir_all(&path) {
+            Ok(_) => { Some(Self { path }) }
+            Err(err) => {
+                tracing::error!("failed to create dir at {path:?}: {err}");
+                None
+            }
+        }
     }
 
     fn loc_to_file_name(loc: &ChunkLocation) -> PathBuf {
