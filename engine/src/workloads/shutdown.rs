@@ -3,6 +3,7 @@ use shipyard::{UniqueView, UniqueViewMut};
 use networking::{PacketRegistry, RuntimePacket};
 use crate::events::KickedByServer;
 use crate::networking::server_handler::ServerHandler;
+use crate::save::WorldSaver;
 
 pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>, registry: UniqueView<PacketRegistry>) {
     let tx = &server_handler.tx;
@@ -20,4 +21,8 @@ pub fn disconnect_connected_players(server_handler: UniqueViewMut<ServerHandler>
             tracing::error!("Failed to send kick packet to {addr:?}");
         }
     }
+}
+
+pub fn save_world(mut world_saver: UniqueViewMut<WorldSaver>) {
+    world_saver.save_all();
 }

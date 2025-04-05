@@ -71,6 +71,10 @@ pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<Local
     held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
 }
 
+pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
+    world_saver.process();
+}
+
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
     for mut bus in vm_block_update_evt_bus.drain() {
         for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
