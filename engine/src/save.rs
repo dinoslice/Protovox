@@ -164,7 +164,8 @@ impl ChunkSaveToFile {
         
         let loc = ChunkLocation(IVec3::new(x, y, z));
         
-        assert_eq!(&Self::loc_to_file_name(&loc), file, "not inverse ops");
+        // performance cost here is negligible since this function is only called on startup
+        assert_eq!(Self::loc_to_file_name(&loc).file_name(), file.file_name(), "not inverse operations");
         
         Some(loc)
     }
