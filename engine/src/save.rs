@@ -92,7 +92,7 @@ impl WorldSaver {
 
 impl Default for WorldSaver {
     fn default() -> Self {
-        Self::new(Duration::from_secs(45), ChunkSaveToFile::new("./world/").expect("path is a directory"))
+        Self::new(Duration::from_secs(45), ChunkSaveToFile::new("target/save/world/").expect("path is a directory"))
     }
 }
 
