@@ -16,6 +16,7 @@ use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::sized_buffer::SizedBuffer;
 use crate::events::{ChunkGenEvent, ChunkGenRequestEvent};
 use crate::render_distance::RenderDistance;
+use crate::save::WorldSaver;
 
 const REQ_TIMEOUT: f32 = 5.0;
 
@@ -160,23 +161,23 @@ impl ChunkManager {
     }
 
     // TODO: ideally the iterator would be &ChunkLocation instead of Transform, but this is much easier to get working
-    pub fn unload_chunks<'a>(&mut self, players_info: impl IntoIterator<Item = (&'a Transform, &'a RenderDistance), IntoIter: Clone>) {
+    pub fn unload_chunks<'a>(&mut self, players_info: impl IntoIterator<Item = (&'a Transform, &'a RenderDistance), IntoIter: Clone>, world_saver: &mut WorldSaver) {
         let players_info = players_info.into_iter();
 
-        self.loaded.retain(|loc, _| {
-            let ret = players_info.clone().any(|(transform, rend)| Self::in_render_distance_with(loc, &transform.get_loc(), rend));
+        for (loc, chunk_data) in self.loaded
+            .extract_if(|loc, _| !players_info.clone().any(|(transform, rend)|
+                Self::in_render_distance_with(loc, &transform.get_loc(), rend)
+            ))
+        {
+            let _had_key = self.bakery.remove(&loc);
 
-            if !ret {
-                let _had_key = self.bakery.remove(loc).is_some();
-
-                // TODO: this debug assert has been failing from the start, but logically it shouldn't- figure it out eventually
-                // if nobody is loading this chunk, that means that when ChunkManager::update was called,
-                // then earlier when we checked if WE were loading this chunk, we should've gotten false and deleted it then
-                // debug_assert!(!had_key, "chunk should've been deleted earlier!");
-            }
-
-            ret
-        });
+            // TODO: this debug assert has been failing from the start, but logically it shouldn't- figure it out eventually
+            // if nobody is loading this chunk, that means that when ChunkManager::update was called,
+            // then earlier when we checked if WE were loading this chunk, we should've gotten false and deleted it then
+            // debug_assert!(_had_key.is_none(), "chunk should've been deleted earlier!");
+            
+            world_saver.cache(loc, chunk_data.data);
+        }
     }
 
     pub fn get_chunk_ref(&self, location: &ChunkLocation) -> Option<&ClientChunk> {
@@ -264,6 +265,8 @@ pub fn chunk_manager_update_and_request(
     vm_local_player: View<LocalPlayer>,
     g_ctx: UniqueView<GraphicsContext>,
     mut chunk_gen_event: ViewMut<ChunkGenEvent>,
+    
+    mut world_saver: UniqueViewMut<WorldSaver>,
 
     v_render_dist: View<RenderDistance>,
     v_transform: View<Transform>
@@ -285,7 +288,7 @@ pub fn chunk_manager_update_and_request(
     let player_info_vec = (&v_transform, &v_render_dist).iter()
         .collect::<Vec<_>>();
 
-    chunk_mgr.unload_chunks(player_info_vec);
+    chunk_mgr.unload_chunks(player_info_vec, &mut world_saver);
 }
 
 #[cfg(test)]
