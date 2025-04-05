@@ -15,6 +15,7 @@ use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
+use crate::save::WorldSaver;
 use crate::world_gen::WorldGenerator;
 
 pub fn toggle_gamemode(
@@ -224,8 +225,12 @@ pub fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entiti
 }
 
 
-pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
+pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, mut world_saver: UniqueViewMut<WorldSaver>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
+        if let Some(cache) = world_saver.try_remove(&req.0) {
+            world_generator.send(cache.data);
+        } else {
+            world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
+        }
     }
 }

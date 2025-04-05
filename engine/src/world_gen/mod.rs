@@ -88,6 +88,15 @@ impl WorldGenerator {
                 .expect("channel should not have disconnected")
         );
     }
+    
+    pub fn send(&self, chunk_data: ChunkData) {
+        let sender = self.chunk_output.0.clone();
+        
+        self.thread_pool.spawn(move ||
+            sender.send(ChunkGenEvent(chunk_data))
+                .expect("channel should not have disconnected")
+        );
+    }
 
     fn generate_chunk(perlin: Arc<Perlin>, splines: Arc<WorldGenSplines>, chunk: ChunkLocation, params: Arc<WorldGenParams>) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
