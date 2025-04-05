@@ -1,7 +1,9 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use hashbrown::HashMap;
+use glm::IVec3;
+use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use shipyard::Unique;
 use game::chunk::data::ChunkData;
@@ -11,15 +13,23 @@ use game::chunk::location::ChunkLocation;
 pub struct WorldSaver {
     default_cache_time: Duration,
     cache: HashMap<ChunkLocation, (Instant, ChunkSaveCache)>,
+    saved: HashSet<ChunkLocation>,
     saver: Box<dyn ChunkSaver + Send + Sync + 'static>,
 }
 
 impl WorldSaver {
     pub fn new(default_cache_time: Duration, saver: impl ChunkSaver + Send + Sync + 'static) -> Self {
+        let mut saved = HashSet::default();
+        
+        let saver = Box::new(saver);
+        
+        saver.update_saved(&mut saved);
+        
         Self {
             default_cache_time,
             cache: HashMap::default(),
-            saver: Box::new(saver),
+            saved,
+            saver,
         }
     }
     
@@ -79,6 +89,8 @@ impl ChunkSaveCache {
 
 pub trait ChunkSaver {
     fn save(&self, data: ChunkSaveCache) -> bool;
+
+    fn update_saved(&self, saved: &mut HashSet<ChunkLocation>);
 }
 
 pub struct ChunkSaveToFile {
@@ -91,15 +103,47 @@ impl ChunkSaveToFile {
         
         path.is_dir().then_some(Self { path })
     }
+
+    fn loc_to_file_name(loc: &ChunkLocation) -> PathBuf {
+        PathBuf::from(format!("{}_{}_{}.cff", loc.0.x, loc.0.y, loc.0.z))
+    }
+
+    fn file_name_to_loc(file: &Path) -> Option<ChunkLocation> {
+        if file.extension().is_none_or(|ext| ext != "cff") {
+            tracing::warn!("extension was incorrect; TODO: errors");
+            return None;
+        }
+        
+        let Some(stem) = file.file_stem() else {
+            tracing::warn!("no file name; TODO: errors");
+            return None;
+        };
+        
+        let stem = stem.to_string_lossy();
+        
+        let mut components = stem.split('_');
+        
+        let (Some((x, y, z)), None) = (components.next_tuple(), components.next()) else {
+            tracing::warn!("invalid name; TODO: errors");
+            return None;
+        };
+        
+        let (Ok(x), Ok(y), Ok(z)) = (x.parse(), y.parse(), z.parse()) else {
+            tracing::warn!("failed to parse coordinates; TODO: errors");
+            return None;
+        };
+        
+        let loc = ChunkLocation(IVec3::new(x, y, z));
+        
+        assert_eq!(&Self::loc_to_file_name(&loc), file, "not inverse ops");
+        
+        Some(loc)
+    }
 }
 
 impl ChunkSaver for ChunkSaveToFile {
     fn save(&self, data: ChunkSaveCache) -> bool {
-        let loc = &data.data.location.0;
-
-        let file_name = format!("{}_{}_{}.cff", loc.x, loc.y, loc.z);
-
-        let save_path = self.path.join(&file_name);
+        let save_path = self.path.join(Self::loc_to_file_name(&data.data.location));
 
         let bytes = match postcard::to_allocvec(&data.data) {
             Ok(bytes) => bytes, 
@@ -114,6 +158,28 @@ impl ChunkSaver for ChunkSaveToFile {
             Err(err) => {
                 tracing::error!("Failed to create and write to file at {save_path:?}: {err}");
                 false
+            }
+        }
+    }
+
+    fn update_saved(&self, saved: &mut HashSet<ChunkLocation>) {
+        let Ok(read_dir) = fs::read_dir(&self.path) else {
+            tracing::warn!("invalid directory; TODO: errors");
+            return;
+        };
+        
+        for entry in read_dir {
+            let Ok(entry) = entry else {
+                tracing::warn!("unable to get dir entry");
+                continue;
+            };
+            
+            let path = entry.path();
+            
+            if let Some(location) = Self::file_name_to_loc(&path) {
+                saved.insert(location);
+            } else {
+                tracing::warn!("file \"{path:?}\" wasn't a chunk save file");
             }
         }
     }
