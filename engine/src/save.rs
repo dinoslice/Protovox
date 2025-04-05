@@ -89,6 +89,8 @@ impl ChunkSaveCache {
 
 pub trait ChunkSaver {
     fn save(&self, data: ChunkSaveCache) -> bool;
+    
+    fn retrieve(&self, loc: &ChunkLocation) -> Option<ChunkSaveCache>;
 
     fn update_saved(&self, saved: &mut HashSet<ChunkLocation>);
 }
@@ -165,6 +167,31 @@ impl ChunkSaver for ChunkSaveToFile {
             Err(err) => {
                 tracing::error!("Failed to create and write to file at {save_path:?}: {err}");
                 false
+            }
+        }
+    }
+
+    fn retrieve(&self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
+        let saved_path = self.path.join(Self::loc_to_file_name(&loc));
+        
+        let Ok(bytes) = fs::read(&saved_path) else {
+            tracing::error!("failed to open & read chunk {loc:?} at {saved_path:?}");
+            return None;
+        };
+        
+        let bytes = match fs::read(&saved_path) {
+            Ok(bytes) => bytes,
+            Err(err) => {
+                tracing::error!("failed to open & read chunk {loc:?} at {saved_path:?}: {err}");
+                return None;
+            }
+        };
+
+        match postcard::from_bytes(&bytes) {
+            Ok(bytes) => Some(bytes),
+            Err(err) => {
+                tracing::error!("failed to deserialize {loc:?} at {saved_path:?}: {err}");
+                None
             }
         }
     }
