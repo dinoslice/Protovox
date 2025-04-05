@@ -57,6 +57,7 @@ noise = "0.9.0"
 # math
 nalgebra = { workspace = true }
 nalgebra-glm = { workspace = true }
+postcard = "1.1.1"
 
 [lints]
 workspace = true

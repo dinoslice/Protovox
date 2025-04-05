@@ -15,6 +15,7 @@ use crate::input::InputManager;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
+use crate::save::WorldSaver;
 use crate::world_gen::WorldGenerator;
 
 pub fn toggle_gamemode(
@@ -68,6 +69,10 @@ pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<Local
     let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
     
     held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
+}
+
+pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
+    world_saver.process();
 }
 
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
@@ -224,8 +229,12 @@ pub fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entiti
 }
 
 
-pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>) {
+pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, mut world_saver: UniqueViewMut<WorldSaver>) {
     for req in reqs.drain() {
-        world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
+        if let Some(cache) = world_saver.try_get(&req.0) {
+            world_generator.send(cache.data);
+        } else {
+            world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());
+        }
     }
 }
