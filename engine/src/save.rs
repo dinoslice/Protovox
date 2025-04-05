@@ -54,6 +54,10 @@ impl WorldSaver {
             self.saver.save(cache);
         }
     }
+    
+    pub fn try_remove(&mut self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
+        self.cache.remove(loc).map(|v| v.1)
+    }
 }
 
 impl Default for WorldSaver {
