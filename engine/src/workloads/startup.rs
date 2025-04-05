@@ -13,6 +13,7 @@ use crate::networking::server_connection::ServerConnection;
 use crate::networking::server_handler::ServerHandler;
 use crate::render_distance::RenderDistance;
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::save::WorldSaver;
 use crate::world_gen::WorldGenerator;
 
 pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
@@ -61,6 +62,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
 
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
+    storages.add_unique(WorldSaver::default());
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {
