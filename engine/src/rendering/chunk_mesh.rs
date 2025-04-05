@@ -59,7 +59,7 @@ impl<'a> ChunkMeshContext<'a> {
                         }
                     }
                     Err(adj) => {
-                        if !self.sides[ft as usize].map_or(true, |blocks| adj_is_air(blocks, adj)) {
+                        if !self.sides[ft as usize].is_none_or(|blocks| adj_is_air(blocks, adj)) {
                             continue;
                         }
                     }
