@@ -9,9 +9,9 @@ use game::chunk::location::ChunkLocation;
 
 #[derive(Unique)]
 pub struct WorldSaver {
-    pub default_cache_time: Duration,
-    pub cache: HashMap<ChunkLocation, (Instant, ChunkSaveCache)>,
-    pub saver: Box<dyn ChunkSaver + Send + Sync + 'static>,
+    default_cache_time: Duration,
+    cache: HashMap<ChunkLocation, (Instant, ChunkSaveCache)>,
+    saver: Box<dyn ChunkSaver + Send + Sync + 'static>,
 }
 
 impl WorldSaver {
