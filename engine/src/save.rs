@@ -71,6 +71,12 @@ pub struct ChunkSaveCache {
     pub data: ChunkData,
 }
 
+impl ChunkSaveCache {
+    pub fn new(data: ChunkData) -> Self {
+        Self { data }
+    }
+}
+
 pub trait ChunkSaver {
     fn save(&self, data: ChunkSaveCache) -> bool;
 }
