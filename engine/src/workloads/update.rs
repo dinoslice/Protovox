@@ -231,7 +231,7 @@ pub fn get_generated_chunks(world_gen: UniqueView<WorldGenerator>, mut vm_entiti
 
 pub fn generate_chunks(mut reqs: ViewMut<ChunkGenRequestEvent>, world_generator: UniqueView<WorldGenerator>, mut world_saver: UniqueViewMut<WorldSaver>) {
     for req in reqs.drain() {
-        if let Some(cache) = world_saver.try_remove(&req.0) {
+        if let Some(cache) = world_saver.try_get(&req.0) {
             world_generator.send(cache.data);
         } else {
             world_generator.spawn_generate_task(req.0, world_generator.splines.clone(), world_generator.params.clone());

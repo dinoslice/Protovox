@@ -54,19 +54,39 @@ impl WorldSaver {
     }
     
     pub fn process(&mut self) {
-        for (_, (_, cache)) in self.cache.extract_if(|_, (time, _)| Instant::now() >= *time) {
+        for (loc, (_, cache)) in self.cache.extract_if(|_, (time, _)| Instant::now() >= *time) {
             self.saver.save(cache);
+            self.saved.insert(loc);
         }
     }
     
     pub fn save_all(&mut self) {
-        for (_, (_, cache)) in self.cache.drain() {
+        for (loc, (_, cache)) in self.cache.drain() {
             self.saver.save(cache);
+            self.saved.insert(loc);
         }
     }
     
-    pub fn try_remove(&mut self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
-        self.cache.remove(loc).map(|v| v.1)
+    pub fn try_get(&mut self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
+        if let Some(cache) = self.cache.remove(loc).map(|v| v.1) {
+            Some(cache)
+        } else {
+            self.get_from_saved(loc)
+        }
+    }
+    
+    fn get_from_saved(&mut self, loc: &ChunkLocation) -> Option<ChunkSaveCache> {
+        if self.saved.contains(loc) {
+            let opt = self.saver.retrieve(loc);
+            
+            if opt.is_none() {
+                self.saved.remove(loc);
+            }
+            
+            opt
+        } else {
+            None
+        }
     }
 }
 
