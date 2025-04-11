@@ -7,6 +7,7 @@ use crate::rendering::sized_buffer::SizedBuffer;
 use crate::rendering::texture::Texture;
 use crate::rendering::texture_atlas::TextureAtlas;
 use crate::rendering::math::Vertex;
+use crate::vertex_buffer_desc;
 
 #[derive(Unique)]
 pub struct WorldRenderState {
@@ -45,7 +46,7 @@ pub fn initialize_world_render_state(
             entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
-                Vertex::buffer_desc(), FaceData::buffer_desc()
+                vertex_buffer_desc!(0), FaceData::buffer_desc()
             ],
         },
         fragment: Some(wgpu::FragmentState {

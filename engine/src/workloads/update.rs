@@ -100,9 +100,9 @@ pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPl
 
     // TODO: get this direction vector in a better way
     let direction = Vec3::new(
-        transform.yaw.cos() * transform.pitch.cos(),
-        transform.pitch.sin(),
-        transform.yaw.sin() * transform.pitch.cos(),
+        transform.yaw().cos() * transform.pitch().cos(),
+        transform.pitch().sin(),
+        transform.yaw().sin() * transform.pitch().cos(),
     );
 
     looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);

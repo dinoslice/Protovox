@@ -1,10 +1,12 @@
 use crate::rendering::camera_uniform_buffer::CameraUniformBuffer;
 use crate::rendering::graphics_context::GraphicsContext;
-use crate::rendering::math::Vertex;
-use crate::rendering::texture::Texture;
-use shipyard::{AllStoragesView, Unique, UniqueView};
 use crate::rendering::math::initialize_base_face;
+use crate::rendering::math::Vertex;
+use crate::rendering::model_render::ModelMap;
 use crate::rendering::sized_buffer::SizedBuffer;
+use crate::rendering::texture::Texture;
+use crate::vertex_buffer_desc;
+use shipyard::{AllStoragesView, Unique, UniqueView};
 
 #[derive(Unique)]
 pub struct EntityRenderState {
@@ -15,31 +17,32 @@ pub struct EntityRenderState {
 pub fn initialize_entity_render_state(
     g_ctx: UniqueView<GraphicsContext>,
     camera_uniform_buffer: UniqueView<CameraUniformBuffer>,
+    model_map: UniqueView<ModelMap>,
     storages: AllStoragesView,
 ) {
     let shader = g_ctx.device.create_shader_module(wgpu::include_wgsl!("shaders/entity.wgsl"));
 
     let push_constant_range = wgpu::PushConstantRange {
         stages: wgpu::ShaderStages::VERTEX,
-        range: 0..36,
+        range: 0..(size_of::<[f32; 10]>() as u32),
     };
 
     // pipeline describes the GPU's actions on a set of data, like a shader program
     let render_pipeline_layout = g_ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[&camera_uniform_buffer.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
+        label: Some("Entity Render Pipeline Layout"),
+        bind_group_layouts: &[&camera_uniform_buffer.bind_group_layout, &model_map.bind_group_layout], // layouts of the bind groups, matches @group(n) in shader
         push_constant_ranges: &[push_constant_range],
     });
 
     let pipeline = g_ctx.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Render Pipeline"),
+        label: Some("Entity Render Pipeline"),
         layout: Some(&render_pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             buffers: &[ // format of the vertex buffers used, indices correspond to slot when setting the buffer before rendering
-                Vertex::buffer_desc()
+                vertex_buffer_desc!(0)
             ],
         },
         fragment: Some(wgpu::FragmentState {

@@ -59,7 +59,7 @@ pub fn render_world(
 
         pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(chunk_loc.0.as_ref()));
 
-        pass.set_vertex_buffer(1, buffer.buffer.slice(..));
+        pass.set_vertex_buffer(1, buffer.slice(..));
 
         // draw the whole range of vertices, and all instances
         pass.draw(0..world_rend_state.base_face.size, 0..buffer.size);

@@ -57,6 +57,7 @@ noise = "0.9.0"
 # math
 nalgebra = { workspace = true }
 nalgebra-glm = { workspace = true }
+gltf = "1.4.1"
 
 [lints]
 workspace = true

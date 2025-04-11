@@ -44,6 +44,7 @@ impl DinoEnginePlugin for VoxelEngine {
             register_packets,
             initialize_networking,
             set_window_title,
+            crate::entity::initialize,
         )
             .into_sequential_workload()
             .into()
@@ -66,6 +67,7 @@ impl DinoEnginePlugin for VoxelEngine {
             process_physics,
             reset_mouse_manager_state,
             get_generated_chunks.run_if(is_hosted),
+            crate::entity::update_entities,
         )
             .into_sequential_workload()
             .into()

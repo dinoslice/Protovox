@@ -26,7 +26,7 @@ pub struct ShaderCam {
 impl ShaderCam {
     pub fn from_camera_and_transform(camera: &Camera, transform: &Transform) -> Option<Self> {
         Self::from_view_proj(
-            view_matrix(transform.position + camera.offset, transform.pitch, transform.yaw),
+            view_matrix(transform.position + camera.offset, transform.pitch(), transform.yaw()),
             *camera.perspective.as_matrix(),
         )
     }

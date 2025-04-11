@@ -1,4 +1,4 @@
-mod vertex;
+pub mod vertex;
 mod base_face;
 
 pub use vertex::*;

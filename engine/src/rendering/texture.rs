@@ -1,4 +1,4 @@
-use image::{GenericImageView, ImageError};
+use image::{DynamicImage, GenericImageView, ImageError, RgbaImage};
 
 pub struct Texture {
     #[allow(dead_code)]
@@ -21,16 +21,16 @@ impl Texture {
     pub fn from_images_2d(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        images: &[image::DynamicImage],
+        images: &[DynamicImage],
         label: Option<&str>,
     ) -> Option<Self> {
-        Self::from_images_2d_inner(device, queue, images, label, &wgpu::TextureViewDescriptor::default())
+        Self::from_images_2d_inner(device, queue, images.to_vec(), label, &wgpu::TextureViewDescriptor::default())
     }
 
     pub fn new_cubemap(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        images: &[image::DynamicImage; 6],
+        images: &[DynamicImage; 6],
         label: Option<&str>,
     ) -> Option<Self> {
         let view_descriptor = wgpu::TextureViewDescriptor {
@@ -41,25 +41,40 @@ impl Texture {
             ..Default::default()
         };
 
-        Self::from_images_2d_inner(device, queue, images, label, &view_descriptor)
+        Self::from_images_2d_inner(device, queue, images.to_vec(), label, &view_descriptor)
     }
 
     fn from_images_2d_inner(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        images: &[image::DynamicImage],
+        images: Vec<DynamicImage>,
         label: Option<&str>,
         view_descriptor: &wgpu::TextureViewDescriptor,
     ) -> Option<Self> {
-        let dimensions = images.first()?.dimensions();
+        let (max_width, max_height) = images.iter().fold((0u32, 0u32), |(mw, mh), img| {
+            let (w, h) = img.dimensions();
+            (mw.max(w), mh.max(h))
+        });
 
-        if images.iter().any(|img| img.dimensions() != dimensions) {
-            return None;
-        }
+        let images = images
+            .into_iter()
+            .map(|img| {
+                let (w, h) = img.dimensions();
+
+                if w == max_width && h == max_height {
+                    img
+                } else {
+                    let mut new_img: RgbaImage = image::ImageBuffer::new(max_width, max_height);
+                    image::imageops::overlay(&mut new_img, &img, 0, 0);
+
+                    DynamicImage::ImageRgba8(new_img)
+                }
+            })
+            .collect::<Vec<_>>();
 
         let size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
+            width: max_width,
+            height: max_height,
             depth_or_array_layers: images.len() as _,
         };
 
@@ -94,8 +109,8 @@ impl Texture {
                 &rgba,
                 wgpu::ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: Some(size_of::<image::Rgba<u8>>() as u32 * dimensions.0),
-                    rows_per_image: Some(dimensions.1),
+                    bytes_per_row: Some(size_of::<image::Rgba<u8>>() as u32 * max_width),
+                    rows_per_image: Some(max_height),
                 },
                 wgpu::Extent3d {
                     depth_or_array_layers: 1,

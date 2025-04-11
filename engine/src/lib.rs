@@ -20,5 +20,6 @@ pub mod physics;
 pub mod looking_at_block;
 pub mod last_world_interaction;
 pub mod gamemode;
+pub mod entity;
 
 pub use workloads::VoxelEngine;

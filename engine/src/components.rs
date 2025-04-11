@@ -1,4 +1,5 @@
 use glm::Vec3;
+use na::{Quaternion, Unit, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
 use game::block::Block;
@@ -19,13 +20,52 @@ pub struct GravityAffected;
 #[derive(Clone, Component, Debug, Default, Serialize, Deserialize)]
 pub struct Transform {
     pub position: Vec3,
-    pub yaw: f32,
-    pub pitch: f32,
+    pub rotation: Vec3,
+    pub scale: Vec3,
 }
 
 impl Transform {
     pub fn get_loc<T: From<WorldLocation>>(&self) -> T {
         WorldLocation(self.position).into()
+    }
+
+    pub fn pitch_mut(&mut self) -> &mut f32 {
+        &mut self.rotation.x
+    }
+
+    pub fn yaw_mut(&mut self) -> &mut f32 {
+        &mut self.rotation.y
+    }
+
+    pub fn roll_mut(&mut self) -> &mut f32 {
+        &mut self.rotation.z
+    }
+
+    pub fn x(&self) -> f32 { self.position.x }
+    pub fn y(&self) -> f32 { self.position.y }
+    pub fn z(&self) -> f32 { self.position.z }
+    pub fn pitch(&self) -> f32 { self.rotation.x }
+    pub fn yaw(&self) -> f32 { self.rotation.y }
+    pub fn roll(&self) -> f32 { self.rotation.z }
+}
+
+impl From<gltf::scene::Transform> for Transform {
+    fn from(t: gltf::scene::Transform) -> Transform {
+        let (position, rotation, scale) = t.decomposed();
+        let rotation: Unit<Quaternion<f32>> = UnitQuaternion::from_quaternion(Quaternion::from(rotation));
+        let (x, y, z) = rotation.euler_angles();
+
+        Transform {
+            position: position.into(),
+            rotation: Vec3::new(x, y, z),
+            scale: scale.into(),
+        }
+    }
+}
+
+impl Into<[f32; 9]> for Transform {
+    fn into(self) -> [f32; 9] {
+        [self.x(), self.y(), self.z(), self.pitch(), self.yaw(), self.roll(), self.scale[0], self.scale[1], self.scale[2]]
     }
 }
 

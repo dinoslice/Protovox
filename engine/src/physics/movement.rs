@@ -35,7 +35,7 @@ pub fn process_movement(
 
             let xz = match input_vec.try_normalize(f32::EPSILON) {
                 Some(norm_input) => {
-                    let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw);
+                    let plane_dir = glm::rotate_vec2(&norm_input, transform.yaw());
 
                     move_towards(&velocity.0.xz(), &(plane_dir * player_speed.max_vel), player_speed.accel * dt_secs)
                 }
@@ -59,7 +59,7 @@ pub fn process_movement(
             
             let xyz = match input_vec.try_normalize(f32::EPSILON) {
                 Some(norm_input) => {
-                    let plane_dir = glm::rotate_vec2(&norm_input.xz(), transform.yaw);
+                    let plane_dir = glm::rotate_vec2(&norm_input.xz(), transform.yaw());
 
                     let target = Vec3::new(plane_dir.x, norm_input.y, plane_dir.y);
 
@@ -83,11 +83,11 @@ pub fn apply_camera_input(input: UniqueView<InputManager>, delta_time: UniqueVie
 
     let rotate_scaled = input.mouse_manager.rotate * input.mouse_manager.sensitivity * dt_secs;
 
-    transform.yaw += rotate_scaled.x;
-    transform.pitch -= rotate_scaled.y;
+    *transform.yaw_mut() += rotate_scaled.x;
+    *transform.pitch_mut() -= rotate_scaled.y;
 
     const SAFE_FRAC_PI_2: f32 = std::f32::consts::FRAC_PI_2 - 0.0001;
-    transform.pitch = transform.pitch.clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
+    *transform.pitch_mut() = transform.pitch().clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
 }
 
 pub fn adjust_spectator_fly_speed(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_spectator_speed: ViewMut<SpectatorSpeed>) {

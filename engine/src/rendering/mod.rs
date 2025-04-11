@@ -21,6 +21,7 @@ pub mod skybox;
 pub mod entity;
 pub mod math;
 pub mod world;
+pub mod model_render;
 
 pub fn initialize() -> Workload {
     (
@@ -28,6 +29,7 @@ pub fn initialize() -> Workload {
             texture_atlas::initialize_texture_atlas,
             depth_texture::initialize_depth_texture,
             initialize_camera_uniform_buffer,
+            model_render::initialize,
         ).into_workload(),
         skybox::initialize_skybox,
         world::initialize_world_render_state,
