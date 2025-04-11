@@ -1,8 +1,61 @@
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
+use crate::block::dyn_block::{BlockDescriptor, ItemStack, TODO};
 use crate::block::face_type::FaceType;
 
 pub mod face_type;
+mod dyn_block;
+
+pub struct BlockDyn(Box<dyn BlockDescriptor>);
+
+impl BlockDyn {
+    pub fn of(block: impl BlockDescriptor) -> Self {
+        Self(Box::new(block))
+    }
+    pub fn is<T: BlockDescriptor>(&self) -> bool {
+        self.0.is::<T>()
+    }
+    
+    pub fn try_ref<T: BlockDescriptor>(&self) -> Option<&T> {
+        self.0.downcast_ref()
+    }
+    
+    pub fn try_mut<T: BlockDescriptor>(&mut self) -> Option<&mut T> {
+        self.0.downcast_mut()
+    }
+    
+    pub fn try_into<T: BlockDescriptor>(self) -> Result<T, Self> {
+        self.try_into_boxed().map(|ok| *ok)
+    }
+    
+    pub fn try_into_boxed<T: BlockDescriptor>(self) -> Result<Box<T>, Self> {
+        self.0
+            .downcast::<T>()
+            .map_err(|err| Self(err))
+    }
+}
+
+impl BlockDescriptor for BlockDyn {
+    fn uuid(&self) -> u128 {
+        self.0.uuid()
+    }
+
+    fn on_break(&self) -> Option<ItemStack> {
+        self.0.on_break()
+    }
+
+    fn placeable(&self) -> bool {
+        self.0.placeable()
+    }
+
+    fn raycast_ty(&self) -> TODO {
+        self.0.raycast_ty()
+    }
+
+    fn texture(&self) -> TODO {
+        self.0.texture()
+    }
+}
 
 #[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
 #[derive(Clone, Copy, Eq, PartialEq, Default, Debug, Deserialize, Serialize, EnumCount, FromRepr)]
