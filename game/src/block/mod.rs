@@ -5,6 +5,8 @@ use crate::block::face_type::FaceType;
 
 pub mod face_type;
 mod dyn_block;
+mod def;
+pub use def::*;
 
 pub struct BlockDyn(Box<dyn BlockDescriptor>);
 
