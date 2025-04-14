@@ -14,6 +14,9 @@ serde-big-array = "0.5.1"
 num-traits = "0.2.19"
 derive_more = { version = "1.0.0", features = ["add", "from"] }
 downcast-rs = "2.0.1"
+const-fnv1a-hash = "1.1.0"
+nohash = "0.2.0"
+hashbrown = "0.14.5"
 
 [lints]
 workspace = true

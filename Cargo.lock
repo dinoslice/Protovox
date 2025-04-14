@@ -629,6 +629,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-fnv1a-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32b13ea120a812beba79e34316b3942a857c86ec1593cb34f27bb28272ce2cca"
+
+[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1118,10 +1124,13 @@ dependencies = [
 name = "game"
 version = "0.1.0"
 dependencies = [
+ "const-fnv1a-hash",
  "derive_more",
  "downcast-rs 2.0.1",
+ "hashbrown 0.14.5",
  "nalgebra",
  "nalgebra-glm",
+ "nohash",
  "num-traits",
  "serde",
  "serde-big-array",
@@ -2000,6 +2009,12 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+
+[[package]]
+name = "nohash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0f889fb66f7acdf83442c35775764b51fed3c606ab9cee51500dbde2cf528ca"
 
 [[package]]
 name = "nohash-hasher"
