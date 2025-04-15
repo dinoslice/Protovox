@@ -1,10 +1,11 @@
 use std::ops::Neg;
 use glm::TVec3;
 use num_traits::{One, Signed, Zero};
+use serde::{Deserialize, Serialize};
 use strum::FromRepr;
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromRepr)]
+#[derive(Copy, Clone, Debug, FromRepr, PartialEq, Eq, Deserialize, Serialize)]
 pub enum FaceType { // TODO: rename to direction
     Bottom, // Y-
     Top, // Y+
