@@ -130,12 +130,12 @@ impl WorldGenerator {
 
                     match height as i32 - block_y {
                         0 => match block_y.cmp(&water_level) {
-                            Ordering::Greater | Ordering::Equal => out.set_block(pos, Block::Grass),
-                            Ordering::Less => out.set_block(pos, Block::Dirt),
+                            Ordering::Greater | Ordering::Equal => *out.block_mut(pos) = Block::Grass,
+                            Ordering::Less => *out.block_mut(pos) = Block::Dirt,
                         }
-                        1..4 => out.set_block(pos, Block::Dirt),
-                        4.. => out.set_block(pos, Block::Cobblestone),
-                        _ if block_y <= water_level => out.set_block(pos, Block::Debug), // TODO: make water block
+                        1..4 => *out.block_mut(pos) = Block::Dirt,
+                        4.. => *out.block_mut(pos) = Block::Cobblestone,
+                        _ if block_y <= water_level => *out.block_mut(pos) = Block::Debug, // TODO: make water block
                         _ => {}, // AIR
                     }
                 }

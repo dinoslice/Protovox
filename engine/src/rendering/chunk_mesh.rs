@@ -40,9 +40,9 @@ impl<'a> ChunkMeshContext<'a> {
         for pos in 0..BLOCKS_PER_CHUNK {
             let pos = ChunkPos(pos as _);
 
-            let block = *self.center.get(pos.0 as usize).expect("should be in range");
+            let block = self.center.get(pos.0 as usize).expect("should be in range");
 
-            if block == Block::Air {
+            if *block == Block::Air {
                 continue;
             }
 

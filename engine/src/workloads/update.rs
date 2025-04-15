@@ -147,14 +147,14 @@ pub fn place_break_blocks(
     should_place &= held.0.placeable();
 
     let mut update_block = |pos: BlockLocation, block: Block| {
-        chunk_mgr.modify_block(&pos, block); // TODO: only create event now, modify world later?
+        chunk_mgr.modify_block(&pos, block.clone()); // TODO: only create event now, modify world later?
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
     };
 
     if should_place && should_break {
-        update_block(hit_block.clone(), held.0);
+        update_block(hit_block.clone(), held.clone().0);
     } else if should_break {
         update_block(hit_block.clone(), Block::Air);
     } else if should_place {
@@ -162,7 +162,7 @@ pub fn place_break_blocks(
             let (min, max) = prev_air.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                update_block(prev_air.clone(), held.0);
+                update_block(prev_air.clone(), held.clone().0);
             }
         }
     }

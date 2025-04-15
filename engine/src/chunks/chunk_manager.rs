@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, mem};
 use std::time::Duration;
 use glm::IVec3;
 use hashbrown::HashMap;
@@ -188,7 +188,7 @@ impl ChunkManager {
         self.loaded.get_mut(location)
     }
 
-    pub fn get_block(&self, block_loc: &BlockLocation) -> Option<Block> {
+    pub fn get_block_ref(&self, block_loc: &BlockLocation) -> Option<&Block> {
         let (loc, pos) = block_loc.as_chunk_parts();
 
         self
@@ -196,7 +196,6 @@ impl ChunkManager {
             .data
             .blocks
             .get(pos.0 as usize)
-            .copied()
     }
 
     pub fn get_block_mut(&mut self, block_loc: &BlockLocation) -> Option<&mut Block> {
@@ -212,10 +211,8 @@ impl ChunkManager {
     pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
         let block_mut = self.get_block_mut(block_loc)?;
         
-        let prev = *block_mut;
-        
-        if prev != new {
-            *block_mut = new;
+        if *block_mut != new {
+            let prev = mem::replace(block_mut, new);
 
             self.get_chunk_mut(&block_loc.into()).map(ClientChunk::set_dirty);
 
@@ -226,14 +223,16 @@ impl ChunkManager {
                 let (new_chunk_loc, new_chunk_pos) = original.as_chunk_parts();
 
                 if let Some(chunk) = self.get_chunk_mut(&new_chunk_loc) {
-                    if chunk.data.get_block(new_chunk_pos) != Block::Air {
+                    if *chunk.data.block_ref(new_chunk_pos) != Block::Air {
                         chunk.set_dirty();
                     }
                 }
             }
+            
+            Some(prev)
+        } else {
+            None
         }
-        
-        Some(prev)
     }
 
     pub fn loaded_locations(&self) -> Vec<&ChunkLocation> {

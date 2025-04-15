@@ -98,7 +98,7 @@ pub fn game_ui(
 
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
                         Gamemode::Survival => {
-                            let hotbar_text = match held_block.0 {
+                            let hotbar_text = match &held_block.0 {
                                 Block::Air => "None".into(),
                                 b => format!("{b:?}"),
                             };
