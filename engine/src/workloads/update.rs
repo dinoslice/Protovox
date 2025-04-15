@@ -57,20 +57,6 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
-    let scroll = input.mouse_manager.scroll.floor() as i32;
-    
-    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
-        .next()
-        .expect("local player should have held block");
-
-    let curr_block = held.0 as u16 as i32;
-    
-    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
-    
-    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
-}
-
 pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
     world_saver.process();
 }
