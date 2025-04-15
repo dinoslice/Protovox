@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumDiscriminants};
 use crate::block::face_type::{Axis, FaceType};
+use static_assertions::const_assert;
 
 pub mod face_type;
 
@@ -18,6 +19,8 @@ pub enum Block {
     Leaf,
     Debug,
 }
+
+const_assert!(size_of::<Block>() <= 16);
 
 #[repr(u8)]
 #[derive(Clone, Copy, Eq, PartialEq)]
