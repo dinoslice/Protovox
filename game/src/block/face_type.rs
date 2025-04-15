@@ -35,6 +35,21 @@ impl FaceType {
             FT::Right => TVec3::new(T::one(), T::zero(), T::zero()),
         }
     }
+    
+    pub const fn axis(self) -> Axis {
+        match self {
+            Self::Left | Self::Right => Axis::X,
+            Self::Bottom | Self::Top => Axis::Y,
+            Self::Front | Self::Back => Axis::Z,
+        }
+    }
+    
+    pub const fn sign(self) -> i8 {
+        match self {
+            Self::Bottom | Self::Back | Self::Left => -1,
+            Self::Top | Self::Front | Self::Right => 1,
+        }
+    }
 }
 
 impl Neg for FaceType {
