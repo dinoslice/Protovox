@@ -15,6 +15,10 @@ pub enum FaceType { // TODO: rename to direction
     Right, // X+
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromRepr, PartialEq, Eq, Deserialize, Serialize)]
+pub enum Axis { X = 0, Y, Z }
+
 impl FaceType {
     pub const ALL: [FaceType; 6] = [FaceType::Top, FaceType::Bottom, FaceType::Left, FaceType::Right, FaceType::Front, FaceType::Back];
     pub const POS: [FaceType; 3] = [FaceType::Right, FaceType::Top, FaceType::Front];
