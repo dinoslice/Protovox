@@ -69,7 +69,7 @@ impl Block {
             B::Air | B::Debug => None,
             B::Grass | B::Dirt  => Some(I::Dirt.default_one()),
             B::Cobblestone | B::Stone => Some(I::Cobblestone.default_one()),
-            B::Log => Some(I::Log.default_one()),
+            B::Log { .. } => Some(I::Log.default_one()),
             B::Leaf => {
                 let count = thread_rng().gen_range(5..15);
 
