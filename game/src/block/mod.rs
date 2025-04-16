@@ -61,7 +61,7 @@ impl Block {
     }
 
     // TODO: take in self
-    pub fn on_break(&self, /* break_context: BreakContext TODO: break context for fortune*/) -> Option<ItemStack> {
+    pub fn on_break(self, /* break_context: BreakContext TODO: break context for fortune*/) -> Option<ItemStack> {
         use Block as B;
         use ItemType as I;
 
