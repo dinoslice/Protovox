@@ -10,15 +10,15 @@ pub fn render_line_gizmos(
     depth_texture: UniqueView<DepthTexture>,
     camera_uniform_buffer: UniqueViewMut<CameraUniformBuffer>
 ) {
-    let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
+    let RenderContext { multisample_view, tex_view, encoder, .. } = ctx.as_mut();
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("line_gizmos_render_pass"),
         color_attachments: &[
             // @location(0) in output of fragment shader
             Some(wgpu::RenderPassColorAttachment { // where to draw color to
-                view: tex_view, // save the color texture view accessed earlier
-                resolve_target: None, // texture to received resolved output, same as view unless multisampling
+                view: multisample_view, // save the color texture view accessed earlier
+                resolve_target: Some(tex_view), // texture to received resolved output, same as view unless multisampling
                 ops: wgpu::Operations { // what to do with the colors on the view
                     load: wgpu::LoadOp::Load,
                     store: wgpu::StoreOp::Store, // store the result of this pass, don't discard it

@@ -32,7 +32,6 @@ impl Model {
 
         let mut dyn_images = Vec::new();
         for (i, image) in images.iter().enumerate() {
-            println!("Loading image {:?}", image.format);
             let format = match image.format {
                 Format::R8 => ColorType::L8,
                 Format::R8G8 => ColorType::La8,
@@ -48,10 +47,7 @@ impl Model {
 
             let mut dyn_image = DynamicImage::new(image.width, image.height, format);
 
-            println!("{} {}", format.channel_count(), format.bytes_per_pixel());
-
             let bytes_per_channel = format.bytes_per_pixel() / format.channel_count();
-            println!("{:?}", bytes_per_channel);
             let mut x = 0;
             let mut y = 0;
             for pixel in image.pixels.chunks_exact(format.bytes_per_pixel() as _) {
@@ -69,8 +65,6 @@ impl Model {
                     y += 1;
                 }
             }
-
-            dyn_image.save(format!("image{}.png", i)).expect("Failed to save image.png");
 
             dyn_images.push(dyn_image);
         }
@@ -107,7 +101,6 @@ pub struct ModelPart {
 
 impl ModelPart {
     pub fn from(mesh: gltf::Mesh, buffers: &Vec<Data>, transform: gltf::scene::Transform) -> ModelPart {
-        tracing::debug!("{:?}", transform);
         let mut vertices = Vec::new();
         let mut indices = Vec::new();
         for primitive in mesh.primitives() {

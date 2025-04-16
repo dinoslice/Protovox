@@ -14,7 +14,7 @@ pub fn resize(new_size: winit::dpi::PhysicalSize<u32>, mut g_ctx: UniqueViewMut<
             .iter()
             .for_each(|c| c.perspective.set_aspect(aspect));
 
-        let new_depth_texture = Texture::create_depth_texture(&g_ctx.device, &g_ctx.config, "depth texture");
+        let new_depth_texture = Texture::create_depth_texture_with_sample_count(&g_ctx.device, &g_ctx.config, 4, "depth texture");
         *depth_texture = DepthTexture(new_depth_texture);
     } else {
         tracing::warn!("Ignoring resize with non-positive width or height ({new_size:?})");

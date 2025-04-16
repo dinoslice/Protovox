@@ -72,7 +72,7 @@ pub fn initialize_entity_render_state(
             bias: wgpu::DepthBiasState::default(),
         }),
         multisample: wgpu::MultisampleState {
-            count: 1, // multisampling
+            count: 4, // multisampling
             mask: !0, // use all samples
             alpha_to_coverage_enabled: false, // for anti-aliasing
         },

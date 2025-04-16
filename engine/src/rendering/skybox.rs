@@ -100,7 +100,11 @@ pub fn initialize_skybox(g_ctx: UniqueView<GraphicsContext>, camera_uniform_buff
             conservative: false,
         },
         depth_stencil: None,
-        multisample: wgpu::MultisampleState::default(),
+        multisample: wgpu::MultisampleState {
+            count: 4,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        },
         multiview: None,
     });
 

@@ -1,5 +1,7 @@
 use shipyard::{AllStoragesView, Unique, UniqueView};
+use wgpu::{TextureAspect, TextureUsages};
 use crate::rendering::graphics_context::GraphicsContext;
+use crate::rendering::texture::Texture;
 
 pub mod world;
 pub mod block_outline;
@@ -10,6 +12,8 @@ pub mod entity;
 pub struct RenderContext {
     pub output: wgpu::SurfaceTexture,
     pub tex_view: wgpu::TextureView,
+    pub multisample: wgpu::Texture,
+    pub multisample_view: wgpu::TextureView,
     pub encoder: wgpu::CommandEncoder,
 }
 
@@ -25,7 +29,29 @@ pub fn create_new_render_context(storages: AllStoragesView, g_ctx: UniqueView<Gr
         label: Some("Render encoder"),
     });
 
-    storages.add_unique(RenderContext { output, tex_view, encoder });
+    let multisample = g_ctx.device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Multisample Texture"),
+        size: output.texture.size(),
+        mip_level_count: output.texture.mip_level_count(),
+        sample_count: 4,
+        dimension: output.texture.dimension(),
+        format: output.texture.format(),
+        usage: TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+
+    let multisample_view = multisample.create_view(&wgpu::TextureViewDescriptor {
+        label: Some("Multisample Texture View"),
+        format: Some(multisample.format()),
+        dimension: Some(wgpu::TextureViewDimension::D2),
+        aspect: TextureAspect::All,
+        base_mip_level: 0,
+        mip_level_count: Some(multisample.mip_level_count()),
+        base_array_layer: 0,
+        array_layer_count: None,
+    });
+
+    storages.add_unique(RenderContext { output, tex_view, multisample, multisample_view, encoder });
 
     Ok(())
 }

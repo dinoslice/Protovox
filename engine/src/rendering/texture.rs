@@ -205,6 +205,10 @@ impl Texture {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float; // store depth as f32
 
     pub fn create_depth_texture(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration, label: &str) -> Self {
+        Self::create_depth_texture_with_sample_count(device, config, 1, label)
+    }
+
+    pub fn create_depth_texture_with_sample_count(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration, sample_count: u32, label: &str) -> Self {
         // depth texture is same size as screen, values taken from surface config
         let size = wgpu::Extent3d {
             width: config.width,
@@ -216,7 +220,7 @@ impl Texture {
             label: Some(label),
             size,
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: Self::DEPTH_FORMAT,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT // rendering to the depth texture

@@ -6,6 +6,6 @@ use crate::rendering::graphics_context::GraphicsContext;
 pub struct DepthTexture(pub Texture);
 
 pub fn initialize_depth_texture(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
-    let depth_texture = Texture::create_depth_texture(&g_ctx.device, &g_ctx.config, "depth texture");
+    let depth_texture = Texture::create_depth_texture_with_sample_count(&g_ctx.device, &g_ctx.config, 4, "depth texture");
     storages.add_unique(DepthTexture(depth_texture));
 }

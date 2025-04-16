@@ -3,12 +3,14 @@ use crate::rendering::depth_texture::DepthTexture;
 use crate::rendering::entity::EntityRenderState;
 use crate::rendering::render::RenderContext;
 use shipyard::{Get, IntoIter, IntoWithId, UniqueView, UniqueViewMut, View};
-use wgpu::ShaderStages;
+use wgpu::{ShaderStages, TextureAspect, TextureUsages};
 use wgpu::util::RenderEncoder;
 use crate::components::Transform;
 use crate::entity::model::Model;
 use crate::entity::ModelView;
+use crate::rendering::graphics_context::GraphicsContext;
 use crate::rendering::model_render::ModelMap;
+use crate::rendering::texture::Texture;
 
 pub fn render_entity(
     mut ctx: UniqueViewMut<RenderContext>,
@@ -19,15 +21,15 @@ pub fn render_entity(
     v_model: View<ModelView>,
     v_transform: View<Transform>,
 ) {
-    let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
+    let RenderContext { multisample_view, tex_view, encoder, .. } = ctx.as_mut();
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("entity_render_pass"),
         color_attachments: &[
             // @location(0) in output of fragment shader
             Some(wgpu::RenderPassColorAttachment { // where to draw color to
-                view: tex_view, // save the color texture view accessed earlier
-                resolve_target: None, // texture to received resolved output, same as view unless multisampling
+                view: multisample_view, // save the color texture view accessed earlier
+                resolve_target: Some(tex_view), // texture to received resolved output, same as view unless multisampling
                 ops: wgpu::Operations { // what to do with the colors on the view
                     load: wgpu::LoadOp::Load,
                     store: wgpu::StoreOp::Store, // store the result of this pass, don't discard it
@@ -69,6 +71,8 @@ pub fn render_entity(
 
                 pass.set_vertex_buffer(0, buffer.slice(..));
 
+                pass.draw(0..buffer.size, 0..1);
+                pass.draw(0..buffer.size, 0..1);
                 pass.draw(0..buffer.size, 0..1);
             }
         }

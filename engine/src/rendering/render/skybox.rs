@@ -8,15 +8,15 @@ pub fn render_skybox(
     camera_uniform_buffer: UniqueView<CameraUniformBuffer>,
     skybox: UniqueView<SkyboxRenderBundle>
 ) {
-    let RenderContext { tex_view, encoder, .. } = ctx.as_mut();
+    let RenderContext { multisample_view, tex_view, encoder, .. } = ctx.as_mut();
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("skybox render pass"),
         color_attachments: &[
             // @location(0) in output of fragment shader
             Some(wgpu::RenderPassColorAttachment { // where to draw color to
-                view: tex_view, // save the color texture view accessed earlier
-                resolve_target: None, // texture to received resolved output, same as view unless multisampling
+                view: multisample_view, // save the color texture view accessed earlier
+                resolve_target: Some(tex_view), // texture to received resolved output, same as view unless multisampling
                 ops: wgpu::Operations { // what to do with the colors on the view
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: wgpu::StoreOp::Store, // store the result of this pass, don't discard it
