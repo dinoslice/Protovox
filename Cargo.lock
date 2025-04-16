@@ -1116,6 +1116,7 @@ dependencies = [
  "nalgebra",
  "nalgebra-glm",
  "num-traits",
+ "rand",
  "serde",
  "serde-big-array",
  "shipyard",
@@ -1136,6 +1137,7 @@ dependencies = [
  "nalgebra-glm",
  "shipyard",
  "strck",
+ "wgpu",
 ]
 
 [[package]]

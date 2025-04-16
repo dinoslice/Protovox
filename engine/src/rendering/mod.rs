@@ -12,7 +12,7 @@ pub mod chunk_mesh;
 
 pub mod camera_uniform_buffer;
 pub mod depth_texture; // TODO: fix visibility
-mod texture_atlas;
+pub mod texture_atlas;
 
 pub mod sized_buffer;
 pub mod block_outline;
