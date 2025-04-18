@@ -1,9 +1,8 @@
 use nalgebra_glm::Vec3;
-use shipyard::{EntitiesViewMut, IntoIter, IntoWorkload, UniqueOrDefaultView, View, ViewMut, Workload};
+use shipyard::{EntitiesViewMut, IntoIter, IntoWorkload, View, ViewMut, Workload};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePluginMetadata};
 use engine::components::{Hitbox, LocalPlayer, Transform};
-use engine::looking_at_block::RaycastDebug;
 use engine::VoxelEngine;
 use game::chunk::CHUNK_SIZE;
 use game::chunk::location::ChunkLocation;
@@ -15,7 +14,6 @@ pub struct VisualDebugPlugin;
 impl DinoEnginePlugin for VisualDebugPlugin {
     fn late_update(&self) -> Option<Workload> {
         (
-            debug_draw_raycast,
             debug_draw_chunks,
             debug_draw_hitbox_gizmos
         )
@@ -30,27 +28,6 @@ impl DinoEnginePlugin for VisualDebugPlugin {
             dependencies: &[ &VoxelEngine, &GizmosPlugin ]
         }
     }
-}
-
-fn debug_draw_raycast(
-    mut hits: UniqueOrDefaultView<RaycastDebug>,
-    mut entities: EntitiesViewMut,
-    mut vm_box_gizmos: ViewMut<BoxGizmo>,
-    mut vm_line_gizmos: ViewMut<LineGizmo>,
-) {
-    for hit in &hits.checks {
-        let (min, max) = hit.get_aabb_bounds();
-
-        entities.add_entity(&mut vm_box_gizmos, BoxGizmo::from_corners(min, max, GizmoStyle::stroke(GizmoColor::new(0.9, 0.2, 0.6)), GizmoLifetime::SingleFrame));
-    }
-
-
-    entities.add_entity(&mut vm_line_gizmos, LineGizmo {
-        start: hits.start,
-        end: hits.end,
-        style: GizmoStyle::stroke(GizmoColor::new(0.8, 0.8, 0.0)),
-        lifetime: GizmoLifetime::SingleFrame,
-    });
 }
 
 fn debug_draw_chunks(
