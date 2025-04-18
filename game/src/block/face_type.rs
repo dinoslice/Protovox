@@ -50,6 +50,17 @@ impl FaceType {
             Self::Top | Self::Front | Self::Right => 1,
         }
     }
+
+    pub const fn from_axis_and_sign(axis: Axis, pos: bool) -> Self {
+        match (axis, pos) {
+            (Axis::X, true) => Self::Right,
+            (Axis::X, false) => Self::Left,
+            (Axis::Y, true) => Self::Top,
+            (Axis::Y, false) => Self::Bottom,
+            (Axis::Z, true) => Self::Front,
+            (Axis::Z, false) => Self::Back,
+        }
+    }
 }
 
 impl Neg for FaceType {
