@@ -171,11 +171,10 @@ pub fn place_break_blocks(
     } else if should_break {
         update_block(&mut chunk_mgr, location.clone(), Block::Air);
     } else if should_place {
+        // TODO: impl Add<IVec3> for BlockLocation
         let adj = BlockLocation(location.0 + ft.as_vector());
 
-        let is_air = chunk_mgr.get_block_ref(&adj).is_some_and(|b| *b == Block::Air);
-
-        if is_air {
+        if chunk_mgr.get_block_ref(&adj) == Some(&Block::Air) {
             let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
