@@ -82,7 +82,7 @@ impl Block {
         self.into()
     }
 
-    pub fn placeable(&self) -> bool {
+    pub fn placeable(&self) -> bool { // TODO: shouldn't this be on item?
         match self.ty() {
             BlockTy::Air => false,
             BlockTy::Grass => true,
