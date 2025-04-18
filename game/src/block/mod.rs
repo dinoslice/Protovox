@@ -45,22 +45,26 @@ impl Block {
     pub fn texture_id(&self, face_type: FaceType) -> Option<TextureId> {
         use crate::texture_ids::*;
 
-        let id = match self.ty() {
-            BlockTy::Air => return None,
-            BlockTy::Grass => match face_type {
+        let id = match self {
+            Block::Air => return None,
+            Block::Grass => match face_type {
                 FaceType::Top => GRASS_TOP,
                 FaceType::Bottom => DIRT,
                 _ => GRASS_SIDE,
             }
-            BlockTy::Dirt => DIRT,
-            BlockTy::Cobblestone => COBBLE,
-            BlockTy::Debug => match face_type {
-                FaceType::Left | FaceType::Right => DEBUG_RED,
-                FaceType::Bottom | FaceType::Top => DEBUG_BLUE,
-                FaceType::Front | FaceType::Back => DEBUG_GREEN,
+            Block::Dirt => DIRT,
+            Block::Cobblestone => COBBLE,
+            Block::Debug => match face_type.axis() {
+                Axis::X => DEBUG_RED,
+                Axis::Y => DEBUG_BLUE,
+                Axis::Z => DEBUG_GREEN,
             }
-            BlockTy::Log => LOG,
-            BlockTy::Stone | BlockTy::Leaf => todo!()
+            Block::Log { rotation } => if face_type.axis() == *rotation {
+                DEBUG_RED
+            } else {
+                LOG // TODO: rotate texture
+            }
+            Block::Stone | Block::Leaf => todo!()
         };
 
         Some(id)
