@@ -1,5 +1,5 @@
 use shipyard::Component;
-use crate::chunks::raycast::BlockRaycastResult;
+use crate::chunks::raycast::RaycastResult;
 
 #[derive(Debug, Component)]
-pub struct LookingAtBlock(pub Option<BlockRaycastResult>);
+pub struct LookingAtBlock(pub Option<RaycastResult>);

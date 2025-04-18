@@ -2,6 +2,7 @@ use std::array;
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View};
 use game::block::face_type::FaceType;
 use game::chunk::pos::ChunkPos;
+use crate::chunks::raycast::RaycastHit;
 use crate::components::LocalPlayer;
 use crate::looking_at_block::LookingAtBlock;
 use crate::rendering::face_data::FaceData;
@@ -28,7 +29,11 @@ pub fn update_block_outline_buffer(
         return
     };
 
-    let chunk_pos = ChunkPos::from(&raycast.hit_block);
+    let RaycastHit::Block { location, face } = &raycast.hit else {
+        return;
+    };
+
+    let chunk_pos = ChunkPos::from(location);
 
     let faces: [_; 6] = array::from_fn(|ty| FaceData::new(chunk_pos, FaceType::ALL[ty], game::texture_ids::BLOCK_OUTLINE));
 

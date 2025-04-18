@@ -6,7 +6,7 @@ use game::block::Block;
 use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;
-use crate::chunks::raycast::BlockRaycastResult;
+use crate::chunks::raycast::{RaycastHit, RaycastResult};
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
@@ -98,7 +98,7 @@ pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPl
         transform.yaw.sin() * transform.pitch.cos(),
     );
 
-    looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);
+    looking_at_block.0 = chunk_mgr.raycast(raycast_origin, direction, 4.5, 0.1);
 }
 
 pub fn place_break_blocks(
@@ -120,7 +120,13 @@ pub fn place_break_blocks(
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     
-    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = &look_at.0 else {
+    let Some(RaycastResult {
+        hit: RaycastHit::Block {
+            location,
+            face: Some(ft)
+        },
+        ..
+    }) = &look_at.0 else {
         return;
     };
 
@@ -134,32 +140,36 @@ pub fn place_break_blocks(
     
     should_place &= held.0.placeable();
 
-    let mut update_block = |pos: BlockLocation, block: Block| {
+    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block| {
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
 
-        chunk_mgr.modify_block(&pos, block) // TODO: only create event now, modify world later?
+        world.modify_block(&pos, block) // TODO: only create event now, modify world later?
     };
 
     if should_place && should_break {
-        if let Some(old) = update_block(hit_block.clone(), held.0) {
+        if let Some(old) = update_block(&mut chunk_mgr, location.clone(), held.0.clone()) {
             if let Some(stack) = old.on_break() {
                 let _ = inventory.try_insert(stack); // TODO: deal with overflow
             }
         }
     } else if should_break {
-        if let Some(old) = update_block(hit_block.clone(), Block::Air) {
+        if let Some(old) = update_block(&mut chunk_mgr, location.clone(), Block::Air) {
             if let Some(stack) = old.on_break() {
                 let _ = inventory.try_insert(stack); // TODO: deal with overflow
             }
         }
     } else if should_place {
-        if let Some(prev_air) = prev_air {
-            let (min, max) = prev_air.get_aabb_bounds();
+        let adj = BlockLocation(location.0 + ft.as_vector());
+
+        let is_air = chunk_mgr.get_block_ref(&adj).is_some_and(|b| *b == Block::Air);
+
+        if is_air {
+            let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                let _ = update_block(prev_air.clone(), held.0.clone());
+                let _ = update_block(&mut chunk_mgr, adj, held.0.clone());
             }
         }
     }
