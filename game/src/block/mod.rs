@@ -5,6 +5,7 @@ use strum::{EnumCount, EnumDiscriminants};
 use crate::block::face_type::{Axis, FaceType};
 use static_assertions::const_assert;
 use crate::item::{ItemStack, ItemType};
+use crate::location::BlockLocation;
 use crate::texture_ids::TextureId;
 
 pub mod face_type;
@@ -91,17 +92,19 @@ impl Block {
     pub fn ty(&self) -> BlockTy {
         self.into()
     }
+}
 
-    pub fn placeable(&self) -> bool { // TODO: shouldn't this be on item?
-        match self.ty() {
-            BlockTy::Air => false,
-            BlockTy::Grass => true,
-            BlockTy::Dirt => true,
-            BlockTy::Cobblestone => true,
-            BlockTy::Debug => true,
-            BlockTy::Stone => true,
-            BlockTy::Log => true,
-            BlockTy::Leaf => true,
+impl BlockTy {
+    pub fn place(self, _loc: BlockLocation, face: FaceType) -> Option<Block> {
+        match self {
+            Self::Air => None,
+            Self::Grass => Some(Block::Grass),
+            Self::Dirt => Some(Block::Dirt),
+            Self::Cobblestone => Some(Block::Cobblestone),
+            Self::Stone => Some(Block::Stone),
+            Self::Log => Some(Block::Log { rotation: face.axis() }),
+            Self::Leaf => Some(Block::Leaf),
+            Self::Debug => Some(Block::Debug),
         }
     }
 }
