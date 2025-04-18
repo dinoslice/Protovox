@@ -11,6 +11,7 @@ use engine::inventory::Inventory;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::Hand;
 use crate::inventory::InventoryOpen;
+use crate::item_stack::ItemStackRender;
 
 pub fn inventory(
     egui_frame: UniqueView<CurrentEguiFrame>,
@@ -59,57 +60,11 @@ pub fn inventory(
                                             ui.set_width(40.0);
 
                                             ui.centered_and_justified(|ui| {
-                                                let response = if let Some(it) = slot {
-                                                    let texture = texture_atlas_views
-                                                        .get_from_texture_id(it.ty.texture_id())
-                                                        .expect("should have a texture");
-
-                                                    let size = Vec2::splat(35.0);
-
-                                                    let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
-
-                                                    Image::new(SizedTexture { id: texture, size })
-                                                        .paint_at(ui, rect);
-
-                                                    let painter = ui.painter();
-
-                                                    let text = it.count.to_string();
-                                                    let text_pos = rect.right_bottom() - Vec2::splat(10.0);
-
-                                                    let font_id = egui::FontId::proportional(16.0);
-
-                                                    // shadow
-                                                    painter.text(
-                                                        text_pos + Vec2::splat(1.2),
-                                                        Align2::RIGHT_BOTTOM,
-                                                        &text,
-                                                        font_id.clone(),
-                                                        egui::Color32::BLACK,
-                                                    );
-
-                                                    painter.text(
-                                                        text_pos,
-                                                        Align2::RIGHT_BOTTOM,
-                                                        text,
-                                                        font_id,
-                                                        egui::Color32::WHITE,
-                                                    );
-
-                                                    response
-                                                } else {
-                                                    let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
-
-                                                    ui.painter().rect_filled(rect, 0.0, Color32::from_gray(128));
-
-                                                    ui.painter().debug_text(
-                                                        rect.center(),
-                                                        Align2::CENTER_CENTER,
-                                                        Color32::WHITE,
-                                                        format!("{i}"),
-                                                    );
-
-                                                    response
-                                                };
+                                                let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
+                                                
+                                                if let Some(it) = slot {
+                                                    ItemStackRender { it, atlas: &texture_atlas_views, rect }.ui(ui);
+                                                }
                                                 
                                                 if response.clicked() {
                                                     mem::swap(slot, &mut hand.0);

@@ -1,4 +1,4 @@
-use egui::Align2;
+use egui::{Align2, Sense, Vec2};
 use egui::load::SizedTexture;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
@@ -7,6 +7,7 @@ use engine::components::LocalPlayer;
 use engine::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
+use crate::item_stack::ItemStackRender;
 
 pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, inv_display: UniqueView<BlockBarDisplay>, block_bar_focus: UniqueView<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
     let (inventory, ..) = (&inventory, &local_player).iter()
@@ -35,7 +36,7 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                     .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
                             };
 
-                            frame.show(ui, |ui| {
+                            let _ = frame.show(ui, |ui| {
                                 ui.style_mut()
                                     .visuals
                                     .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
@@ -62,37 +63,9 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                         )
                                         .flatten()
                                     {
-                                        let texture = texture_atlas_views
-                                            .get_from_texture_id(it.ty.texture_id())
-                                            .expect("should have a texture");
+                                        let (rect, _) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
 
-                                        let size = egui::Vec2::splat(35.0);
-
-                                        let image_response = ui.image(SizedTexture { id: texture, size });
-
-                                        let painter = ui.painter();
-                                        let rect = image_response.rect;
-
-                                        let text = it.count.to_string();
-                                        let text_pos = rect.right_bottom() - egui::Vec2::splat(10.0);
-
-                                        let font_id = egui::FontId::proportional(16.0);
-
-                                        painter.text(
-                                            text_pos + egui::Vec2::splat(1.2),
-                                            Align2::RIGHT_BOTTOM,
-                                            &text,
-                                            font_id.clone(),
-                                            egui::Color32::BLACK,
-                                        );
-
-                                        painter.text(
-                                            text_pos,
-                                            Align2::RIGHT_BOTTOM,
-                                            text,
-                                            font_id,
-                                            egui::Color32::WHITE,
-                                        );
+                                        ItemStackRender { it, atlas: &texture_atlas_views, rect }.ui(ui);
                                     }
                                 });
                             }).response;
