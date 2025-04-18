@@ -1,4 +1,4 @@
-use serde_big_array::BigArray;
+use serde_big_array::Array;
 use serde::{Deserialize, Serialize};
 use crate::block::Block;
 use crate::chunk::BLOCKS_PER_CHUNK;
@@ -10,16 +10,23 @@ pub type ChunkBlocks = [Block; BLOCKS_PER_CHUNK];
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChunkData {
     pub location: ChunkLocation,
-    #[serde(with = "BigArray")]
-    pub blocks: ChunkBlocks,
+    blocks: Box<Array<Block, BLOCKS_PER_CHUNK>>,
 }
 
 impl ChunkData {
     pub fn empty(location: ChunkLocation) -> Self {
         Self {
             location,
-            blocks: [const { Block::Air }; BLOCKS_PER_CHUNK],
+            blocks: Box::new(Array([const { Block::Air }; BLOCKS_PER_CHUNK])),
         }
+    }
+
+    pub fn blocks_ref(&self) -> &ChunkBlocks {
+        &self.blocks.0
+    }
+
+    pub fn blocks_mut(&mut self) -> &mut ChunkBlocks {
+        &mut self.blocks.0
     }
 
     pub fn block_mut(&mut self, pos: ChunkPos) -> &mut Block {

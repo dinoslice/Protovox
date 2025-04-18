@@ -194,7 +194,7 @@ impl ChunkManager {
         self
             .get_chunk_ref(&loc)?
             .data
-            .blocks
+            .blocks_ref()
             .get(pos.0 as usize)
     }
 
@@ -204,7 +204,7 @@ impl ChunkManager {
         self
             .get_chunk_mut(&loc)?
             .data
-            .blocks
+            .blocks_mut()
             .get_mut(pos.0 as usize)
     }
     

@@ -25,12 +25,12 @@ impl<'a> ChunkMeshContext<'a> {
             let new_loc = ChunkLocation(center_loc.0 + ft.as_vector());
 
             chunk_mgr.get_chunk_ref(&new_loc)
-                .map(|c| &c.data.blocks)
+                .map(|c| c.data.blocks_ref())
         });
 
         Self {
             sides,
-            center: &center_chunk.blocks,
+            center: &center_chunk.blocks_ref(),
         }
     }
 
