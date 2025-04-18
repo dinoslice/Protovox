@@ -2,7 +2,7 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::ChunkManager;
 use shipyard::{UniqueView, UniqueViewMut, ViewMut, IntoIter, View, EntitiesViewMut, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
-use game::block::Block;
+use game::block::{Block, BlockTy};
 use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;
@@ -137,8 +137,6 @@ pub fn place_break_blocks(
         should_place |= input.pressed().get_action(Action::PlaceBlock);
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
-    
-    should_place &= held.0.placeable();
 
     let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block| {
         last_world_interaction.reset_cooldown();
@@ -153,7 +151,9 @@ pub fn place_break_blocks(
     };
 
     if should_place && should_break {
-        update_block(&mut chunk_mgr, location.clone(), held.0.clone());
+        let block = held.0.place(location.clone(), *ft).unwrap_or(Block::Air);
+        
+        update_block(&mut chunk_mgr, location.clone(), block);
     } else if should_break {
         update_block(&mut chunk_mgr, location.clone(), Block::Air);
     } else if should_place {
@@ -165,7 +165,9 @@ pub fn place_break_blocks(
             let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                update_block(&mut chunk_mgr, adj, held.0.clone());
+                if let Some(block) = held.0.place(location.clone(), *ft) {
+                    update_block(&mut chunk_mgr, adj, block);
+                }
             }
         }
     }

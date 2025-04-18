@@ -1,7 +1,7 @@
 use glm::Vec3;
 use serde::{Deserialize, Serialize};
 use shipyard::Component;
-use game::block::Block;
+use game::block::BlockTy;
 use game::location::WorldLocation;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
@@ -111,4 +111,4 @@ impl Hitbox {
 pub struct IsOnGround(pub bool);
 
 #[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
-pub struct HeldBlock(pub Block);
+pub struct HeldBlock(pub BlockTy);

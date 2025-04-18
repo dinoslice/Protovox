@@ -9,7 +9,7 @@ use engine::networking::server_handler::ServerHandler;
 use egui_systems::DuringEgui;
 use engine::inventory::Inventory;
 use engine::VoxelEngine;
-use game::block::Block;
+use game::block::BlockTy;
 use crate::egui_views::{initialize_texture_atlas_views, EguiTextureAtlasViews};
 
 extern crate nalgebra_glm as glm;
@@ -133,7 +133,7 @@ pub fn game_ui(
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| match gamemode {
                         Gamemode::Survival => {
                             let hotbar_text = match &held_block.0 {
-                                Block::Air => "None".into(),
+                                BlockTy::Air => "None".into(),
                                 b => format!("{b:?}"),
                             };
 

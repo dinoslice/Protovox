@@ -1,7 +1,7 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
-use game::block::Block;
+use game::block::BlockTy;
 use networking::PacketRegistry;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -48,7 +48,7 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
-    storages.add_component(id, HeldBlock(Block::Cobblestone));
+    storages.add_component(id, HeldBlock(BlockTy::Cobblestone));
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
