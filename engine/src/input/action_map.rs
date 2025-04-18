@@ -30,6 +30,8 @@ pub enum Action {
     BlockBar7,
     BlockBar8,
     BlockBar9,
+
+    ToggleGui,
 }
 
 impl Action {
@@ -104,6 +106,9 @@ impl TryFrom<&KeyCode> for Action {
             KC::Digit7 => Ok(Self::BlockBar7),
             KC::Digit8 => Ok(Self::BlockBar8),
             KC::Digit9 => Ok(Self::BlockBar9),
+
+            KC::Escape => Ok(Self::ToggleGui),
+
             _ => Err(UnmappedAction),
         }
     }

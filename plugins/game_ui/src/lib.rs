@@ -8,11 +8,11 @@ use egui_systems::DuringEgui;
 use block_bar::block_bar;
 use engine::gamemode::local_player_is_gamemode_spectator;
 use engine::VoxelEngine;
-use crate::block_bar::{create_block_bar_display, process_block_bar, scroll_block_bar};
+use crate::block_bar::{create_block_bar_display, scroll_block_bar};
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
-use crate::inventory::{inventory, open_inventory, InventoryOpen};
+use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
 
 extern crate nalgebra_glm as glm;
 
@@ -20,6 +20,7 @@ mod bottom_bar;
 mod egui_views;
 mod block_bar;
 mod inventory;
+pub mod gui_bundle;
 
 pub struct GameUiPlugin;
 
@@ -44,8 +45,7 @@ impl DinoEnginePlugin for GameUiPlugin {
     fn input(&self) -> Option<Workload> {
         (
             scroll_block_bar.skip_if(local_player_is_gamemode_spectator),
-            process_block_bar,
-            open_inventory,
+            toggle_inv_block_bar,
         )
             .into_sequential_workload()
             .into()
