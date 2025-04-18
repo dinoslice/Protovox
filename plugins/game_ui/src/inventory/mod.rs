@@ -26,7 +26,7 @@ pub fn toggle_inv_block_bar(
     let just_rel = gui_bundle.input.just_released().get_action(Action::ToggleBlockBar);
     
     if !gui_bundle.input.pressed().get_action(Action::ToggleBlockBar) {
-        if !open.0 && just_rel {
+        if !open.0 && just_rel && gui_bundle.capture_state.is_captured() {
             block_bar_display.toggle();
         }
         
@@ -36,7 +36,7 @@ pub fn toggle_inv_block_bar(
     let just_pressed = gui_bundle.input.just_pressed().get_action(Action::ToggleBlockBar);
 
     if open.0 {
-        // closing the inventory / block bar
+        // closing the inventory
         if just_pressed {
             open.0 = false;
             open_time.0 = None;
@@ -48,7 +48,7 @@ pub fn toggle_inv_block_bar(
 
             gui_bundle.set_capture(true, false);
         }
-    } else {
+    } else if gui_bundle.capture_state.is_captured() {
         if just_pressed {
             open_time.0 = Some(Instant::now());
         }
