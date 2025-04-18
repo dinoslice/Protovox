@@ -53,7 +53,7 @@ pub fn toggle_inv_block_bar(
             open_time.0 = Some(Instant::now());
         }
 
-        if matches!(open_time.0, Some(t) if t.elapsed() > Duration::from_secs_f32(0.5)) {
+        if matches!(open_time.0, Some(t) if t.elapsed() > Duration::from_secs_f32(0.25)) {
             open.0 = true;
             open_time.0 = None;
 
