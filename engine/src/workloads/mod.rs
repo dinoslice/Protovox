@@ -1,8 +1,9 @@
-use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload, WorkloadModificator};
+use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, UniqueView, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
 use crate::{args, rendering};
+use crate::application::CaptureState;
 use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::gamemode::local_player_is_gamemode_spectator;
@@ -58,6 +59,7 @@ impl DinoEnginePlugin for VoxelEngine {
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
         )
             .into_sequential_workload()
+            .run_if(|captured: UniqueView<CaptureState>| captured.is_captured())
             .into()
     }
 
