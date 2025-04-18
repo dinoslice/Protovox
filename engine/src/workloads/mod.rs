@@ -53,6 +53,7 @@ impl DinoEnginePlugin for VoxelEngine {
         (
             apply_camera_input,
             process_movement,
+            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
         )
@@ -120,7 +121,6 @@ impl DinoEnginePlugin for VoxelEngine {
             client_apply_block_updates.run_if(is_multiplayer_client),
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
-            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
         ).into_sequential_workload()
             .into()
     }
