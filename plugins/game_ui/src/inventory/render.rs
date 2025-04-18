@@ -1,6 +1,7 @@
-use egui::{Align2, Grid, Vec2};
+use std::mem;
+use egui::{Align2, Color32, Grid, Image, Sense, Vec2};
 use egui::load::SizedTexture;
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
@@ -8,10 +9,20 @@ use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::Inventory;
 use crate::egui_views::EguiTextureAtlasViews;
+use crate::inventory::hand::Hand;
 use crate::inventory::InventoryOpen;
 
-pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, mut block_bar_focus: UniqueViewMut<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>, input_manager: UniqueView<InputManager>, open: UniqueView<InventoryOpen>) {
-    let (inventory, ..) = (&inventory, &local_player).iter()
+pub fn inventory(
+    egui_frame: UniqueView<CurrentEguiFrame>,
+    local_player: View<LocalPlayer>,
+    mut inventory: ViewMut<Inventory>,
+    mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
+    texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
+    input_manager: UniqueView<InputManager>,
+    open: UniqueView<InventoryOpen>,
+    mut hand: UniqueViewMut<Hand>,
+) {
+    let (inventory, ..) = (&mut inventory, &local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
 
@@ -32,8 +43,8 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
 
                     Grid::new("inventory_grid")
                         .show(ui, |ui| {
-                            for (row_idx, row) in inventory.as_slice().chunks(COLUMNS).enumerate() {
-                                for (col_idx, slot) in row.iter().enumerate() {
+                            for (row_idx, row) in inventory.as_mut_slice().chunks_mut(COLUMNS).enumerate() {
+                                for (col_idx, slot) in row.iter_mut().enumerate() {
                                     let i = row_idx * COLUMNS + col_idx;
 
                                     let response = egui::Frame::none()
@@ -48,17 +59,19 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                             ui.set_width(40.0);
 
                                             ui.centered_and_justified(|ui| {
-                                                if let Some(it) = slot {
+                                                let response = if let Some(it) = slot {
                                                     let texture = texture_atlas_views
                                                         .get_from_texture_id(it.ty.texture_id())
                                                         .expect("should have a texture");
 
                                                     let size = Vec2::splat(35.0);
 
-                                                    let image_response = ui.image(SizedTexture { id: texture, size });
+                                                    let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
+
+                                                    Image::new(SizedTexture { id: texture, size })
+                                                        .paint_at(ui, rect);
 
                                                     let painter = ui.painter();
-                                                    let rect = image_response.rect;
 
                                                     let text = it.count.to_string();
                                                     let text_pos = rect.right_bottom() - Vec2::splat(10.0);
@@ -81,8 +94,25 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                                         font_id,
                                                         egui::Color32::WHITE,
                                                     );
+
+                                                    response
                                                 } else {
-                                                    ui.label(format!("{i}"));
+                                                    let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
+
+                                                    ui.painter().rect_filled(rect, 0.0, Color32::from_gray(128));
+
+                                                    ui.painter().debug_text(
+                                                        rect.center(),
+                                                        Align2::CENTER_CENTER,
+                                                        Color32::WHITE,
+                                                        format!("{i}"),
+                                                    );
+
+                                                    response
+                                                };
+                                                
+                                                if response.clicked() {
+                                                    mem::swap(slot, &mut hand.0);
                                                 }
                                             });
                                         });
