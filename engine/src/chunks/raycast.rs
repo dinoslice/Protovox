@@ -1,6 +1,6 @@
 use glm::Vec3;
 use game::block::Block;
-use game::block::face_type::FaceType;
+use game::block::face_type::{Axis, FaceType};
 use game::location::{BlockLocation, WorldLocation};
 use crate::chunks::chunk_manager::ChunkManager;
 
@@ -23,65 +23,63 @@ pub enum RaycastHit {
 }
 
 impl ChunkManager {
-    pub fn raycast(&self, origin: &Vec3, direction: &Vec3, max_dist: f32, step: f32) -> Option<BlockRaycastResult> {
-        let delta = direction.normalize() * step;
+    pub fn raycast(&self, origin: Vec3, direction: Vec3, max_dist: f32) -> Option<RaycastResult> {
+        let direction = direction.normalize();
 
-        let mut curr = origin;
-        let mut traversed = 0.0;
+        let mut voxel = BlockLocation::from(WorldLocation(origin));
 
-        while traversed < max_dist {
-            let block_loc = WorldLocation(curr).into();
+        let step = direction.map(|n| n.signum() as i32);
 
-            // TODO: should I early return if the chunk doesn't exist? or should you be able to raycast through it?
-            let block = self.get_block_ref(&block_loc)?;
+        let voxel_f = voxel.0.cast::<f32>();
 
-            if *block != Block::Air {
-                return Some(RaycastResult {
-                    distance: traversed,
-                    hit: RaycastHit::Block {
-                        location: block_loc.clone(),
-                        face: (traversed.abs() < 1e-6).then(|| determine_hit_face(curr, delta, block_loc)),
-                    },
-                });
+        let mut t_max = Vec3::from_fn(|i, _| {
+            if direction[i] != 0.0 {
+                let next_boundary = if direction[i] >= 0.0 {
+                    voxel_f[i] + 1.0
+                } else {
+                    voxel_f[i]
+                };
+
+                (next_boundary - origin[i]) / direction[i]
             } else {
-                traversed += step;
-                curr += delta;
+                f32::INFINITY
             }
+        });
+
+        let t_delta = direction.map(|n| n.recip().abs());
+
+        let mut t = 0.0;
+
+        let mut face = None;
+
+        while t < max_dist {
+            if *self.get_block_ref(&voxel)? != Block::Air {
+                return Some(RaycastResult {
+                    distance: t,
+                    hit: RaycastHit::Block {
+                        location: voxel,
+                        face,
+                    },
+                })
+            }
+
+            let min_comp = if t_max.x < t_max.y && t_max.x < t_max.z {
+                0
+            } else if t_max.y < t_max.z {
+                1
+            } else {
+                2
+            };
+
+            voxel.0[min_comp] += step[min_comp];
+            t = t_max[min_comp];
+            t_max[min_comp] += t_delta[min_comp];
+            face = Some(FaceType::from_axis_and_sign(
+                Axis::from_repr(min_comp as _).expect("min_comp returns [0,3)"),
+                step[min_comp].is_negative()
+            ));
         }
 
         None
     }
-}
-
-fn determine_hit_face(position: Vec3, delta: Vec3, block_loc: BlockLocation) -> FaceType {
-    let (block_min, block_max) = block_loc.get_aabb_bounds();
-
-    // Calculate previous position (before entering the block)
-    let mut prev_pos = position;
-
-    for i in 0..10 {
-        prev_pos -= delta;
-        dbg!(i);
-
-        if prev_pos.x < block_min.x && position.x >= block_min.x {
-            return FaceType::Left;
-        }
-        if prev_pos.x >= block_max.x && position.x < block_max.x {
-            return FaceType::Right;
-        }
-        if prev_pos.y < block_min.y && position.y >= block_min.y {
-            return FaceType::Bottom;
-        }
-        if prev_pos.y >= block_max.y && position.y < block_max.y {
-            return FaceType::Top;
-        }
-        if prev_pos.z < block_min.z && position.z >= block_min.z {
-            return FaceType::Back;
-        }
-        if prev_pos.z >= block_max.z && position.z < block_max.z {
-            return FaceType::Front;
-        }
-    }
-
-    unreachable!("this function should not be called if distance = 0")
 }
