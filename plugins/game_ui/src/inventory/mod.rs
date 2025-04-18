@@ -16,26 +16,32 @@ pub struct InventoryOpen(pub bool);
 #[derive(Unique, Default)]
 pub struct PrevBlockBarState(pub bool);
 
-pub fn open_inventory(
+pub fn toggle_inv_block_bar(
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
     mut prev_block_bar_state: UniqueOrDefaultViewMut<PrevBlockBarState>,
     mut gui_bundle: GuiBundle,
 ) {
-    let pressed = gui_bundle.input.pressed().get_action(Action::ToggleBlockBar);
-
-    if !pressed {
+    let just_rel = gui_bundle.input.just_released().get_action(Action::ToggleBlockBar);
+    
+    if !gui_bundle.input.pressed().get_action(Action::ToggleBlockBar) {
+        if !open.0 && just_rel {
+            block_bar_display.toggle();
+        }
+        
         return;
     }
 
     let just_pressed = gui_bundle.input.just_pressed().get_action(Action::ToggleBlockBar);
 
     if open.0 {
+        // closing the inventory / block bar
         if just_pressed {
             open.0 = false;
             open_time.0 = None;
 
+            // TODO: this has some weird behavior
             if prev_block_bar_state.0 { // one ! for toggle, another ! since it tries to toggle block bar
                 block_bar_display.toggle();
             }
@@ -47,7 +53,7 @@ pub fn open_inventory(
             open_time.0 = Some(Instant::now());
         }
 
-        if matches!(open_time.0, Some(t) if pressed && t.elapsed() > Duration::from_secs_f32(0.5)) {
+        if matches!(open_time.0, Some(t) if t.elapsed() > Duration::from_secs_f32(0.5)) {
             open.0 = true;
             open_time.0 = None;
 
@@ -58,6 +64,8 @@ pub fn open_inventory(
             }
 
             gui_bundle.set_capture(false, false);
+        } else if just_rel {
+            block_bar_display.toggle();
         }
     }
 }
