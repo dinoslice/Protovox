@@ -1,4 +1,5 @@
 mod render;
+pub mod hand;
 
 use std::time::{Duration, Instant};
 use shipyard::{Unique, UniqueOrDefaultViewMut, UniqueViewMut};

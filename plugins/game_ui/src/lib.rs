@@ -12,7 +12,9 @@ use crate::block_bar::{create_block_bar_display, scroll_block_bar};
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
+use game::item::ItemType;
 use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
+use crate::inventory::hand::{render_hand, Hand};
 
 extern crate nalgebra_glm as glm;
 
@@ -30,6 +32,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             initialize_texture_atlas_views
                 .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
             |storages: AllStoragesView| storages.add_unique(InventoryOpen::default()),
+            |storages: AllStoragesView| storages.add_unique(Hand(Some(ItemType::Dirt.default_one()))),
         )
             .into_workload()
             .into()
@@ -57,6 +60,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             bottom_bar,
             block_bar,
             inventory,
+            render_hand,
         )
             .into_workload()
             .order_egui()
