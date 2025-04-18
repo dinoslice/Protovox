@@ -15,7 +15,7 @@ use crate::input::action_map::Action;
 use crate::input::{reset_mouse_manager_state, InputManager};
 use crate::inventory::Inventory;
 use crate::last_world_interaction::LastWorldInteraction;
-use crate::looking_at_block::LookingAtBlock;
+use crate::looking_at_block::{LookingAtBlock, RaycastDebug};
 use crate::physics::{collision};
 use crate::save::WorldSaver;
 use crate::world_gen::WorldGenerator;
@@ -83,7 +83,15 @@ pub fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm
     }
 }
 
-pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPlayer>, v_transform: View<Transform>, v_camera: View<Camera>, mut vm_looking_at_block: ViewMut<LookingAtBlock>) {
+pub fn raycast(
+    chunk_mgr: UniqueView<ChunkManager>,
+    v_local_player: View<LocalPlayer>,
+    v_transform: View<Transform>,
+    v_camera: View<Camera>,
+    mut vm_looking_at_block: ViewMut<LookingAtBlock>,
+    mut dbg: UniqueOrDefaultViewMut<RaycastDebug>,
+    input: UniqueView<InputManager>,
+) {
     let (_, transform, camera, looking_at_block) = (&v_local_player, &v_transform, &v_camera, &mut vm_looking_at_block)
         .iter()
         .next()
@@ -98,7 +106,11 @@ pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPl
         transform.yaw.sin() * transform.pitch.cos(),
     );
 
-    looking_at_block.0 = chunk_mgr.raycast(raycast_origin, direction, 4.5);
+    let rc_dbg = input.just_pressed()
+        .get_action(Action::Sneak)
+        .then_some(&mut dbg as _);
+
+    looking_at_block.0 = chunk_mgr.raycast(raycast_origin, direction, 4.5, rc_dbg);
 }
 
 pub fn place_break_blocks(

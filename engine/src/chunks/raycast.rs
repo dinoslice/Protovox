@@ -3,6 +3,7 @@ use game::block::Block;
 use game::block::face_type::{Axis, FaceType};
 use game::location::{BlockLocation, WorldLocation};
 use crate::chunks::chunk_manager::ChunkManager;
+use crate::looking_at_block::RaycastDebug;
 
 #[derive(Debug, Clone)]
 pub struct RaycastResult {
@@ -23,7 +24,9 @@ pub enum RaycastHit {
 }
 
 impl ChunkManager {
-    pub fn raycast(&self, origin: Vec3, direction: Vec3, max_dist: f32) -> Option<RaycastResult> {
+    pub fn raycast(&self, origin: Vec3, direction: Vec3, max_dist: f32, mut rc_dbg: Option<&mut RaycastDebug>) -> Option<RaycastResult> {
+        rc_dbg.as_mut().map(|d| d.checks.clear());
+
         let direction = direction.normalize();
 
         let mut voxel = BlockLocation::from(WorldLocation(origin));
@@ -53,7 +56,14 @@ impl ChunkManager {
         let mut face = None;
 
         while t < max_dist {
+            rc_dbg.as_mut().map(|d| d.checks.push(voxel.clone()));
+
             if *self.get_block_ref(&voxel)? != Block::Air {
+                rc_dbg.map(|d| {
+                    d.start = origin;
+                    d.end = origin + direction * t;
+                });
+
                 return Some(RaycastResult {
                     distance: t,
                     hit: RaycastHit::Block {
