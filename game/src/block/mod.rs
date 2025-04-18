@@ -11,7 +11,7 @@ pub mod face_type;
 
 #[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
 #[derive(Clone, Eq, PartialEq, Default, Debug, Deserialize, Serialize, EnumCount, EnumDiscriminants)]
-#[strum_discriminants(name(BlockTy))]
+#[strum_discriminants(name(BlockTy), derive(strum::FromRepr, EnumCount))]
 pub enum Block {
     #[default]
     Air,
@@ -22,6 +22,12 @@ pub enum Block {
     Log { rotation: Axis },
     Leaf,
     Debug,
+}
+
+impl Default for BlockTy {
+    fn default() -> Self {
+        Self::Air
+    }
 }
 
 const_assert!(size_of::<Block>() <= 16);
