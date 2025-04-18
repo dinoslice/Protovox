@@ -144,22 +144,18 @@ pub fn place_break_blocks(
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
-
-        world.modify_block(&pos, block) // TODO: only create event now, modify world later?
+        
+        if let Some(old) = world.modify_block(&pos, block) {
+            if let Some(stack) = old.on_break() {
+                let _ = inventory.try_insert(stack); // TODO: deal with overflow
+            }
+        }
     };
 
     if should_place && should_break {
-        if let Some(old) = update_block(&mut chunk_mgr, location.clone(), held.0.clone()) {
-            if let Some(stack) = old.on_break() {
-                let _ = inventory.try_insert(stack); // TODO: deal with overflow
-            }
-        }
+        update_block(&mut chunk_mgr, location.clone(), held.0.clone());
     } else if should_break {
-        if let Some(old) = update_block(&mut chunk_mgr, location.clone(), Block::Air) {
-            if let Some(stack) = old.on_break() {
-                let _ = inventory.try_insert(stack); // TODO: deal with overflow
-            }
-        }
+        update_block(&mut chunk_mgr, location.clone(), Block::Air);
     } else if should_place {
         let adj = BlockLocation(location.0 + ft.as_vector());
 
@@ -169,7 +165,7 @@ pub fn place_break_blocks(
             let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                let _ = update_block(&mut chunk_mgr, adj, held.0.clone());
+                update_block(&mut chunk_mgr, adj, held.0.clone());
             }
         }
     }
