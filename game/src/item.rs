@@ -75,7 +75,7 @@ impl ItemType {
             IT::Dirt => DIRT,
             IT::Cobblestone => COBBLE,
             IT::Stone => DEBUG_RED,
-            IT::Log => DEBUG_RED,
+            IT::Log => LOG,
             IT::LeafPile => DEBUG_GREEN,
         }
     }
