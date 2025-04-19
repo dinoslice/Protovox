@@ -1,98 +1,80 @@
-use egui::{Align2, Grid, Vec2};
-use egui::load::SizedTexture;
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
-use egui_systems::CurrentEguiFrame;
+use std::mem;
+use std::num::NonZeroU8;
+use egui::{Align2, Color32, Grid, Image, PointerButton, Response, Sense, Ui, Vec2, Widget};
 use engine::block_bar_focus::BlockBarFocus;
-use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::Inventory;
+use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
-use crate::inventory::InventoryOpen;
+use crate::inventory::hand::InventoryHand;
+use crate::item_stack::ItemStackRender;
 
-pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, mut block_bar_focus: UniqueViewMut<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>, input_manager: UniqueView<InputManager>, open: UniqueView<InventoryOpen>) {
-    let (inventory, ..) = (&inventory, &local_player).iter()
-        .next()
-        .expect("LocalPlayer should exist");
+pub struct InventoryGui<'a> {
+    pub inventory: &'a mut Inventory,
+    pub texture_atlas_views: &'a EguiTextureAtlasViews,
+    pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
+    pub hand: &'a mut InventoryHand,
+    pub columns: usize,
+}
 
-    if !open.0 {
-        return;
-    }
+impl Widget for InventoryGui<'_> {
+    fn ui(self, ui: &mut Ui) -> Response {
+        let Self {
+            inventory,
+            texture_atlas_views,
+            mut block_bar_focus_input,
+            hand,
+            columns,
+        } = self;
+        
+        egui::Frame::none()
+            .show(ui, |ui| {
+                ui.spacing_mut().item_spacing = Vec2::ZERO;
 
-    const COLUMNS: usize = 3;
+                let mut block_bar_focus_selected = Vec::with_capacity(
+                    block_bar_focus_input.as_ref().map_or(0, |(bbf, _)| bbf.focus.len())
+                );
 
-    egui::Area::new("inventory".into())
-        .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
-        .show(egui_frame.ctx(), |ui| {
-            egui::Frame::none()
-                .show(ui, |ui| {
-                    ui.spacing_mut().item_spacing = Vec2::ZERO;
+                Grid::new("inventory_grid")
+                    .show(ui, |ui| {
+                        for (row_idx, row) in inventory.as_mut_slice().chunks_mut(columns).enumerate() {
+                            for (col_idx, slot) in row.iter_mut().enumerate() {
+                                let i = row_idx * columns + col_idx;
 
-                    let mut selected = Vec::with_capacity(block_bar_focus.focus.len());
+                                let response = egui::Frame::none()
+                                    .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
+                                    .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
+                                    .show(ui, |ui| {
+                                        ui.style_mut()
+                                            .visuals
+                                            .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
 
-                    Grid::new("inventory_grid")
-                        .show(ui, |ui| {
-                            for (row_idx, row) in inventory.as_slice().chunks(COLUMNS).enumerate() {
-                                for (col_idx, slot) in row.iter().enumerate() {
-                                    let i = row_idx * COLUMNS + col_idx;
+                                        ui.set_height(40.0);
+                                        ui.set_width(40.0);
 
-                                    let response = egui::Frame::none()
-                                        .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
-                                        .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
-                                        .show(ui, |ui| {
-                                            ui.style_mut()
-                                                .visuals
-                                                .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
+                                        ui.centered_and_justified(|ui| {
+                                            let (rect, response) = ui.allocate_exact_size(Vec2::splat(35.0), Sense::click());
 
-                                            ui.set_height(40.0);
-                                            ui.set_width(40.0);
+                                            if let Some(it) = slot {
+                                                ItemStackRender { it, atlas: texture_atlas_views, rect }.ui(ui);
+                                            }
 
-                                            ui.centered_and_justified(|ui| {
-                                                if let Some(it) = slot {
-                                                    let texture = texture_atlas_views
-                                                        .get_from_texture_id(it.ty.texture_id())
-                                                        .expect("should have a texture");
-
-                                                    let size = Vec2::splat(35.0);
-
-                                                    let image_response = ui.image(SizedTexture { id: texture, size });
-
-                                                    let painter = ui.painter();
-                                                    let rect = image_response.rect;
-
-                                                    let text = it.count.to_string();
-                                                    let text_pos = rect.right_bottom() - Vec2::splat(10.0);
-
-                                                    let font_id = egui::FontId::proportional(16.0);
-
-                                                    // shadow
-                                                    painter.text(
-                                                        text_pos + Vec2::splat(1.2),
-                                                        Align2::RIGHT_BOTTOM,
-                                                        &text,
-                                                        font_id.clone(),
-                                                        egui::Color32::BLACK,
-                                                    );
-
-                                                    painter.text(
-                                                        text_pos,
-                                                        Align2::RIGHT_BOTTOM,
-                                                        text,
-                                                        font_id,
-                                                        egui::Color32::WHITE,
-                                                    );
-                                                } else {
-                                                    ui.label(format!("{i}"));
-                                                }
-                                            });
+                                            if response.clicked_by(PointerButton::Primary) {
+                                                Self::interact_hand_inventory_slot(&mut hand.0, slot, PointerButton::Primary);
+                                            } else if response.clicked_by(PointerButton::Secondary) {
+                                                Self::interact_hand_inventory_slot(&mut hand.0, slot, PointerButton::Secondary);
+                                            }
                                         });
-
+                                    });
+                                
+                                if let Some((block_bar_focus, input_manager)) = block_bar_focus_input.as_mut() {
                                     if let Some(i) = block_bar_focus
                                         .focus
                                         .iter()
                                         .position(|&slot| slot == Some(i))
                                     {
-                                        selected.push((i, response.response.rect));
+                                        block_bar_focus_selected.push((i, response.response.rect));
                                     }
 
                                     if response.response.hovered() {
@@ -117,43 +99,94 @@ pub fn inventory(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
                                             }
                                         }
                                     }
-
                                 }
 
-                                ui.end_row();
                             }
-                        });
 
-                    let painter = ui.painter();
-                    let font_id = egui::FontId::proportional(16.0);
+                            ui.end_row();
+                        }
+                    });
 
-                    for (i, rect) in selected {
-                        let i = i + 1;
+                let font_id = egui::FontId::proportional(16.0);
 
-                        painter.rect_stroke(
-                            rect,
-                            0.0,
-                            egui::Stroke::new(2.0, egui::Color32::LIGHT_RED),
-                        );
+                for (i, rect) in block_bar_focus_selected {
+                    let i = i + 1;
 
-                        let text_pos = rect.left_top() + Vec2::splat(2.0);
+                    ui.painter().rect_stroke(
+                        rect,
+                        0.0,
+                        egui::Stroke::new(2.0, egui::Color32::LIGHT_RED),
+                    );
 
-                        painter.text(
-                            text_pos + Vec2::splat(0.75),
-                            Align2::LEFT_TOP,
-                            i,
-                            font_id.clone(),
-                            egui::Color32::BLACK,
-                        );
+                    let text_pos = rect.left_top() + Vec2::splat(2.0);
 
-                        painter.text(
-                            text_pos,
-                            Align2::LEFT_TOP,
-                            i,
-                            font_id.clone(),
-                            egui::Color32::LIGHT_RED,
-                        );
-                    }
-                })
-        });
+                    ui.painter().text(
+                        text_pos + Vec2::splat(0.75),
+                        Align2::LEFT_TOP,
+                        i,
+                        font_id.clone(),
+                        egui::Color32::BLACK,
+                    );
+
+                    ui.painter().text(
+                        text_pos,
+                        Align2::LEFT_TOP,
+                        i,
+                        font_id.clone(),
+                        egui::Color32::LIGHT_RED,
+                    );
+                }
+            }).response
+    }
 }
+
+impl InventoryGui<'_> {
+    fn interact_hand_inventory_slot(hand: &mut Option<ItemStack>, slot: &mut Option<ItemStack>, button: PointerButton) {
+        match (&hand, &slot, button) {
+            (None, Some(_), PointerButton::Secondary) => {
+                let s = slot.take().expect("should've matched on Some");
+                
+                let (hand_it, slot_it) = s.split_half();
+                
+                *hand = Some(hand_it);
+                *slot = slot_it;
+            }
+            (Some(hand_it), slot_it, PointerButton::Secondary)
+                if slot_it.as_ref().is_none_or(|a| a.eq_data(hand_it)) =>
+            {
+                let h = hand.take().expect("should've matched on Some");
+                
+                let (slot_it, mut hand_it) = h.split(NonZeroU8::new(1).expect("not zero"));
+                
+                match slot {
+                    Some(slot) => {
+                        if let Some(residual) = slot.try_combine(slot_it) {
+                            if let Some(hand_it) = &mut hand_it {
+                                let res = hand_it.try_combine(residual);
+                                
+                                assert!(res.is_none(), "should be eq and have space, since res originally came from hand");
+                            } else {
+                                hand_it = Some(residual);
+                            }
+                        }
+                    }
+                    None => {
+                        *slot = Some(slot_it);
+                    }
+                }
+    
+                *hand = hand_it;
+            }
+            (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.eq_data(hand_it) => {
+                let hand_it = hand.take().expect("should've matched on Some");
+                let slot = slot.as_mut().expect("should've matched on Some");
+                
+                *hand = slot.try_combine(hand_it);
+            }
+            (_, _, PointerButton::Primary) | (_, _, PointerButton::Secondary) => mem::swap(hand, slot),
+            /* do nothing on middle or extra buttons */
+            _ => tracing::warn!("InventoryGui::interact_hand_inventory_slot should only be called with PointerButton::{{Primary, Secondary}}"),
+        }
+    }
+}
+

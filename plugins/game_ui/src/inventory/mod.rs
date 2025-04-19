@@ -1,11 +1,20 @@
 mod render;
+pub mod hand;
 
 use std::time::{Duration, Instant};
-use shipyard::{Unique, UniqueOrDefaultViewMut, UniqueViewMut};
+use egui::Align2;
+use shipyard::{IntoIter, Unique, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, View, ViewMut};
+use egui_systems::CurrentEguiFrame;
+use engine::block_bar_focus::BlockBarFocus;
+use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
-pub use render::inventory;
+use engine::input::InputManager;
+use engine::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
+use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
+use crate::inventory::hand::InventoryHand;
+use crate::inventory::render::InventoryGui;
 
 #[derive(Unique, Default)]
 pub struct InventoryOpenTime(pub Option<Instant>);
@@ -16,7 +25,41 @@ pub struct InventoryOpen(pub bool);
 #[derive(Unique, Default)]
 pub struct PrevBlockBarState(pub bool);
 
+pub fn inventory(
+    egui_frame: UniqueView<CurrentEguiFrame>,
+    local_player: View<LocalPlayer>,
+    mut inventory: ViewMut<Inventory>,
+    mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
+    texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
+    input_manager: UniqueView<InputManager>,
+    open: UniqueView<InventoryOpen>,
+    mut hand: UniqueViewMut<InventoryHand>,
+) {
+    let (inventory, ..) = (&mut inventory, &local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+
+    if !open.0 {
+        return;
+    }
+
+    egui::Area::new("inventory".into())
+        .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
+        .show(egui_frame.ctx(), |ui| {
+            ui.add(InventoryGui {
+                inventory,
+                texture_atlas_views: &texture_atlas_views,
+                block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
+                hand: &mut hand,
+                columns: 6,
+            })
+        });
+}
+
 pub fn toggle_inv_block_bar(
+    v_local_player: View<LocalPlayer>,
+    vm_inventory: ViewMut<Inventory>,
+    mut hand: UniqueViewMut<InventoryHand>,
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
@@ -39,6 +82,9 @@ pub fn toggle_inv_block_bar(
         // closing the inventory
         if just_pressed {
             open.0 = false;
+
+            return_hand(v_local_player, vm_inventory, &mut hand);
+            
             open_time.0 = None;
 
             // TODO: this has some weird behavior
@@ -66,6 +112,18 @@ pub fn toggle_inv_block_bar(
             gui_bundle.set_capture(false, false);
         } else if just_rel {
             block_bar_display.toggle();
+        }
+    }
+}
+
+fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut InventoryHand) {
+    let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+    
+    if let Some(it) = hand.0.take() {
+        if let Some(residual) = inventory.try_insert(it) {
+            tracing::warn!("TODO: couldn't insert remaining {residual:?} into player inventory from hand upon closing inventory");
         }
     }
 }
