@@ -12,7 +12,7 @@ pub struct ItemStackRender<'a> {
 impl ItemStackRender<'_> {
     pub fn ui(self, ui: &mut Ui) {
         let texture = self.atlas
-            .get_from_texture_id(self.it.ty.texture_id())
+            .get_from_texture_id(self.it.item.ty.texture_id())
             .expect("should have a texture");
 
         let size = self.rect.size();
