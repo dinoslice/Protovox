@@ -7,9 +7,9 @@ use crate::egui_views::EguiTextureAtlasViews;
 use crate::item_stack::ItemStackRender;
 
 #[derive(Unique, Default)]
-pub struct Hand(pub Option<ItemStack>);
+pub struct InventoryHand(pub Option<ItemStack>);
 
-pub fn render_hand(egui_frame: UniqueView<CurrentEguiFrame>, hand: UniqueView<Hand>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+pub fn render_hand(egui_frame: UniqueView<CurrentEguiFrame>, hand: UniqueView<InventoryHand>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
     if let (Some(cursor_pos), Some(it)) = (egui_frame.ctx().pointer_latest_pos(), &hand.0) {
         let size = Vec2::splat(35.0);
 

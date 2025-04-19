@@ -14,7 +14,7 @@ use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
 use game::item::ItemType;
 use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
-use crate::inventory::hand::{render_hand, Hand};
+use crate::inventory::hand::{render_hand, InventoryHand};
 
 extern crate nalgebra_glm as glm;
 
@@ -33,7 +33,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             initialize_texture_atlas_views
                 .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
             |storages: AllStoragesView| storages.add_unique(InventoryOpen::default()),
-            |storages: AllStoragesView| storages.add_unique(Hand(None)),
+            |storages: AllStoragesView| storages.add_unique(InventoryHand(None)),
         )
             .into_workload()
             .into()

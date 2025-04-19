@@ -7,14 +7,14 @@ use engine::input::InputManager;
 use engine::inventory::Inventory;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
-use crate::inventory::hand::Hand;
+use crate::inventory::hand::InventoryHand;
 use crate::item_stack::ItemStackRender;
 
 pub struct InventoryGui<'a> {
     pub inventory: &'a mut Inventory,
     pub texture_atlas_views: &'a EguiTextureAtlasViews,
     pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
-    pub hand: &'a mut Hand,
+    pub hand: &'a mut InventoryHand,
     pub columns: usize,
 }
 

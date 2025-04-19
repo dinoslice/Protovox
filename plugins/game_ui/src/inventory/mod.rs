@@ -13,7 +13,7 @@ use engine::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
-use crate::inventory::hand::Hand;
+use crate::inventory::hand::InventoryHand;
 use crate::inventory::render::InventoryGui;
 
 #[derive(Unique, Default)]
@@ -33,7 +33,7 @@ pub fn inventory(
     texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
     input_manager: UniqueView<InputManager>,
     open: UniqueView<InventoryOpen>,
-    mut hand: UniqueViewMut<Hand>,
+    mut hand: UniqueViewMut<InventoryHand>,
 ) {
     let (inventory, ..) = (&mut inventory, &local_player).iter()
         .next()
@@ -59,7 +59,7 @@ pub fn inventory(
 pub fn toggle_inv_block_bar(
     v_local_player: View<LocalPlayer>,
     vm_inventory: ViewMut<Inventory>,
-    mut hand: UniqueViewMut<Hand>,
+    mut hand: UniqueViewMut<InventoryHand>,
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
@@ -116,7 +116,7 @@ pub fn toggle_inv_block_bar(
     }
 }
 
-fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut Hand) {
+fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut InventoryHand) {
     let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
