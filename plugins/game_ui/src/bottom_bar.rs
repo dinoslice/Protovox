@@ -1,4 +1,4 @@
-use egui::{Color32, Response, Ui, Vec2, Widget};
+use egui::{Align2, Area, Color32, Frame, Pos2, Rect, Response, Sense, Ui, Vec2, Widget};
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::components::{Health, LocalPlayer, Mana, SpectatorSpeed};
@@ -21,8 +21,8 @@ pub fn bottom_bar(
     let half_width = SegmentedBar::default().size.x;
     let half_segments = SegmentedBar::default().segments;
 
-    egui::Area::new("bottom_bars".into())
-        .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -10.0))
+    Area::new("bottom_bars".into())
+        .anchor(Align2::CENTER_BOTTOM, Vec2::new(0.0, -10.0))
         .show(egui_frame.ctx(), |ui| {
             match gamemode {
                 Gamemode::Survival => {
@@ -84,14 +84,11 @@ impl Default for SegmentedBar {
 
 impl Widget for &SegmentedBar {
     fn ui(self, ui: &mut Ui) -> Response {
-        use egui::*;
-
         debug_assert!((0.0..=1.0).contains(&self.percentage));
 
         let segments = self.segments as f32;
 
-        let spacing = 2.0;
-        let segment_width = (self.size.x - spacing * (segments - 1.0)) / segments;
+        let segment_width = (self.size.x - self.spacing * (segments - 1.0)) / segments;
         let filled_segments = ((segments * self.percentage).round() as u16).min(self.segments);
 
         Frame::none()
@@ -101,7 +98,7 @@ impl Widget for &SegmentedBar {
                 let painter = ui.painter();
 
                 for i in 0..self.segments {
-                    let x_start = rect.min.x + i as f32 * (segment_width + spacing);
+                    let x_start = rect.min.x + i as f32 * (segment_width + self.spacing);
                     let segment_rect = Rect {
                         min: Pos2::new(x_start, rect.min.y),
                         max: Pos2::new(x_start + segment_width, rect.max.y),

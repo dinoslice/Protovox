@@ -1,5 +1,5 @@
 use shipyard::{Borrow, BorrowInfo, UniqueViewMut};
-use engine::application::{capture_state, CaptureState};
+use engine::application::CaptureState;
 use engine::input::InputManager;
 use engine::rendering::graphics_context::GraphicsContext;
 

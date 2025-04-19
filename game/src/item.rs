@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 use std::num::NonZeroU8;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
@@ -58,8 +57,10 @@ impl ItemType {
     }
 
     pub const fn default_data(self) -> Option<Box<dyn ItemDataProvider>> {
+        #[allow(unused_imports, reason = "alias for when ItemTypes define their default data")]
         use ItemType as IT;
 
+        #[allow(clippy::match_single_binding, reason = "meant to show that each ItemType should provide its own default data")]
         match self {
             _ => None,
         }

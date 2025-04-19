@@ -2,7 +2,7 @@ mod render;
 pub mod hand;
 
 use std::time::{Duration, Instant};
-use egui::Align2;
+use egui::{Align2, Area};
 use shipyard::{IntoIter, Unique, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
@@ -43,7 +43,7 @@ pub fn inventory(
         return;
     }
 
-    egui::Area::new("inventory".into())
+    Area::new("inventory".into())
         .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
         .show(egui_frame.ctx(), |ui| {
             ui.add(InventoryGui {

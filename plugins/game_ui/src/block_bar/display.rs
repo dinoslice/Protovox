@@ -17,14 +17,14 @@ impl BlockBarDisplay {
     const EXPANDED_CT: u8 = Self::MINIMIZED_CT * Self::SECTIONS;
 
     pub fn toggle(&mut self) {
-        match self {
-            BlockBarDisplay::Expanded { mut selected } => {
+        match *self {
+            BlockBarDisplay::Expanded { selected } => {
                 *self = Self::Minimized {
                     start: selected - (selected % Self::MINIMIZED_CT),
                     selected,
                 }
             }
-            BlockBarDisplay::Minimized { mut selected, .. } => {
+            BlockBarDisplay::Minimized { selected, .. } => {
                 *self = Self::Expanded { selected }
             }
         }

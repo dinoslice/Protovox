@@ -1,10 +1,9 @@
-use egui::{Align2, Area, Image, Order, Vec2, Widget};
-use egui::load::SizedTexture;
-use shipyard::{Unique, UniqueView};
-use egui_systems::CurrentEguiFrame;
-use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::item_stack::ItemStackRender;
+use egui::{Area, Order, Rect, Vec2};
+use egui_systems::CurrentEguiFrame;
+use game::item::ItemStack;
+use shipyard::{Unique, UniqueView};
 
 #[derive(Unique, Default)]
 pub struct InventoryHand(pub Option<ItemStack>);
@@ -18,7 +17,7 @@ pub fn render_hand(egui_frame: UniqueView<CurrentEguiFrame>, hand: UniqueView<In
             .order(Order::Foreground) // make sure it's above other UI
             .interactable(false)
             .show(egui_frame.ctx(), |ui| {
-                let rect = egui::Rect::from_min_size(cursor_pos - size / 2.0, size);
+                let rect = Rect::from_min_size(cursor_pos - size / 2.0, size);
 
                 ItemStackRender { it, atlas: &texture_atlas_views, rect }.ui(ui);
             });

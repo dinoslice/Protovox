@@ -1,5 +1,4 @@
 use shipyard::{AllStoragesView, UniqueView, UniqueViewMut};
-use engine::input::action_map::Action;
 use engine::input::InputManager;
 
 mod render;
@@ -7,7 +6,7 @@ mod display;
 
 pub use render::block_bar;
 pub use display::BlockBarDisplay;
-use crate::inventory::InventoryOpen;
+
 
 pub fn scroll_block_bar(input: UniqueView<InputManager>, mut block_bar_display: UniqueViewMut<BlockBarDisplay>) {
     let scroll = input.mouse_manager.scroll.floor() as i32;

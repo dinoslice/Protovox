@@ -1,5 +1,4 @@
-use egui::{Align2, Sense, Vec2};
-use egui::load::SizedTexture;
+use egui::{Align2, Area, Color32, Frame, Sense, Stroke, Vec2};
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
@@ -16,30 +15,30 @@ pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<Lo
 
     const OFFSET: f32 = 10.0;
 
-    egui::Area::new("hotbar".into())
+    Area::new("hotbar".into())
         .anchor(Align2::RIGHT_BOTTOM, [-OFFSET, -OFFSET])
         .show(egui_frame.ctx(), |ui| {
-            egui::Frame::none()
+            Frame::none()
                 .show(ui, |ui| {
                     ui.vertical_centered(|ui| {
                         ui.spacing_mut()
-                            .item_spacing = egui::vec2(0.0, 0.0);
+                            .item_spacing = Vec2::ZERO;
 
                         for (i, selected) in inv_display.visible()  {
                             let frame = if selected {
-                                egui::Frame::none()
-                                    .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
-                                    .fill(egui::Color32::from_rgba_unmultiplied(100, 100, 100, 175))
+                                Frame::none()
+                                    .stroke(Stroke::new(2.0, Color32::GRAY))
+                                    .fill(Color32::from_rgba_unmultiplied(100, 100, 100, 175))
                             } else {
-                                egui::Frame::none()
-                                    .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
-                                    .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
+                                Frame::none()
+                                    .stroke(Stroke::new(2.0, Color32::GRAY))
+                                    .fill(Color32::from_rgba_unmultiplied(128, 128, 128, 175))
                             };
 
                             let _ = frame.show(ui, |ui| {
                                 ui.style_mut()
                                     .visuals
-                                    .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
+                                    .override_text_color = Some(Color32::from_rgb(230, 230, 230));
 
                                 if selected {
                                     ui.set_height(50.0);

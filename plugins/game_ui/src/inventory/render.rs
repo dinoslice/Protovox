@@ -1,6 +1,6 @@
 use std::mem;
 use std::num::NonZeroU8;
-use egui::{Align2, Color32, Grid, Image, PointerButton, Response, Sense, Ui, Vec2, Widget};
+use egui::{Align2, Color32, FontId, Frame, Grid, PointerButton, Response, Sense, Stroke, Ui, Vec2, Widget};
 use engine::block_bar_focus::BlockBarFocus;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
@@ -28,7 +28,7 @@ impl Widget for InventoryGui<'_> {
             columns,
         } = self;
         
-        egui::Frame::none()
+        Frame::none()
             .show(ui, |ui| {
                 ui.spacing_mut().item_spacing = Vec2::ZERO;
 
@@ -42,13 +42,13 @@ impl Widget for InventoryGui<'_> {
                             for (col_idx, slot) in row.iter_mut().enumerate() {
                                 let i = row_idx * columns + col_idx;
 
-                                let response = egui::Frame::none()
-                                    .stroke(egui::Stroke::new(2.0, egui::Color32::GRAY))
-                                    .fill(egui::Color32::from_rgba_unmultiplied(128, 128, 128, 175))
+                                let response = Frame::none()
+                                    .stroke(Stroke::new(2.0, Color32::GRAY))
+                                    .fill(Color32::from_rgba_unmultiplied(128, 128, 128, 175))
                                     .show(ui, |ui| {
                                         ui.style_mut()
                                             .visuals
-                                            .override_text_color = Some(egui::Color32::from_rgb(230, 230, 230));
+                                            .override_text_color = Some(Color32::from_rgb(230, 230, 230));
 
                                         ui.set_height(40.0);
                                         ui.set_width(40.0);
@@ -107,7 +107,7 @@ impl Widget for InventoryGui<'_> {
                         }
                     });
 
-                let font_id = egui::FontId::proportional(16.0);
+                let font_id = FontId::proportional(16.0);
 
                 for (i, rect) in block_bar_focus_selected {
                     let i = i + 1;
@@ -115,7 +115,7 @@ impl Widget for InventoryGui<'_> {
                     ui.painter().rect_stroke(
                         rect,
                         0.0,
-                        egui::Stroke::new(2.0, egui::Color32::LIGHT_RED),
+                        Stroke::new(2.0, Color32::LIGHT_RED),
                     );
 
                     let text_pos = rect.left_top() + Vec2::splat(2.0);
@@ -125,7 +125,7 @@ impl Widget for InventoryGui<'_> {
                         Align2::LEFT_TOP,
                         i,
                         font_id.clone(),
-                        egui::Color32::BLACK,
+                        Color32::BLACK,
                     );
 
                     ui.painter().text(
@@ -133,7 +133,7 @@ impl Widget for InventoryGui<'_> {
                         Align2::LEFT_TOP,
                         i,
                         font_id.clone(),
-                        egui::Color32::LIGHT_RED,
+                        Color32::LIGHT_RED,
                     );
                 }
             }).response

@@ -12,7 +12,7 @@ impl Vertex {
             wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2];
 
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress, // how wide (bytes) each vertex is
+            array_stride: size_of::<Self>() as wgpu::BufferAddress, // how wide (bytes) each vertex is
             step_mode: wgpu::VertexStepMode::Vertex, // switch to the next item in the buffer after each vertex
             attributes: &ATTRIBUTES, // generally a 1:1 mapping with the struct fields
         }

@@ -1,4 +1,4 @@
-use egui::{Align2, Image, Rect, Ui, Vec2};
+use egui::{Align2, Color32, FontId, Image, Rect, Ui, Vec2};
 use egui::load::SizedTexture;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
@@ -27,7 +27,7 @@ impl ItemStackRender<'_> {
         let text = self.it.count.to_string();
         let text_pos = self.rect.right_bottom() - Vec2::splat(size.x * 0.15);
 
-        let font_id = egui::FontId::proportional(size.x / 2.0);
+        let font_id = FontId::proportional(size.x / 2.0);
 
         // shadow
         painter.text(
@@ -35,7 +35,7 @@ impl ItemStackRender<'_> {
             Align2::RIGHT_BOTTOM,
             &text,
             font_id.clone(),
-            egui::Color32::BLACK,
+            Color32::BLACK,
         );
 
         painter.text(
@@ -43,7 +43,7 @@ impl ItemStackRender<'_> {
             Align2::RIGHT_BOTTOM,
             text,
             font_id,
-            egui::Color32::WHITE,
+            Color32::WHITE,
         );
     }
 }

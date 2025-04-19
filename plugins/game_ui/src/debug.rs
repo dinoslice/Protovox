@@ -1,3 +1,4 @@
+use egui::Window;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::components::{Entity, LocalPlayer, Transform, Velocity};
@@ -27,7 +28,7 @@ pub fn debug_ui(
         .map(|e| &e.2.position)
         .peekable();
 
-    egui::Window::new("Entities")
+    Window::new("Entities")
         .default_open(true)
         .show(ctx, |ui| {
             ui.heading("LocalPlayer");
@@ -44,7 +45,7 @@ pub fn debug_ui(
         });
 
     if let Some(server_handler) = opt_server_handler {
-        egui::Window::new("ServerHandler")
+        Window::new("ServerHandler")
             .default_open(true)
             .show(ctx, |ui| {
                 ui.label(format!("Address: {}", server_handler.local_addr));

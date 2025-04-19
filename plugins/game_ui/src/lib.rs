@@ -1,5 +1,5 @@
-use egui::Color32;
-use shipyard::{AllStoragesView, IntoIter, IntoWorkload, UniqueView, Workload, WorkloadModificator};
+use egui::{Color32, LayerId};
+use shipyard::{AllStoragesView, IntoWorkload, UniqueView, Workload, WorkloadModificator};
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use dino_plugins::path;
@@ -12,7 +12,6 @@ use crate::block_bar::{create_block_bar_display, scroll_block_bar};
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
-use game::item::ItemType;
 use crate::debug::debug_ui;
 use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
 use crate::inventory::hand::{render_hand, InventoryHand};
@@ -75,8 +74,8 @@ impl DinoEnginePlugin for GameUiPlugin {
             name: "game_ui".ck().expect("valid identifier"),
             version: "0.1.0",
             dependencies: &[
-                &engine::VoxelEngine,
-                &egui_systems::EguiSystemsPlugin,
+                &VoxelEngine,
+                &EguiSystemsPlugin,
             ],
         }
     }
@@ -85,7 +84,7 @@ impl DinoEnginePlugin for GameUiPlugin {
 fn reticle(egui_frame: UniqueView<CurrentEguiFrame>) {
     let ctx = egui_frame.ctx();
 
-    ctx.layer_painter(egui::LayerId::background())
+    ctx.layer_painter(LayerId::background())
         .circle_filled(
             ctx.screen_rect().center(),
             2.5,

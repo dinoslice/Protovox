@@ -22,7 +22,7 @@ impl FaceData {
             wgpu::vertex_attr_array![2 => Uint32];
 
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress, // how wide (bytes) each vertex is
+            array_stride: size_of::<Self>() as wgpu::BufferAddress, // how wide (bytes) each vertex is
             step_mode: wgpu::VertexStepMode::Instance, // switch to the next item in the buffer after each vertex
             attributes: &ATTRIBUTES, // generally a 1:1 mapping with the struct fields
         }

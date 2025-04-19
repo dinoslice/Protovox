@@ -25,7 +25,7 @@ pub fn initialize_line_gizmos_render_state(g_ctx: UniqueView<GraphicsContext>, g
     let buffer = g_ctx.device.create_buffer(
         &wgpu::BufferDescriptor {
             label: Some("line_gizmos_buffer"),
-            size: num_line_gizmo_vertices as u64 * std::mem::size_of::<GizmoVertex>() as u64,
+            size: num_line_gizmo_vertices as u64 * size_of::<GizmoVertex>() as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }
