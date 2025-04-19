@@ -53,7 +53,7 @@ impl DinoEnginePlugin for VoxelEngine {
     fn input(&self) -> Option<Workload> {
         (
             apply_camera_input,
-            process_movement,
+            process_movement, // TODO: this still needs to be called if not captured, it just shouldn't react to input
             place_break_blocks.skip_if(local_player_is_gamemode_spectator),
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
