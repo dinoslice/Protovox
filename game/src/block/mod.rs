@@ -61,7 +61,7 @@ impl Block {
                 Axis::Z => DEBUG_GREEN,
             }
             Block::Log { rotation } => if face_type.axis() == *rotation {
-                DEBUG_RED
+                MISSING
             } else {
                 LOG // TODO: rotate texture
             }
