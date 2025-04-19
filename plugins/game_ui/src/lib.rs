@@ -13,6 +13,7 @@ use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
 use game::item::ItemType;
+use crate::debug::debug_ui;
 use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
 use crate::inventory::hand::{render_hand, InventoryHand};
 
@@ -24,6 +25,7 @@ mod block_bar;
 mod inventory;
 pub mod gui_bundle;
 pub(crate) mod item_stack;
+mod debug;
 
 pub struct GameUiPlugin;
 
@@ -61,6 +63,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             bottom_bar,
             block_bar,
             inventory,
+            debug_ui,
             render_hand,
         )
             .into_workload()
