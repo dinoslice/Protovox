@@ -2,6 +2,7 @@ use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, Uni
 use strck::IntoCk;
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata, RenderUiStartMarker};
 use dino_plugins::path;
+use engine::application::CaptureState;
 use engine::input::last_frame_events::LastFrameEvents;
 use engine::rendering::graphics_context::GraphicsContext;
 use engine::VoxelEngine;
@@ -56,10 +57,12 @@ fn initialize_renderer(g_ctx: UniqueView<GraphicsContext>, all_storages: AllStor
     all_storages.add_unique(EguiRenderer::new(&g_ctx.device, g_ctx.config.format, None, 1, &g_ctx.window))
 }
 
-fn process_events(g_ctx: UniqueView<GraphicsContext>, last_frame_events: UniqueView<LastFrameEvents>, mut egui_renderer: UniqueViewMut<EguiRenderer>) {
+fn process_events(g_ctx: UniqueView<GraphicsContext>, last_frame_events: UniqueView<LastFrameEvents>, mut egui_renderer: UniqueViewMut<EguiRenderer>, capture_state: UniqueView<CaptureState>) {
     let window = &g_ctx.window;
-
-    for evt in &last_frame_events.0 {
-        egui_renderer.handle_input(window, evt);
+    
+    if !capture_state.is_captured() {
+        for evt in &last_frame_events.0 {
+            egui_renderer.handle_input(window, evt);
+        }
     }
 }
