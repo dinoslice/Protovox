@@ -1,57 +1,21 @@
 use std::mem;
 use std::num::NonZeroU8;
 use egui::{Align2, Color32, Grid, Image, PointerButton, Response, Sense, Ui, Vec2, Widget};
-use egui::load::SizedTexture;
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
-use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
-use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::Inventory;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::Hand;
-use crate::inventory::InventoryOpen;
 use crate::item_stack::ItemStackRender;
 
-pub fn inventory(
-    egui_frame: UniqueView<CurrentEguiFrame>,
-    local_player: View<LocalPlayer>,
-    mut inventory: ViewMut<Inventory>,
-    mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
-    texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
-    input_manager: UniqueView<InputManager>,
-    open: UniqueView<InventoryOpen>,
-    mut hand: UniqueViewMut<Hand>,
-) {
-    let (inventory, ..) = (&mut inventory, &local_player).iter()
-        .next()
-        .expect("LocalPlayer should exist");
-
-    if !open.0 {
-        return;
-    }
-    
-    egui::Area::new("inventory".into())
-        .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
-        .show(egui_frame.ctx(), |ui| {
-            ui.add(InventoryGui {
-                inventory,
-                texture_atlas_views: &texture_atlas_views,
-                block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
-                hand: &mut hand,
-                columns: 6,
-            })
-        });
-}
-
 pub struct InventoryGui<'a> {
-    inventory: &'a mut Inventory,
-    texture_atlas_views: &'a EguiTextureAtlasViews,
-    block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
-    hand: &'a mut Hand,
-    columns: usize,
+    pub inventory: &'a mut Inventory,
+    pub texture_atlas_views: &'a EguiTextureAtlasViews,
+    pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
+    pub hand: &'a mut Hand,
+    pub columns: usize,
 }
 
 impl Widget for InventoryGui<'_> {
@@ -74,7 +38,6 @@ impl Widget for InventoryGui<'_> {
 
                 Grid::new("inventory_grid")
                     .show(ui, |ui| {
-                        
                         for (row_idx, row) in inventory.as_mut_slice().chunks_mut(columns).enumerate() {
                             for (col_idx, slot) in row.iter_mut().enumerate() {
                                 let i = row_idx * columns + col_idx;

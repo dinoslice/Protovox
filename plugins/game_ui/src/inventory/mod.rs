@@ -2,11 +2,19 @@ mod render;
 pub mod hand;
 
 use std::time::{Duration, Instant};
-use shipyard::{Unique, UniqueOrDefaultViewMut, UniqueViewMut};
+use egui::Align2;
+use shipyard::{IntoIter, Unique, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, View, ViewMut};
+use egui_systems::CurrentEguiFrame;
+use engine::block_bar_focus::BlockBarFocus;
+use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
-pub use render::inventory;
+use engine::input::InputManager;
+use engine::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
+use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
+use crate::inventory::hand::Hand;
+use crate::inventory::render::InventoryGui;
 
 #[derive(Unique, Default)]
 pub struct InventoryOpenTime(pub Option<Instant>);
@@ -16,6 +24,37 @@ pub struct InventoryOpen(pub bool);
 
 #[derive(Unique, Default)]
 pub struct PrevBlockBarState(pub bool);
+
+pub fn inventory(
+    egui_frame: UniqueView<CurrentEguiFrame>,
+    local_player: View<LocalPlayer>,
+    mut inventory: ViewMut<Inventory>,
+    mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
+    texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
+    input_manager: UniqueView<InputManager>,
+    open: UniqueView<InventoryOpen>,
+    mut hand: UniqueViewMut<Hand>,
+) {
+    let (inventory, ..) = (&mut inventory, &local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+
+    if !open.0 {
+        return;
+    }
+
+    egui::Area::new("inventory".into())
+        .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
+        .show(egui_frame.ctx(), |ui| {
+            ui.add(InventoryGui {
+                inventory,
+                texture_atlas_views: &texture_atlas_views,
+                block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
+                hand: &mut hand,
+                columns: 6,
+            })
+        });
+}
 
 pub fn toggle_inv_block_bar(
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
