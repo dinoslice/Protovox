@@ -25,6 +25,7 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
         "debug_green",
         "debug_blue",
         "log",
+        "missing",
     ];
 
     let loaded_textures = textures.map(|key| {

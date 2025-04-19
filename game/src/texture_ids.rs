@@ -9,3 +9,4 @@ pub const DEBUG_RED: TextureId = 5;
 pub const DEBUG_GREEN: TextureId = 6;
 pub const DEBUG_BLUE: TextureId = 7;
 pub const LOG: TextureId = 8;
+pub const MISSING: TextureId = 9;

@@ -51,7 +51,7 @@ impl Block {
             },
             Block::Log => LOG,
             Block::Leaf => DEBUG_GREEN,
-            Block::Stone => DEBUG_RED,
+            Block::Stone => MISSING,
         };
 
         Some(id)
