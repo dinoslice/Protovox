@@ -57,6 +57,9 @@ pub fn inventory(
 }
 
 pub fn toggle_inv_block_bar(
+    v_local_player: View<LocalPlayer>,
+    vm_inventory: ViewMut<Inventory>,
+    mut hand: UniqueViewMut<Hand>,
     mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
@@ -79,6 +82,9 @@ pub fn toggle_inv_block_bar(
         // closing the inventory
         if just_pressed {
             open.0 = false;
+
+            return_hand(v_local_player, vm_inventory, &mut hand);
+            
             open_time.0 = None;
 
             // TODO: this has some weird behavior
@@ -106,6 +112,18 @@ pub fn toggle_inv_block_bar(
             gui_bundle.set_capture(false, false);
         } else if just_rel {
             block_bar_display.toggle();
+        }
+    }
+}
+
+fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut Hand) {
+    let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
+        .next()
+        .expect("LocalPlayer should exist");
+    
+    if let Some(it) = hand.0.take() {
+        if let Some(residual) = inventory.try_insert(it) {
+            tracing::warn!("TODO: couldn't insert remaining {residual:?} into player inventory from hand upon closing inventory");
         }
     }
 }
