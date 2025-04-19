@@ -1,5 +1,6 @@
 use std::mem;
-use egui::{Align2, Color32, Grid, Image, Sense, Vec2};
+use std::num::NonZeroU8;
+use egui::{Align2, Color32, Grid, Image, PointerButton, Sense, Vec2};
 use egui::load::SizedTexture;
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
@@ -8,6 +9,7 @@ use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::Inventory;
+use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::Hand;
 use crate::inventory::InventoryOpen;
@@ -66,8 +68,10 @@ pub fn inventory(
                                                     ItemStackRender { it, atlas: &texture_atlas_views, rect }.ui(ui);
                                                 }
                                                 
-                                                if response.clicked() {
-                                                    mem::swap(slot, &mut hand.0);
+                                                if response.clicked_by(PointerButton::Primary) {
+                                                    interact_hand_inventory_slot(&mut hand.0, slot, PointerButton::Primary);
+                                                } else if response.clicked_by(PointerButton::Secondary) {
+                                                    interact_hand_inventory_slot(&mut hand.0, slot, PointerButton::Secondary);
                                                 }
                                             });
                                         });
@@ -141,4 +145,51 @@ pub fn inventory(
                     }
                 })
         });
+}
+
+fn interact_hand_inventory_slot(hand: &mut Option<ItemStack>, slot: &mut Option<ItemStack>, button: PointerButton) {
+    match (&hand, &slot, button) {
+        (None, Some(_), PointerButton::Secondary) => {
+            let s = slot.take().expect("should've matched on Some");
+            
+            let (hand_it, slot_it) = s.split_half();
+            
+            *hand = Some(hand_it);
+            *slot = slot_it;
+        }
+        (Some(hand_it), slot_it, PointerButton::Secondary)
+            if slot_it.as_ref().is_none_or(|a| a.eq_data(hand_it)) =>
+        {
+            let h = hand.take().expect("should've matched on Some");
+            
+            let (slot_it, mut hand_it) = h.split(NonZeroU8::new(1).expect("not zero"));
+            
+            match slot {
+                Some(slot) => {
+                    if let Some(residual) = slot.try_combine(slot_it) {
+                        if let Some(hand_it) = &mut hand_it {
+                            let res = hand_it.try_combine(residual);
+                            
+                            assert!(res.is_none(), "should be eq and have space, since res originally came from hand");
+                        } else {
+                            hand_it = Some(residual);
+                        }
+                    }
+                }
+                None => {
+                    *slot = Some(slot_it);
+                }
+            }
+
+            *hand = hand_it;
+        }
+        (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.eq_data(hand_it) => {
+            let hand_it = hand.take().expect("should've matched on Some");
+            let slot = slot.as_mut().expect("should've matched on Some");
+            
+            *hand = slot.try_combine(hand_it);
+        }
+        (_, _, PointerButton::Primary) | (_, _, PointerButton::Secondary) => mem::swap(hand, slot),
+        _ => { /* do nothing on middle or extra buttons */ }
+    }
 }
