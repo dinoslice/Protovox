@@ -84,8 +84,16 @@ impl Default for SegmentedBar {
 
 impl Widget for &SegmentedBar {
     fn ui(self, ui: &mut Ui) -> Response {
-        debug_assert!((0.0..=1.0).contains(&self.percentage));
-
+        if !(0.0..=1.0).contains(&self.percentage) {
+            let err = format!("SegmentedBar's percentage was {}, which isn't [0,1]", self.percentage);
+            
+            if cfg!(debug_assertions) {
+                panic!("{err}");
+            } else {
+                tracing::error!("{err}");
+            }
+        }
+        
         let segments = self.segments as f32;
 
         let segment_width = (self.size.x - self.spacing * (segments - 1.0)) / segments;
