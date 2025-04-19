@@ -3,7 +3,7 @@ pub mod hand;
 
 use std::time::{Duration, Instant};
 use egui::{Align2, Area};
-use shipyard::{IntoIter, Unique, UniqueOrDefaultViewMut, UniqueView, UniqueViewMut, View, ViewMut};
+use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
@@ -16,14 +16,21 @@ use crate::gui_bundle::GuiBundle;
 use crate::inventory::hand::InventoryHand;
 use crate::inventory::render::InventoryGui;
 
-#[derive(Unique, Default)]
+#[derive(Unique)]
 pub struct InventoryOpenTime(pub Option<Instant>);
 
-#[derive(Unique, Default)]
+#[derive(Unique)]
 pub struct InventoryOpen(pub bool);
 
-#[derive(Unique, Default)]
+#[derive(Unique)]
 pub struct PrevBlockBarState(pub bool);
+
+pub fn initialize(storages: AllStoragesView) {
+    storages.add_unique(InventoryOpen(false));
+    storages.add_unique(InventoryHand(None));
+    storages.add_unique(InventoryOpenTime(None));
+    storages.add_unique(PrevBlockBarState(false));
+}
 
 pub fn inventory(
     egui_frame: UniqueView<CurrentEguiFrame>,
@@ -60,10 +67,10 @@ pub fn toggle_inv_block_bar(
     v_local_player: View<LocalPlayer>,
     vm_inventory: ViewMut<Inventory>,
     mut hand: UniqueViewMut<InventoryHand>,
-    mut open_time: UniqueOrDefaultViewMut<InventoryOpenTime>,
+    mut open_time: UniqueViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
-    mut prev_block_bar_state: UniqueOrDefaultViewMut<PrevBlockBarState>,
+    mut prev_block_bar_state: UniqueViewMut<PrevBlockBarState>,
     mut gui_bundle: GuiBundle,
 ) {
     let just_rel = gui_bundle.input.just_released().get_action(Action::ToggleBlockBar);

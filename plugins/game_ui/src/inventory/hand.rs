@@ -5,7 +5,7 @@ use egui_systems::CurrentEguiFrame;
 use game::item::ItemStack;
 use shipyard::{Unique, UniqueView};
 
-#[derive(Unique, Default)]
+#[derive(Unique)]
 pub struct InventoryHand(pub Option<ItemStack>);
 
 pub fn render_hand(egui_frame: UniqueView<CurrentEguiFrame>, hand: UniqueView<InventoryHand>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {

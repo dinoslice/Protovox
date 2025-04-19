@@ -33,8 +33,7 @@ impl DinoEnginePlugin for GameUiPlugin {
         (
             initialize_texture_atlas_views
                 .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
-            |storages: AllStoragesView| storages.add_unique(InventoryOpen::default()),
-            |storages: AllStoragesView| storages.add_unique(InventoryHand(None)),
+            inventory::initialize,
         )
             .into_workload()
             .into()
