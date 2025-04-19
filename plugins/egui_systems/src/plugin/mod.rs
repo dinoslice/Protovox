@@ -1,6 +1,6 @@
 use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator};
 use strck::IntoCk;
-use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata, RenderUiStartMarker};
 use dino_plugins::path;
 use engine::input::last_frame_events::LastFrameEvents;
 use engine::rendering::graphics_context::GraphicsContext;
@@ -32,7 +32,9 @@ impl DinoEnginePlugin for EguiSystemsPlugin {
         pub use render::*;
 
         (
-            render_start.tag(path!({self}::{EnginePhase::Render}::render_start)),
+            render_start
+                .tag(path!({self}::{EnginePhase::Render}::render_start))
+                .tag(path!({RenderUiStartMarker})),
             render_end.tag(path!({self}::{EnginePhase::Render}::render_end)),
         )
             .into_sequential_workload()

@@ -21,6 +21,14 @@ pub enum EnginePhase {
     Shutdown,
 }
 
+pub struct RenderUiStartMarker;
+
+impl Identifiable for RenderUiStartMarker {
+    fn identifier(&self) -> &'static Ident {
+        "render_ui_start".ck().expect("valid identifier")
+    }
+}
+
 impl Identifiable for EnginePhase {
     fn identifier(&self) -> &'static Ident {
         use EnginePhase as P;

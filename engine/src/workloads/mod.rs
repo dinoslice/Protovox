@@ -1,5 +1,5 @@
 use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, UniqueView, Workload, WorkloadModificator};
-use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata, RenderUiStartMarker};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
 use crate::{args, rendering};
@@ -146,9 +146,14 @@ impl DinoEnginePlugin for VoxelEngine {
 
         (
             // -- RENDER -- //
-            render::skybox::render_skybox,
-            world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
-            block_outline::render_block_outline,
+            (
+                render::skybox::render_skybox,
+                world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
+                block_outline::render_block_outline,
+            )
+                .into_sequential_workload()
+                .before_all(path!({RenderUiStartMarker})),
+            
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()
