@@ -164,7 +164,21 @@ impl ItemStack {
     }
 }
 
+impl Clone for ItemStack {
+    fn clone(&self) -> Self {
+        Self {
+            ty: self.ty,
+            count: self.count,
+            title: self.title.clone(),
+            desc: self.desc.clone(),
+            data: self.data.as_ref().map(|d| d.clone_boxed()),
+        }
+    }
+}
+
 pub trait ItemDataProvider: Debug + Send + Sync {
     // TODO: better way to check for equality
     fn hash(&self) -> u64;
+    
+    fn clone_boxed(&self) -> Box<dyn ItemDataProvider>;
 }
