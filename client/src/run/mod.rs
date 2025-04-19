@@ -2,11 +2,9 @@ use std::sync::Arc;
 use shipyard::{UniqueView, World};
 use tracing::error;
 use wgpu::SurfaceError;
-use winit::event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent};
+use winit::event::{DeviceEvent, Event, WindowEvent};
 use winit::event_loop::EventLoopBuilder;
-use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use engine::application::capture_state;
 use engine::application::exit::{request_exit, ExitRequested};
 use engine::application::plugin_manager::PluginManager;
 use engine::rendering::graphics_context::GraphicsContext;
@@ -17,6 +15,7 @@ use dino_plugins::path;
 mod core_workloads;
 mod input;
 pub mod resize;
+pub mod lost_focus;
 
 pub fn run(plugin_manager: PluginManager) {
     let client = "client".ck().expect("valid ident");
@@ -97,16 +96,7 @@ pub fn run(plugin_manager: PluginManager) {
                     }
                     WindowEvent::CloseRequested => world.run(request_exit),
                     WindowEvent::Resized(physical_size) => world.run_with_data(resize::resize, *physical_size),
-
-                    WindowEvent::Focused(focused) => world.run_with_data(capture_state::set_from_focus, *focused),
-                    WindowEvent::KeyboardInput {
-                        event: KeyEvent {
-                            state: ElementState::Pressed,
-                            physical_key: PhysicalKey::Code(KeyCode::Escape),
-                            ..
-                        },
-                        ..
-                    } => world.run(capture_state::toggle_captured),
+                    WindowEvent::Focused(focused) => world.run_with_data(lost_focus::on_window_focus_change, *focused),
                     _ => {}
                 }
             }

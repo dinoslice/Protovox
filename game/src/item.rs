@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 use std::num::NonZeroU8;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
@@ -58,8 +57,10 @@ impl ItemType {
     }
 
     pub const fn default_data(self) -> Option<Box<dyn ItemDataProvider>> {
+        #[allow(unused_imports, reason = "alias for when ItemTypes define their default data")]
         use ItemType as IT;
 
+        #[allow(clippy::match_single_binding, reason = "meant to show that each ItemType should provide its own default data")]
         match self {
             _ => None,
         }
@@ -73,9 +74,9 @@ impl ItemType {
             IT::Grass => GRASS_SIDE,
             IT::Dirt => DIRT,
             IT::Cobblestone => COBBLE,
-            IT::Stone => DEBUG_RED,
-            IT::Log => DEBUG_RED,
+            IT::Log => LOG,
             IT::LeafPile => DEBUG_GREEN,
+            IT::Stone => MISSING,
         }
     }
 }
@@ -162,9 +163,43 @@ impl ItemStack {
             }
         }
     }
+    
+    pub fn split(mut self, first_ct: NonZeroU8) -> (Self, Option<Self>) {
+        if first_ct >= self.count {
+            (self, None)
+        } else {
+            let mut other = self.clone();
+            
+            other.count = NonZeroU8::new(self.count.get() - first_ct.get()).expect("can't be zero, since first_ct must be less than total");
+            
+            self.count = first_ct;
+
+            (self, Some(other))
+        }
+    }
+    
+    pub fn split_half(self) -> (Self, Option<Self>) {
+        let ct = self.count.get() / 2 + self.count.get() % 2;
+        
+        self.split(NonZeroU8::new(ct).expect("shouldn't ever be zero"))
+    }
+}
+
+impl Clone for ItemStack {
+    fn clone(&self) -> Self {
+        Self {
+            ty: self.ty,
+            count: self.count,
+            title: self.title.clone(),
+            desc: self.desc.clone(),
+            data: self.data.as_ref().map(|d| d.clone_boxed()),
+        }
+    }
 }
 
 pub trait ItemDataProvider: Debug + Send + Sync {
     // TODO: better way to check for equality
     fn hash(&self) -> u64;
+    
+    fn clone_boxed(&self) -> Box<dyn ItemDataProvider>;
 }

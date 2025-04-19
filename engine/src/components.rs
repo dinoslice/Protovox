@@ -44,9 +44,9 @@ impl PlayerSpeed {
     pub fn from_observed(max_vel: f32, jump_height: f32, gravity: f32, accel_time: f32, friction_time: f32) -> Self {
         assert!(max_vel >= 0.0, "max_vel must be non negative");
         assert!(gravity >= 0.0, "gravity must be non negative");
-        assert!(jump_height >= 0.0, "jump_height must be non negative");
-        assert!(accel_time >= 0.0, "accel_time must be non negative");
-        assert!(friction_time >= 0.0, "friction_time must be non negative");
+        assert!(jump_height >= 0.0, "jump_height must be non-negative");
+        assert!(accel_time >= 0.0, "accel_time must be non-negative");
+        assert!(friction_time >= 0.0, "friction_time must be non-negative");
 
         let jump_vel = (2.0 * gravity * jump_height).sqrt();
         let accel = max_vel / accel_time;
@@ -112,3 +112,35 @@ pub struct IsOnGround(pub bool);
 
 #[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
 pub struct HeldBlock(pub BlockTy);
+
+#[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
+pub struct Health {
+    pub curr: f32,
+    pub max: f32,
+}
+
+impl Health {
+    pub fn percentage(&self) -> f32 {
+        self.curr / self.max
+    }
+
+    pub fn percentage_clamped(&self) -> f32 {
+        self.percentage().clamp(0.0, 1.0)
+    }
+}
+
+#[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
+pub struct Mana {
+    pub curr: f32,
+    pub max: f32,
+}
+
+impl Mana {
+    pub fn percentage(&self) -> f32 {
+        self.curr / self.max
+    }
+
+    pub fn percentage_clamped(&self) -> f32 {
+        self.percentage().clamp(0.0, 1.0)
+    }
+}

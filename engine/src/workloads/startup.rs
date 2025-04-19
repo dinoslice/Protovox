@@ -3,9 +3,10 @@ use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
 use game::block::BlockTy;
 use networking::PacketRegistry;
+use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
-use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
+use crate::components::{Entity, GravityAffected, Health, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Mana, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
 use crate::inventory::Inventory;
@@ -52,19 +53,22 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
+    storages.add_component(id, Health { curr: 9.0, max: 10.0 });
+    storages.add_component(id, Mana { curr: 6.0, max: 10.0 });
     storages.add_component(id, Inventory::new(18.try_into().expect("18 is nonzero")));
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&RenderDistance, &LocalPlayer)>();
+    let iter = &mut storages.iter::<(&RenderDistance, &Inventory, &LocalPlayer)>();
 
-    let (render_dist, ..) = iter.iter()
+    let (render_dist, inventory, ..) = iter.iter()
         .next()
         .expect("TODO: local player with transform should exist");
 
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
+    storages.add_unique(BlockBarFocus::new(inventory.space()));
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {

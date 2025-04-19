@@ -1,4 +1,3 @@
-use std::mem;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::{PacketDeserializationError, PacketHeader};
@@ -32,7 +31,7 @@ pub trait Packet<H: PacketHeader> {
     }
 
     fn deserialize_checked(bytes: &[u8]) -> Result<Self, PacketDeserializationError> where Self: DeserializeOwned {
-        let id_bytes = bytes.get(..mem::size_of::<u16>())
+        let id_bytes = bytes.get(..size_of::<u16>())
             .ok_or(PacketDeserializationError::MalformedData)?;
 
         let id = u16::from_le_bytes(id_bytes.try_into().expect("must be 2 bytes"));

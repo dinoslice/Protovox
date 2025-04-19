@@ -12,7 +12,7 @@ use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, Clien
 use crate::events::event_bus::EventBus;
 use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
-use crate::input::{reset_mouse_manager_state, InputManager};
+use crate::input::InputManager;
 use crate::inventory::Inventory;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
@@ -67,7 +67,7 @@ pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<Local
         .expect("local player should have held block");
 
     let curr_block = held.0 as u16 as i32;
-
+    
     let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
 
     held.0 = BlockTy::from_repr(new_block as _).expect("block id should be in range");
@@ -130,7 +130,7 @@ pub fn place_break_blocks(
 
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let (_, look_at, held, mut inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
+    let (_, look_at, held, inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     
@@ -156,7 +156,7 @@ pub fn place_break_blocks(
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
-        
+
         if let Some(old) = world.modify_block(&pos, block) {
             if let Some(stack) = old.on_break() {
                 let _ = inventory.try_insert(stack); // TODO: deal with overflow
@@ -166,7 +166,7 @@ pub fn place_break_blocks(
 
     if should_place && should_break {
         let block = held.0.place(location.clone(), *ft).unwrap_or(Block::Air);
-        
+
         update_block(&mut chunk_mgr, location.clone(), block);
     } else if should_break {
         update_block(&mut chunk_mgr, location.clone(), Block::Air);

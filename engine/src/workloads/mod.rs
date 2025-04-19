@@ -1,8 +1,9 @@
-use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload, WorkloadModificator};
-use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
+use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, UniqueView, Workload, WorkloadModificator};
+use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata, RenderUiStartMarker};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
 use crate::{args, rendering};
+use crate::application::CaptureState;
 use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::gamemode::local_player_is_gamemode_spectator;
@@ -40,7 +41,7 @@ impl DinoEnginePlugin for VoxelEngine {
 
     fn late_startup(&self) -> Option<Workload> {
         (
-            initialize_gameplay_systems,
+            initialize_gameplay_systems.tag(path!({self}::{EnginePhase::LateStartup}::initialize_gameplay_systems)),
             register_packets,
             initialize_networking,
             set_window_title,
@@ -52,12 +53,14 @@ impl DinoEnginePlugin for VoxelEngine {
     fn input(&self) -> Option<Workload> {
         (
             apply_camera_input,
-            process_movement,
+            process_movement, // TODO: this still needs to be called if not captured, it just shouldn't react to input
+            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
             scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
         )
             .into_sequential_workload()
+            .run_if(|captured: UniqueView<CaptureState>| captured.is_captured())
             .into()
     }
 
@@ -122,7 +125,6 @@ impl DinoEnginePlugin for VoxelEngine {
             client_apply_block_updates.run_if(is_multiplayer_client),
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
-            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
         ).into_sequential_workload()
             .into()
     }
@@ -144,9 +146,14 @@ impl DinoEnginePlugin for VoxelEngine {
 
         (
             // -- RENDER -- //
-            render::skybox::render_skybox,
-            world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
-            block_outline::render_block_outline,
+            (
+                render::skybox::render_skybox,
+                world::render_world.tag(path!({plugin}::{EnginePhase::Render}::render_world)),
+                block_outline::render_block_outline,
+            )
+                .into_sequential_workload()
+                .before_all(path!({RenderUiStartMarker})),
+            
             submit_rendered_frame.tag(path!({plugin}::{EnginePhase::Render}::submit_rendered_frame)),
         ).into_sequential_workload()
             .into()

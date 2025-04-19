@@ -41,6 +41,14 @@ impl Inventory {
 
         None
     }
+
+    pub fn as_slice(&self) -> &[Option<ItemStack>] {
+        &self.0
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
+        &mut self.0
+    }
 }
 
 impl Inventory {

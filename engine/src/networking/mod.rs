@@ -218,7 +218,7 @@ pub fn server_handle_client_chunk_reqs(mut reqs: ViewMut<EventBus<ClientChunkReq
                 Some(cc) => {
                     use std::mem;
 
-                    assert_eq!(mem::size_of::<ChunkData>(), mem::size_of::<ChunkGenEvent>());
+                    assert_eq!(size_of::<ChunkData>(), size_of::<ChunkGenEvent>());
 
                     let gen_evt = unsafe { mem::transmute::<&ChunkData, &ChunkGenEvent>(&cc.data) }; // TODO: eventually figure out how to get rid of this transmute without copying
 

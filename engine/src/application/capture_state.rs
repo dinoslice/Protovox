@@ -4,20 +4,23 @@ use winit::window::{CursorGrabMode, Window};
 use crate::input::InputManager;
 use crate::rendering::graphics_context::GraphicsContext;
 
-#[derive(Unique, Default)]
+#[derive(Unique, Debug)]
 pub struct CaptureState(bool);
 
 impl CaptureState {
+    // TODO: store Arc<Window>
+    pub fn new_with(window: &Window, captured: bool) -> Option<Self> {
+        let state = Self(captured);
+
+        state.reconfigure_window(window);
+
+        Some(state)
+    }
+
     pub fn set(&mut self, window: &Window, captured: bool) -> Option<()> {
         self.0 = captured;
 
-        let cursor_grab = match self.0 {
-            true => CursorGrabMode::Confined,
-            false => CursorGrabMode::None,
-        };
-
-        window.set_cursor_visible(!self.0);
-        window.set_cursor_grab(cursor_grab).ok()
+        self.reconfigure_window(window).map(|_| ())
     }
 
     pub fn is_captured(&self) -> bool {
@@ -26,6 +29,20 @@ impl CaptureState {
 
     pub fn toggle(&mut self, window: &Window) -> Option<bool> {
         self.set(window, !self.0).map(|_| self.0)
+    }
+
+    pub fn reconfigure_window(&self, window: &Window) -> Option<bool> {
+        let captured = self.is_captured();
+
+        let cursor_grab = match self.0 {
+            true => CursorGrabMode::Confined,
+            false => CursorGrabMode::None,
+        };
+
+        window.set_cursor_visible(!self.0);
+        window.set_cursor_grab(cursor_grab).ok()?;
+
+        Some(captured)
     }
 }
 

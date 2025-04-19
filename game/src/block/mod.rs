@@ -65,13 +65,13 @@ impl Block {
             } else {
                 LOG // TODO: rotate texture
             }
-            Block::Stone | Block::Leaf => todo!()
+            Block::Leaf => DEBUG_GREEN,
+            Block::Stone => MISSING,
         };
 
         Some(id)
     }
 
-    // TODO: take in self
     pub fn on_break(self, /* break_context: BreakContext TODO: break context for fortune*/) -> Option<ItemStack> {
         use Block as B;
         use ItemType as I;
