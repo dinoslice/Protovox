@@ -1,8 +1,9 @@
-use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, Workload, WorkloadModificator};
+use shipyard::{IntoWorkload, IntoWorkloadTrySystem, SystemModificator, UniqueView, Workload, WorkloadModificator};
 use dino_plugins::engine::{DinoEnginePlugin, EnginePhase, EnginePluginMetadata};
 use strck::IntoCk;
 use dino_plugins::{path, Identifiable};
 use crate::{args, rendering};
+use crate::application::CaptureState;
 use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::gamemode::local_player_is_gamemode_spectator;
@@ -40,7 +41,7 @@ impl DinoEnginePlugin for VoxelEngine {
 
     fn late_startup(&self) -> Option<Workload> {
         (
-            initialize_gameplay_systems,
+            initialize_gameplay_systems.tag(path!({self}::{EnginePhase::LateStartup}::initialize_gameplay_systems)),
             register_packets,
             initialize_networking,
             set_window_title,
@@ -53,11 +54,13 @@ impl DinoEnginePlugin for VoxelEngine {
         (
             apply_camera_input,
             process_movement,
+            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
             scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
         )
             .into_sequential_workload()
+            .run_if(|captured: UniqueView<CaptureState>| captured.is_captured())
             .into()
     }
 
@@ -122,7 +125,6 @@ impl DinoEnginePlugin for VoxelEngine {
             client_apply_block_updates.run_if(is_multiplayer_client),
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
-            place_break_blocks.skip_if(local_player_is_gamemode_spectator),
         ).into_sequential_workload()
             .into()
     }

@@ -22,5 +22,6 @@ pub mod last_world_interaction;
 pub mod gamemode;
 pub mod save;
 pub mod inventory;
+pub mod block_bar_focus;
 
 pub use workloads::VoxelEngine;

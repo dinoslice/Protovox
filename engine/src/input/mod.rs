@@ -10,6 +10,7 @@ pub mod last_frame_events;
 pub struct InputManager {
     pressed: ActionMap,
     just_pressed: ActionMap,
+    just_released: ActionMap,
     
     queue: Vec<(Action, bool)>,
     
@@ -21,6 +22,7 @@ impl InputManager {
         Self {
             pressed: ActionMap::default(),
             just_pressed: ActionMap::default(),
+            just_released: ActionMap::default(),
             queue: Vec::default(),
             mouse_manager,
         }
@@ -38,10 +40,16 @@ impl InputManager {
     
     pub fn process(&mut self) {
         self.just_pressed.reset_all();
+        self.just_released.reset_all();
         
         for (action, state) in self.queue.drain(..) {
             if state && !self.pressed.get_action(action) {
                 self.just_pressed.set_action(action, true);
+            }
+
+
+            if !state && self.pressed.get_action(action) {
+                self.just_released.set_action(action, true);
             }
 
             self.pressed.set_action(action, state);
@@ -54,6 +62,10 @@ impl InputManager {
     
     pub fn just_pressed(&self) -> &ActionMap {
         &self.just_pressed
+    }
+
+    pub fn just_released(&self) -> &ActionMap {
+        &self.just_released
     }
 
     pub fn reset_all(&mut self) {

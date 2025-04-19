@@ -16,6 +16,7 @@ pub struct EguiSystemsPlugin;
 impl DinoEnginePlugin for EguiSystemsPlugin {
     fn early_startup(&self) -> Option<Workload> {
         initialize_renderer
+            .tag(path!({self}::{EnginePhase::EarlyStartup}::initialize_renderer))
             .after_all(path!({VoxelEngine}::{EnginePhase::EarlyStartup}::rendering::initialize))
             .into_workload()
             .into()

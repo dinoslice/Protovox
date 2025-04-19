@@ -1136,6 +1136,7 @@ dependencies = [
  "nalgebra-glm",
  "shipyard",
  "strck",
+ "tracing",
  "wgpu",
 ]
 

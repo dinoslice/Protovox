@@ -162,9 +162,43 @@ impl ItemStack {
             }
         }
     }
+    
+    pub fn split(mut self, first_ct: NonZeroU8) -> (Self, Option<Self>) {
+        if first_ct >= self.count {
+            (self, None)
+        } else {
+            let mut other = self.clone();
+            
+            other.count = NonZeroU8::new(self.count.get() - first_ct.get()).expect("can't be zero, since first_ct must be less than total");
+            
+            self.count = first_ct;
+
+            (self, Some(other))
+        }
+    }
+    
+    pub fn split_half(self) -> (Self, Option<Self>) {
+        let ct = self.count.get() / 2 + self.count.get() % 2;
+        
+        self.split(NonZeroU8::new(ct).expect("shouldn't ever be zero"))
+    }
+}
+
+impl Clone for ItemStack {
+    fn clone(&self) -> Self {
+        Self {
+            ty: self.ty,
+            count: self.count,
+            title: self.title.clone(),
+            desc: self.desc.clone(),
+            data: self.data.as_ref().map(|d| d.clone_boxed()),
+        }
+    }
 }
 
 pub trait ItemDataProvider: Debug + Send + Sync {
     // TODO: better way to check for equality
     fn hash(&self) -> u64;
+    
+    fn clone_boxed(&self) -> Box<dyn ItemDataProvider>;
 }
