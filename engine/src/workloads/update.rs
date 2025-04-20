@@ -80,7 +80,7 @@ pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
     for mut bus in vm_block_update_evt_bus.drain() {
         for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
-            if world.modify_block(&loc, new_block).is_none() {
+            if world.modify_block(&loc, new_block).is_err() {
                 tracing::error!("Location from block update wasn't loaded");
             }
         }
@@ -91,7 +91,7 @@ pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm
 
 pub fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
     for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
-        if world.modify_block(&loc, new_block).is_none() {
+        if world.modify_block(&loc, new_block).is_err() {
             tracing::error!("Location from block update wasn't loaded");
         }
     }
