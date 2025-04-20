@@ -93,19 +93,3 @@ impl Block {
         self.into()
     }
 }
-
-impl BlockTy {
-    // TODO: remove this method
-    pub fn place(self, _loc: BlockLocation, face: FaceType) -> Option<Block> {
-        match self {
-            Self::Air => None,
-            Self::Grass => Some(Block::Grass),
-            Self::Dirt => Some(Block::Dirt),
-            Self::Cobblestone => Some(Block::Cobblestone),
-            Self::Stone => Some(Block::Stone),
-            Self::Log => Some(Block::Log { rotation: face.axis() }),
-            Self::Leaf => Some(Block::Leaf),
-            Self::Debug => Some(Block::Debug),
-        }
-    }
-}
