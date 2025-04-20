@@ -83,7 +83,7 @@ impl ItemType {
 
 // TODO: move name and description into item data provider
 // TODO: make this clone
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ItemStack {
     pub item: Item,
     pub count: NonZeroU8,
@@ -168,11 +168,12 @@ impl ItemStack {
 }
 
 // TODO: i don't like this
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Item {
     pub ty: ItemType,
     pub title: String,
     pub desc: String,
+    #[serde(skip)] // TODO: serialize the data
     pub data: Option<Box<dyn ItemDataProvider>>,
 }
 
