@@ -10,11 +10,11 @@ thiserror = { workspace = true }
 shipyard = { workspace = true }
 serde = { workspace = true }
 strum = { workspace = true }
-serde-big-array = "0.5.1"
 num-traits = "0.2.19"
 derive_more = { version = "1.0.0", features = ["add", "from"] }
 rand = "0.8.5"
 static_assertions = "1.1.0"
+serde_with = "3.12.0"
 
 [lints]
 workspace = true
