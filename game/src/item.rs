@@ -181,6 +181,10 @@ impl Item {
             count,
         }
     }
+    
+    pub fn stack_one(self) -> ItemStack {
+        ItemStack::one(self)
+    }
 }
 
 impl PartialEq<Self> for Item {
