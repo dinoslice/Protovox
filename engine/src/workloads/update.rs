@@ -134,7 +134,7 @@ pub fn place_break_blocks(
     let Some(RaycastResult {
         hit: RaycastHit::Block {
             location,
-            face: Some(ft)
+            face,
         },
         ..
     }) = &look_at.0 else {
@@ -162,21 +162,25 @@ pub fn place_break_blocks(
     };
 
     if should_place && should_break {
-        let block = inventory.try_get_place_at(held.0, location.clone(), *ft).unwrap_or(Block::Air);
-        
-        update_block(&mut chunk_mgr, location.clone(), block, inventory);
+        if let Some(ft) = face {
+            let block = inventory.try_get_place_at(held.0, location.clone(), *ft).unwrap_or(Block::Air);
+
+            update_block(&mut chunk_mgr, location.clone(), block, inventory);
+        }
     } else if should_break {
         update_block(&mut chunk_mgr, location.clone(), Block::Air, inventory);
     } else if should_place {
-        // TODO: impl Add<IVec3> for BlockLocation
-        let adj = BlockLocation(location.0 + ft.as_vector());
+        if let Some(ft) = face {
+            // TODO: impl Add<IVec3> for BlockLocation
+            let adj = BlockLocation(location.0 + ft.as_vector());
 
-        if chunk_mgr.get_block_ref(&adj) == Some(&Block::Air) {
-            let (min, max) = adj.get_aabb_bounds();
+            if chunk_mgr.get_block_ref(&adj) == Some(&Block::Air) {
+                let (min, max) = adj.get_aabb_bounds();
 
-            if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                if let Some(block) = inventory.try_get_place_at(held.0, adj.clone(), *ft) {
-                    update_block(&mut chunk_mgr, adj, block, inventory);
+                if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
+                    if let Some(block) = inventory.try_get_place_at(held.0, adj.clone(), *ft) {
+                        update_block(&mut chunk_mgr, adj, block, inventory);
+                    }
                 }
             }
         }

@@ -15,7 +15,7 @@ pub struct RaycastResult {
 pub enum RaycastHit {
     Block {
         location: BlockLocation,
-        face: Option<FaceType>,
+        face: Option<FaceType>, // TODO: if starts inside a block, find the face that's the closest to intersection
     },
     Entity {
         // TODO
