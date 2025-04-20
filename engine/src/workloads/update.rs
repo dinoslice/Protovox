@@ -59,18 +59,15 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
-    let scroll = input.mouse_manager.scroll.floor() as i32;
-
-    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
+// TODO: move this fn to game_ui
+pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>, mut v_inventory: View<Inventory>) {
+    let scroll = input.mouse_manager.scroll.floor() as isize;
+    
+    let (_, held, inventory) = (&v_local_player, &mut vm_held_block, &v_inventory).iter()
         .next()
         .expect("local player should have held block");
-
-    let curr_block = held.0 as u16 as i32;
     
-    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
-
-    held.0 = BlockTy::from_repr(new_block as _).expect("block id should be in range");
+    held.0 = (held.0 as isize + scroll).rem_euclid(inventory.space() as _) as _;
 }
 
 pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
@@ -152,7 +149,7 @@ pub fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
 
-    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block| {
+    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut Inventory| {
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
@@ -164,12 +161,39 @@ pub fn place_break_blocks(
         }
     };
 
-    if should_place && should_break {
-        let block = held.0.place(location.clone(), *ft).unwrap_or(Block::Air);
+    let held_slot = inventory.as_mut_slice().get_mut(held.0).expect("should be in range");
 
-        update_block(&mut chunk_mgr, location.clone(), block);
+    if should_place && should_break {
+        if let Some(it) = held_slot.take() {
+            let (item, mut split_res) = it.split_item();
+
+            let block = match item.place(location.clone(), *ft) {
+                Ok(block) => block,
+                Err(unplace_item) => {
+                    let rem = if let Some(split_it) = split_res.take() {
+                        let mut unplace_item = unplace_item.stack_one();
+                    
+                        let res = unplace_item.try_combine(split_it);
+                    
+                        assert!(res.is_none(), "should have at least one free slot");
+                    
+                        unplace_item
+                    } else {
+                        unplace_item.stack_one()
+                    };
+                    
+                    split_res = Some(rem);
+
+                    Block::Air
+                }
+            };
+
+            *held_slot = split_res;
+
+            update_block(&mut chunk_mgr, location.clone(), block, inventory);
+        }
     } else if should_break {
-        update_block(&mut chunk_mgr, location.clone(), Block::Air);
+        update_block(&mut chunk_mgr, location.clone(), Block::Air, inventory);
     } else if should_place {
         // TODO: impl Add<IVec3> for BlockLocation
         let adj = BlockLocation(location.0 + ft.as_vector());
@@ -178,9 +202,36 @@ pub fn place_break_blocks(
             let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                if let Some(block) = held.0.place(location.clone(), *ft) {
-                    update_block(&mut chunk_mgr, adj, block);
+
+                if let Some(it) = held_slot.take() {
+                    let (item, mut split_res) = it.split_item();
+
+                    let block = match item.place(adj.clone(), *ft) {
+                        Ok(block) => block,
+                        Err(unplace_item) => {
+                            let rem = if let Some(split_it) = split_res.take() {
+                                let mut unplace_item = unplace_item.stack_one();
+
+                                let res = unplace_item.try_combine(split_it);
+
+                                assert!(res.is_none(), "should have at least one free slot");
+
+                                unplace_item
+                            } else {
+                                unplace_item.stack_one()
+                            };
+
+                            split_res = Some(rem);
+
+                            Block::Air
+                        }
+                    };
+
+                    *held_slot = split_res;
+
+                    update_block(&mut chunk_mgr, adj, block, inventory);
                 }
+                
             }
         }
     }

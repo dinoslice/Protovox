@@ -49,7 +49,7 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
-    storages.add_component(id, HeldBlock(BlockTy::Cobblestone));
+    storages.add_component(id, HeldBlock(0));
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
