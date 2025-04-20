@@ -33,6 +33,12 @@ pub struct Inventory<const N: usize>(
     Box<[Option<ItemStack>; N]>,
 );
 
+impl<const N: usize> Default for Inventory<N> {
+    fn default() -> Self {
+        Self(Box::new([const { None }; N]))
+    }
+}
+
 impl Default for BlockTy {
     fn default() -> Self {
         Self::Air
