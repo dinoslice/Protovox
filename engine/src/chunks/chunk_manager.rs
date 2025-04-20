@@ -208,8 +208,10 @@ impl ChunkManager {
             .get_mut(pos.0 as usize)
     }
     
-    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Option<Block> {
-        let block_mut = self.get_block_mut(block_loc)?;
+    pub fn modify_block(&mut self, block_loc: &BlockLocation, new: Block) -> Result<Block, Block> {
+        let Some(block_mut) = self.get_block_mut(block_loc) else {
+            return Err(new);
+        };
         
         if *block_mut != new {
             let prev = mem::replace(block_mut, new);
@@ -229,9 +231,9 @@ impl ChunkManager {
                 }
             }
             
-            Some(prev)
+            Ok(prev)
         } else {
-            None
+            Err(new)
         }
     }
 

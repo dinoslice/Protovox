@@ -1,7 +1,7 @@
 use egui::Window;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
-use engine::components::{Entity, LocalPlayer, Transform, Velocity};
+use engine::components::{Entity, HeldBlock, LocalPlayer, Transform, Velocity};
 use engine::networking::server_handler::ServerHandler;
 
 pub fn debug_ui(
@@ -12,6 +12,7 @@ pub fn debug_ui(
     v_entity: View<Entity>,
     v_transform: View<Transform>,
     v_velocity: View<Velocity>,
+    v_held: View<HeldBlock>,
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
 ) {
@@ -19,7 +20,7 @@ pub fn debug_ui(
 
     let vec3_fmt = |title: &'static str, v: &glm::Vec3| format!("{title}: [{:.2}, {:.2}, {:.2}]", v.x, v.y, v.z);
 
-    let (_, local_transform, velocity) = (&v_local_player, &v_transform, &v_velocity)
+    let (_, local_transform, velocity, held) = (&v_local_player, &v_transform, &v_velocity, &v_held)
         .iter()
         .next()
         .expect("LocalPlayer didn't have transform & held block");
@@ -34,6 +35,7 @@ pub fn debug_ui(
             ui.heading("LocalPlayer");
             ui.label(vec3_fmt("Position", &local_transform.position));
             ui.label(vec3_fmt("Velocity", &velocity.0));
+            ui.label(format!("{held:?}")); // TODO: stop displaying held
 
             if other_pos.peek().is_some() {
                 ui.heading("Entities");

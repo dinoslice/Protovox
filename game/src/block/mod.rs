@@ -84,7 +84,7 @@ impl Block {
             B::Leaf => {
                 let count = thread_rng().gen_range(5..15);
 
-                Some(I::LeafPile.default_stack(NonZeroU8::new(count).expect("0 is not in range")))
+                Some(I::LeafPile.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range")))
             }
         }
     }
@@ -95,6 +95,7 @@ impl Block {
 }
 
 impl BlockTy {
+    // TODO: remove this method
     pub fn place(self, _loc: BlockLocation, face: FaceType) -> Option<Block> {
         match self {
             Self::Air => None,

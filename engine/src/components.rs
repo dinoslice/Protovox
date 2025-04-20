@@ -111,7 +111,7 @@ impl Hitbox {
 pub struct IsOnGround(pub bool);
 
 #[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
-pub struct HeldBlock(pub BlockTy);
+pub struct HeldBlock(pub usize); // inventory index, TODO: improve api
 
 #[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
 pub struct Health {

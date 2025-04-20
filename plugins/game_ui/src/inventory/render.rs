@@ -152,11 +152,11 @@ impl InventoryGui<'_> {
                 *slot = slot_it;
             }
             (Some(hand_it), slot_it, PointerButton::Secondary)
-                if slot_it.as_ref().is_none_or(|a| a.eq_data(hand_it)) =>
+                if slot_it.as_ref().is_none_or(|slot_it| slot_it.item == hand_it.item) =>
             {
                 let h = hand.take().expect("should've matched on Some");
                 
-                let (slot_it, mut hand_it) = h.split(NonZeroU8::new(1).expect("not zero"));
+                let (slot_it, mut hand_it) = h.split_at_most(NonZeroU8::new(1).expect("not zero"));
                 
                 match slot {
                     Some(slot) => {
@@ -177,7 +177,7 @@ impl InventoryGui<'_> {
     
                 *hand = hand_it;
             }
-            (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.eq_data(hand_it) => {
+            (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.item == hand_it.item => {
                 let hand_it = hand.take().expect("should've matched on Some");
                 let slot = slot.as_mut().expect("should've matched on Some");
                 

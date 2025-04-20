@@ -1,6 +1,9 @@
-use std::num::NonZeroUsize;
+use std::num::{NonZeroU8, NonZeroUsize};
 use shipyard::Component;
-use game::item::ItemStack;
+use game::block::Block;
+use game::block::face_type::FaceType;
+use game::item::{Item, ItemStack};
+use game::location::BlockLocation;
 
 #[derive(Component, Debug)]
 pub struct Inventory(Box<[Option<ItemStack>]>);
@@ -48,6 +51,85 @@ impl Inventory {
 
     pub fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
         &mut self.0
+    }
+
+    // TODO: refactor these helper methods
+    pub fn split_item_at(&mut self, slot: usize) -> Option<Item> {
+        let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
+
+        if let Some(it) = slot.take() {
+            let (item, rem) = it.split_item();
+
+            *slot = rem;
+
+            Some(item)
+        } else {
+            None
+        }
+    }
+
+    pub fn split_at_most_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
+        let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
+
+        if let Some(it) = slot.take() {
+            let (it, rem) = it.split_at_most(ct);
+
+            *slot = rem;
+
+            Some(it)
+        } else {
+            None
+        }
+    }
+
+    pub fn split_exact_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
+        let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
+
+        if let Some(it) = slot.take() {
+            match it.split_exact(ct) {
+                Ok((it, rem)) => {
+                    *slot = rem;
+                    
+                    Some(it)
+                }
+                Err(rem) => {
+                    *slot = Some(rem);
+                    
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn try_insert_at(&mut self, slot: usize, it: ItemStack) -> Option<ItemStack> {
+        let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
+
+        if let Some(slot) = slot {
+            slot.try_combine(it)
+        } else {
+            *slot = Some(it);
+            
+            None
+        }
+    }
+
+    pub fn try_get_place_at(&mut self, slot: usize, location: BlockLocation, face_type: FaceType) -> Option<Block> {
+        if let Some(item) = self.split_item_at(slot) {
+            match item.place(location, face_type) {
+                Ok(block) => Some(block),
+                Err(err_item) => {
+                    let rem = self.try_insert_at(slot, err_item.stack_one());
+
+                    assert!(rem.is_none(), "should have at least one free slot");
+
+                    None
+                }
+            }
+        } else {
+            None
+        }
     }
 }
 
