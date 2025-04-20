@@ -156,7 +156,7 @@ impl InventoryGui<'_> {
             {
                 let h = hand.take().expect("should've matched on Some");
                 
-                let (slot_it, mut hand_it) = h.split(NonZeroU8::new(1).expect("not zero"));
+                let (slot_it, mut hand_it) = h.split_at_most(NonZeroU8::new(1).expect("not zero"));
                 
                 match slot {
                     Some(slot) => {

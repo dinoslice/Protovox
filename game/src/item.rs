@@ -129,7 +129,15 @@ impl ItemStack {
         }
     }
     
-    pub fn split(mut self, first_ct: NonZeroU8) -> (Self, Option<Self>) {
+    pub fn split_exact(self, first_ct: NonZeroU8) -> Result<(Self, Option<Self>), Self> {
+        if first_ct <= self.count {
+            Ok(self.split_at_most(first_ct))
+        } else {
+            Err(self)
+        }
+    }
+    
+    pub fn split_at_most(mut self, first_ct: NonZeroU8) -> (Self, Option<Self>) {
         if first_ct >= self.count {
             (self, None)
         } else {
@@ -146,11 +154,11 @@ impl ItemStack {
     pub fn split_half(self) -> (Self, Option<Self>) {
         let ct = self.count.get() / 2 + self.count.get() % 2;
         
-        self.split(NonZeroU8::new(ct).expect("shouldn't ever be zero"))
+        self.split_at_most(NonZeroU8::new(ct).expect("shouldn't ever be zero"))
     }
     
     pub fn split_item(self) -> (Item, Option<Self>) {
-        let (item, res) = self.split(1.try_into().expect("nonzero"));
+        let (item, res) = self.split_at_most(1.try_into().expect("nonzero"));
 
         (item.item, res)
     }
