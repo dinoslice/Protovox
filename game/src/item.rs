@@ -155,7 +155,7 @@ impl ItemStack {
     }
     
     pub fn split_half(self) -> (Self, Option<Self>) {
-        let ct = self.count.get() / 2 + self.count.get() % 2;
+        let ct = self.count.get().div_ceil(2);
         
         self.split_at_most(NonZeroU8::new(ct).expect("shouldn't ever be zero"))
     }
