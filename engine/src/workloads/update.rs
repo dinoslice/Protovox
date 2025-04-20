@@ -156,11 +156,11 @@ pub fn place_break_blocks(
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
+        
+        let old = world.modify_block(&pos, block).expect("chunk shouldn't have unloaded so quickly");
 
-        if let Some(old) = world.modify_block(&pos, block) {
-            if let Some(stack) = old.on_break() {
-                let _ = inventory.try_insert(stack); // TODO: deal with overflow
-            }
+        if let Some(stack) = old.on_break() {
+            let _ = inventory.try_insert(stack); // TODO: deal with overflow
         }
     };
 
