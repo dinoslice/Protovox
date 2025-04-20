@@ -161,37 +161,10 @@ pub fn place_break_blocks(
         }
     };
 
-    let held_slot = inventory.as_mut_slice().get_mut(held.0).expect("should be in range");
-
     if should_place && should_break {
-        if let Some(it) = held_slot.take() {
-            let (item, mut split_res) = it.split_item();
-
-            let block = match item.place(location.clone(), *ft) {
-                Ok(block) => block,
-                Err(unplace_item) => {
-                    let rem = if let Some(split_it) = split_res.take() {
-                        let mut unplace_item = unplace_item.stack_one();
-                    
-                        let res = unplace_item.try_combine(split_it);
-                    
-                        assert!(res.is_none(), "should have at least one free slot");
-                    
-                        unplace_item
-                    } else {
-                        unplace_item.stack_one()
-                    };
-                    
-                    split_res = Some(rem);
-
-                    Block::Air
-                }
-            };
-
-            *held_slot = split_res;
-
-            update_block(&mut chunk_mgr, location.clone(), block, inventory);
-        }
+        let block = inventory.try_get_place_at(held.0, location.clone(), *ft).unwrap_or(Block::Air);
+        
+        update_block(&mut chunk_mgr, location.clone(), block, inventory);
     } else if should_break {
         update_block(&mut chunk_mgr, location.clone(), Block::Air, inventory);
     } else if should_place {
@@ -202,36 +175,9 @@ pub fn place_break_blocks(
             let (min, max) = adj.get_aabb_bounds();
 
             if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-
-                if let Some(it) = held_slot.take() {
-                    let (item, mut split_res) = it.split_item();
-
-                    let block = match item.place(adj.clone(), *ft) {
-                        Ok(block) => block,
-                        Err(unplace_item) => {
-                            let rem = if let Some(split_it) = split_res.take() {
-                                let mut unplace_item = unplace_item.stack_one();
-
-                                let res = unplace_item.try_combine(split_it);
-
-                                assert!(res.is_none(), "should have at least one free slot");
-
-                                unplace_item
-                            } else {
-                                unplace_item.stack_one()
-                            };
-
-                            split_res = Some(rem);
-
-                            Block::Air
-                        }
-                    };
-
-                    *held_slot = split_res;
-
+                if let Some(block) = inventory.try_get_place_at(held.0, adj.clone(), *ft) {
                     update_block(&mut chunk_mgr, adj, block, inventory);
                 }
-                
             }
         }
     }

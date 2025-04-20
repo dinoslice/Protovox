@@ -1,6 +1,9 @@
 use std::num::{NonZeroU8, NonZeroUsize};
 use shipyard::Component;
+use game::block::Block;
+use game::block::face_type::FaceType;
 use game::item::{Item, ItemStack};
+use game::location::BlockLocation;
 
 #[derive(Component, Debug)]
 pub struct Inventory(Box<[Option<ItemStack>]>);
@@ -108,6 +111,23 @@ impl Inventory {
         } else {
             *slot = Some(it);
             
+            None
+        }
+    }
+
+    pub fn try_get_place_at(&mut self, slot: usize, location: BlockLocation, face_type: FaceType) -> Option<Block> {
+        if let Some(item) = self.split_item_at(slot) {
+            match item.place(location, face_type) {
+                Ok(block) => Some(block),
+                Err(err_item) => {
+                    let rem = self.try_insert_at(slot, err_item.stack_one());
+
+                    assert!(rem.is_none(), "should have at least one free slot");
+
+                    None
+                }
+            }
+        } else {
             None
         }
     }
