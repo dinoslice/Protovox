@@ -2,6 +2,9 @@ use std::fmt::Debug;
 use std::num::NonZeroU8;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr};
+use crate::block::Block;
+use crate::block::face_type::FaceType;
+use crate::location::BlockLocation;
 use crate::texture_ids::TextureId;
 
 #[repr(u16)] // TODO: eventually replace strum::EnumCount with std::mem::variant_count
@@ -192,6 +195,20 @@ impl Item {
     
     pub fn stack_one(self) -> ItemStack {
         ItemStack::one(self)
+    }
+
+    // TODO: should this have a similar discriminant design to block
+    pub fn place(self, _loc: BlockLocation, face: FaceType) -> Result<Block, Self> {
+        use ItemType as IT;
+        
+        match self.ty {
+            IT::Grass => Ok(Block::Grass),
+            IT::Dirt => Ok(Block::Dirt),
+            IT::Cobblestone => Ok(Block::Cobblestone),
+            IT::Stone => Ok(Block::Stone),
+            IT::Log => Ok(Block::Log { rotation: face.axis() }),
+            IT::LeafPile => Ok(Block::Leaf),
+        }
     }
 }
 

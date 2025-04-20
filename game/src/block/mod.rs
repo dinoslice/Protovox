@@ -95,6 +95,7 @@ impl Block {
 }
 
 impl BlockTy {
+    // TODO: remove this method
     pub fn place(self, _loc: BlockLocation, face: FaceType) -> Option<Block> {
         match self {
             Self::Air => None,
