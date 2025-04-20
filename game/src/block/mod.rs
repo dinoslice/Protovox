@@ -23,7 +23,15 @@ pub enum Block {
     Log { rotation: Axis },
     Leaf,
     Debug,
+    Chest { inventory: Inventory<36> },
 }
+
+#[serde_with::serde_as]
+#[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
+pub struct Inventory<const N: usize>(
+    #[serde_as(as = "Box<[_; N]>")]
+    Box<[Option<ItemStack>; N]>,
+);
 
 impl Default for BlockTy {
     fn default() -> Self {
@@ -67,11 +75,13 @@ impl Block {
             }
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => MISSING,
+            Block::Chest { .. } => MISSING,
         };
 
         Some(id)
     }
 
+    // TODO: this should return a vec?
     pub fn on_break(self, /* break_context: BreakContext TODO: break context for fortune*/) -> Option<ItemStack> {
         use Block as B;
         use ItemType as I;
@@ -85,6 +95,10 @@ impl Block {
                 let count = thread_rng().gen_range(5..15);
 
                 Some(I::LeafPile.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range")))
+            }
+            B::Chest { inventory: mut inv } => {
+                // TODO: just take the first stack
+                inv.0.first_mut().expect("has at least one item").take()
             }
         }
     }
