@@ -59,17 +59,6 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-// TODO: move this fn to game_ui
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>, mut v_inventory: View<Inventory>) {
-    let scroll = input.mouse_manager.scroll.floor() as isize;
-    
-    let (_, held, inventory) = (&v_local_player, &mut vm_held_block, &v_inventory).iter()
-        .next()
-        .expect("local player should have held block");
-    
-    held.0 = (held.0 as isize + scroll).rem_euclid(inventory.space() as _) as _;
-}
-
 pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
     world_saver.process();
 }
@@ -116,7 +105,7 @@ pub fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
-    v_held_block: View<HeldBlock>,
+    held: UniqueView<HeldBlock>,
     input: UniqueView<InputManager>,
     mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
@@ -127,7 +116,7 @@ pub fn place_break_blocks(
 
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let (_, look_at, held, inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
+    let (_, look_at, inventory) = (&v_local_player, &v_looking_at_block, &mut vm_inventory).iter()
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     

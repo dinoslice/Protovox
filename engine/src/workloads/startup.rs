@@ -49,7 +49,6 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
-    storages.add_component(id, HeldBlock(0));
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
@@ -69,6 +68,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
     storages.add_unique(BlockBarFocus::new(inventory.space()));
+    storages.add_unique(HeldBlock(0));
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {
