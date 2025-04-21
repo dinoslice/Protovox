@@ -8,26 +8,28 @@ use game::location::BlockLocation;
 #[derive(Component, Debug)]
 pub struct PlayerInventory(Box<[Option<ItemStack>]>);
 
-impl PlayerInventory {
-    pub fn spaces(&self) -> impl Iterator<Item = Option<&'_ ItemStack>> {
-        self.0.iter().map(Option::as_ref)
+pub trait Inventory {
+    fn as_slice(&self) -> &[Option<ItemStack>];
+
+    fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>];
+
+    fn items(&self) -> impl Iterator<Item = &ItemStack> {
+        self.as_slice().iter().filter_map(Option::as_ref)
     }
 
-    pub fn items(&self) -> impl Iterator<Item = &ItemStack> {
-        self.0.iter()
-            .filter_map(Option::as_ref)
+    fn items_mut(&self) -> impl Iterator<Item = &mut ItemStack> {
+        self.as_mut_slice().iter_mut().filter_map(Option::as_mut)
     }
 
-    pub fn space(&self) -> usize {
-        self.0.len()
+    fn size(&self) -> usize {
+        self.as_slice().len()
     }
 
-    pub fn try_insert(&mut self, item_stack: ItemStack) -> Option<ItemStack> {
+    fn try_insert(&mut self, item_stack: ItemStack) -> Option<ItemStack> {
         let mut residual = item_stack;
 
         // loop through every slot that already has items
-        for inv_stack in self.0.iter_mut()
-            .filter_map(Option::as_mut)
+        for inv_stack in self.items_mut()
         {
             // try to put data into the stack, return None if all the data has been interested
             match inv_stack.try_combine(residual) {
@@ -37,7 +39,10 @@ impl PlayerInventory {
         }
 
 
-        match self.0.iter_mut().find(|s| s.is_none()) {
+        match self.as_mut_slice()
+            .iter_mut()
+            .find(|s| s.is_none())
+        {
             None => return Some(residual),
             Some(empty) => *empty = Some(residual),
         }
@@ -45,16 +50,8 @@ impl PlayerInventory {
         None
     }
 
-    pub fn as_slice(&self) -> &[Option<ItemStack>] {
-        &self.0
-    }
-
-    pub fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
-        &mut self.0
-    }
-
     // TODO: refactor these helper methods
-    pub fn split_item_at(&mut self, slot: usize) -> Option<Item> {
+    fn split_item_at(&mut self, slot: usize) -> Option<Item> {
         let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
 
         if let Some(it) = slot.take() {
@@ -68,7 +65,7 @@ impl PlayerInventory {
         }
     }
 
-    pub fn split_at_most_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
+    fn split_at_most_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
         let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
 
         if let Some(it) = slot.take() {
@@ -82,19 +79,19 @@ impl PlayerInventory {
         }
     }
 
-    pub fn split_exact_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
+    fn split_exact_at(&mut self, slot: usize, ct: NonZeroU8) -> Option<ItemStack> {
         let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
 
         if let Some(it) = slot.take() {
             match it.split_exact(ct) {
                 Ok((it, rem)) => {
                     *slot = rem;
-                    
+
                     Some(it)
                 }
                 Err(rem) => {
                     *slot = Some(rem);
-                    
+
                     None
                 }
             }
@@ -103,19 +100,19 @@ impl PlayerInventory {
         }
     }
 
-    pub fn try_insert_at(&mut self, slot: usize, it: ItemStack) -> Option<ItemStack> {
+    fn try_insert_at(&mut self, slot: usize, it: ItemStack) -> Option<ItemStack> {
         let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
 
         if let Some(slot) = slot {
             slot.try_combine(it)
         } else {
             *slot = Some(it);
-            
+
             None
         }
     }
 
-    pub fn try_get_place_at(&mut self, slot: usize, location: BlockLocation, face_type: FaceType) -> Option<Block> {
+    fn try_get_place_at(&mut self, slot: usize, location: BlockLocation, face_type: FaceType) -> Option<Block> {
         if let Some(item) = self.split_item_at(slot) {
             match item.place(location, face_type) {
                 Ok(block) => Some(block),
@@ -130,6 +127,16 @@ impl PlayerInventory {
         } else {
             None
         }
+    }
+}
+
+impl Inventory for PlayerInventory {
+    fn as_slice(&self) -> &[Option<ItemStack>] {
+        &self.0
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
+        &mut self.0
     }
 }
 
