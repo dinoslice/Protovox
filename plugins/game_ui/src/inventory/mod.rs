@@ -9,7 +9,7 @@ use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
-use engine::inventory::Inventory;
+use engine::inventory::PlayerInventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
@@ -35,7 +35,7 @@ pub fn initialize(storages: AllStoragesView) {
 pub fn inventory(
     egui_frame: UniqueView<CurrentEguiFrame>,
     local_player: View<LocalPlayer>,
-    mut inventory: ViewMut<Inventory>,
+    mut inventory: ViewMut<PlayerInventory>,
     mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
     texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
     input_manager: UniqueView<InputManager>,
@@ -65,7 +65,7 @@ pub fn inventory(
 
 pub fn toggle_inv_block_bar(
     v_local_player: View<LocalPlayer>,
-    vm_inventory: ViewMut<Inventory>,
+    vm_inventory: ViewMut<PlayerInventory>,
     mut hand: UniqueViewMut<InventoryHand>,
     mut open_time: UniqueViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
@@ -123,7 +123,7 @@ pub fn toggle_inv_block_bar(
     }
 }
 
-fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut InventoryHand) {
+fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<PlayerInventory>, hand: &mut InventoryHand) {
     let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
         .next()
         .expect("LocalPlayer should exist");

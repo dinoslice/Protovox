@@ -13,7 +13,7 @@ use crate::events::event_bus::EventBus;
 use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
-use crate::inventory::Inventory;
+use crate::inventory::PlayerInventory;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
@@ -112,7 +112,7 @@ pub fn place_break_blocks(
     // to ensure we're placing at a valid spot
     (v_entity, v_transform): (View<Entity>, View<Transform>),
     v_hitbox: View<Hitbox>,
-    mut vm_inventory: ViewMut<Inventory>,
+    mut vm_inventory: ViewMut<PlayerInventory>,
 
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
@@ -138,7 +138,7 @@ pub fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
 
-    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut Inventory| {
+    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut PlayerInventory| {
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));

@@ -6,9 +6,9 @@ use game::item::{Item, ItemStack};
 use game::location::BlockLocation;
 
 #[derive(Component, Debug)]
-pub struct Inventory(Box<[Option<ItemStack>]>);
+pub struct PlayerInventory(Box<[Option<ItemStack>]>);
 
-impl Inventory {
+impl PlayerInventory {
     pub fn spaces(&self) -> impl Iterator<Item = Option<&'_ ItemStack>> {
         self.0.iter().map(Option::as_ref)
     }
@@ -133,7 +133,7 @@ impl Inventory {
     }
 }
 
-impl Inventory {
+impl PlayerInventory {
     pub fn new(size: NonZeroUsize) -> Self {
         let mut v = Vec::new();
 

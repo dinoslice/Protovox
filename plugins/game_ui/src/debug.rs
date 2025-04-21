@@ -2,7 +2,7 @@ use egui::Window;
 use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::components::{Entity, HeldBlock, LocalPlayer, Transform, Velocity};
-use engine::inventory::Inventory;
+use engine::inventory::PlayerInventory;
 use engine::networking::server_handler::ServerHandler;
 
 pub fn debug_ui(
@@ -13,7 +13,7 @@ pub fn debug_ui(
     v_entity: View<Entity>,
     v_transform: View<Transform>,
     v_velocity: View<Velocity>,
-    v_inventory: View<Inventory>,
+    v_inventory: View<PlayerInventory>,
     held: UniqueView<HeldBlock>,
 
     opt_server_handler: Option<UniqueView<ServerHandler>>,
