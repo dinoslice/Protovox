@@ -5,6 +5,7 @@ use engine::block_bar_focus::BlockBarFocus;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::inventory::PlayerInventory;
+use game::inventory::Inventory;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::InventoryHand;

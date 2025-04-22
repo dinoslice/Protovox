@@ -4,6 +4,7 @@ use egui_systems::CurrentEguiFrame;
 use engine::components::{Entity, HeldBlock, LocalPlayer, Transform, Velocity};
 use engine::inventory::PlayerInventory;
 use engine::networking::server_handler::ServerHandler;
+use game::inventory::Inventory;
 
 pub fn debug_ui(
     egui_frame: UniqueView<CurrentEguiFrame>,

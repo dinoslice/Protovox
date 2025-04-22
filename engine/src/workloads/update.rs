@@ -3,6 +3,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use shipyard::{UniqueView, UniqueViewMut, ViewMut, IntoIter, View, EntitiesViewMut, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
 use game::block::{Block, BlockTy};
+use game::inventory::Inventory;
 use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;

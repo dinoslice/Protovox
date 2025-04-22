@@ -4,6 +4,7 @@ use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
 use engine::inventory::PlayerInventory;
+use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::item_stack::ItemStackRender;

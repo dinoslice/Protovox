@@ -2,6 +2,7 @@ use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
 use game::block::BlockTy;
+use game::inventory::Inventory;
 use networking::PacketRegistry;
 use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
@@ -67,7 +68,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
-    storages.add_unique(BlockBarFocus::new(inventory.space()));
+    storages.add_unique(BlockBarFocus::new(inventory.size()));
     storages.add_unique(HeldBlock(0));
 }
 

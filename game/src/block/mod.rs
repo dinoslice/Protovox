@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumDiscriminants};
 use crate::block::face_type::{Axis, FaceType};
 use static_assertions::const_assert;
+use crate::inventory::Inventory;
 use crate::item::{ItemStack, ItemType};
 use crate::location::BlockLocation;
 use crate::texture_ids::TextureId;
@@ -23,19 +24,29 @@ pub enum Block {
     Log { rotation: Axis },
     Leaf,
     Debug,
-    Chest { inventory: Inventory<36> },
+    Chest { inventory: BlockInventory<36> },
 }
 
 #[serde_with::serde_as]
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
-pub struct Inventory<const N: usize>(
+pub struct BlockInventory<const N: usize>(
     #[serde_as(as = "Box<[_; N]>")]
     Box<[Option<ItemStack>; N]>,
 );
 
-impl<const N: usize> Default for Inventory<N> {
+impl<const N: usize> Default for BlockInventory<N> {
     fn default() -> Self {
         Self(Box::new([const { None }; N]))
+    }
+}
+
+impl<const N: usize> Inventory for BlockInventory<N> {
+    fn as_slice(&self) -> &[Option<ItemStack>] {
+        self.0.as_slice()
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
+        self.0.as_mut_slice()
     }
 }
 
