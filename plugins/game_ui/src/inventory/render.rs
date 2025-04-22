@@ -11,15 +11,15 @@ use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::InventoryHand;
 use crate::item_stack::ItemStackRender;
 
-pub struct InventoryGui<'a> {
-    pub inventory: &'a mut PlayerInventory,
+pub struct InventoryGui<'a, I: Inventory> {
+    pub inventory: &'a mut I,
     pub texture_atlas_views: &'a EguiTextureAtlasViews,
     pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
     pub hand: &'a mut InventoryHand,
     pub columns: usize,
 }
 
-impl Widget for InventoryGui<'_> {
+impl<I: Inventory> Widget for InventoryGui<'_, I> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             inventory,
@@ -141,7 +141,7 @@ impl Widget for InventoryGui<'_> {
     }
 }
 
-impl InventoryGui<'_> {
+impl<I: Inventory> InventoryGui<'_, I> {
     fn interact_hand_inventory_slot(hand: &mut Option<ItemStack>, slot: &mut Option<ItemStack>, button: PointerButton) {
         match (&hand, &slot, button) {
             (None, Some(_), PointerButton::Secondary) => {
