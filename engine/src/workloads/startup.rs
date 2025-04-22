@@ -10,6 +10,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Health, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Mana, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
+use crate::interact::CurrentlyFocusedBlock;
 use crate::inventory::PlayerInventory;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
@@ -69,6 +70,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
     storages.add_unique(BlockBarFocus::new(inventory.size()));
+    storages.add_unique(CurrentlyFocusedBlock(None));
     storages.add_unique(HeldBlock(0));
 }
 
