@@ -17,6 +17,7 @@ pub struct InventoryGui<'a, I: Inventory> {
     pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
     pub hand: &'a mut InventoryHand,
     pub columns: usize,
+    pub id: &'a str,
 }
 
 impl<I: Inventory> Widget for InventoryGui<'_, I> {
@@ -27,6 +28,7 @@ impl<I: Inventory> Widget for InventoryGui<'_, I> {
             mut block_bar_focus_input,
             hand,
             columns,
+            id,
         } = self;
         
         Frame::none()
@@ -37,7 +39,7 @@ impl<I: Inventory> Widget for InventoryGui<'_, I> {
                     block_bar_focus_input.as_ref().map_or(0, |(bbf, _)| bbf.focus.len())
                 );
 
-                Grid::new("inventory_grid")
+                Grid::new(id)
                     .show(ui, |ui| {
                         for (row_idx, row) in inventory.as_mut_slice().chunks_mut(columns).enumerate() {
                             for (col_idx, slot) in row.iter_mut().enumerate() {
