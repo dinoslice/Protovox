@@ -6,10 +6,14 @@ use egui::{Align2, Area};
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
+use engine::chunks::chunk_manager::ChunkManager;
 use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
+use engine::interact::CurrentlyFocusedBlock;
 use engine::inventory::PlayerInventory;
+use game::block::Block;
+use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
@@ -41,6 +45,8 @@ pub fn inventory(
     input_manager: UniqueView<InputManager>,
     open: UniqueView<InventoryOpen>,
     mut hand: UniqueViewMut<InventoryHand>,
+    mut world: UniqueViewMut<ChunkManager>,
+    focused_inv: UniqueView<CurrentlyFocusedBlock>,
 ) {
     let (inventory, ..) = (&mut inventory, &local_player).iter()
         .next()
@@ -53,13 +59,31 @@ pub fn inventory(
     Area::new("inventory".into())
         .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
         .show(egui_frame.ctx(), |ui| {
-            ui.add(InventoryGui {
-                inventory,
-                texture_atlas_views: &texture_atlas_views,
-                block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
-                hand: &mut hand,
-                columns: 6,
-            })
+            ui.vertical(|ui| {
+                ui.add(InventoryGui {
+                    inventory,
+                    texture_atlas_views: &texture_atlas_views,
+                    block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
+                    hand: &mut hand,
+                    columns: 6,
+                    id: "player_inventory",
+                });
+
+                if let Some(location) = &focused_inv.as_ref().0 {
+                    if let Some(Block::Chest { inventory }) = world.get_block_mut(location) {
+                        ui.add_space(10.0);
+
+                        ui.add(InventoryGui {
+                            inventory,
+                            texture_atlas_views: &texture_atlas_views,
+                            block_bar_focus_input: None,
+                            hand: &mut hand,
+                            columns: 6,
+                            id: "chest_ui",
+                        });
+                    }
+                }
+            });
         });
 }
 
