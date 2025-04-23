@@ -60,7 +60,7 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
 
     let mut inv = PlayerInventory::new(18.try_into().expect("18 is nonzero"));
 
-    inv.try_insert(ItemType::Chest.default_item().with_count(5.try_into().expect("should be nonzero")));
+    inv.try_insert(ItemType::Crate.default_item().with_count(5.try_into().expect("should be nonzero")));
 
     storages.add_component(id, inv);
 }

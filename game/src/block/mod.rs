@@ -24,7 +24,7 @@ pub enum Block {
     Log { rotation: Axis },
     Leaf,
     Debug,
-    Chest { inventory: BlockInventory<36> },
+    Crate { inventory: BlockInventory<36> },
 }
 
 #[serde_with::serde_as]
@@ -92,7 +92,7 @@ impl Block {
             }
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => MISSING,
-            Block::Chest { .. } => MISSING,
+            Block::Crate { .. } => MISSING,
         };
 
         Some(id)
@@ -115,8 +115,8 @@ impl Block {
 
                 vec![I::LeafPile.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range"))]
             }
-            B::Chest { inventory: mut inv } => {
-                inv.try_insert(I::Chest.default_one())
+            B::Crate { inventory: mut inv } => {
+                inv.try_insert(I::Crate.default_one())
                     .into_iter()
                     .chain(inv.0.into_iter().flatten())
                     .collect()

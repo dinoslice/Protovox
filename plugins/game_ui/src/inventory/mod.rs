@@ -70,7 +70,7 @@ pub fn inventory(
                 });
 
                 if let Some(location) = &focused_inv.as_ref().0 {
-                    if let Some(Block::Chest { inventory }) = world.get_block_mut(location) {
+                    if let Some(Block::Crate { inventory }) = world.get_block_mut(location) {
                         ui.add_space(10.0);
 
                         ui.add(InventoryGui {
@@ -79,7 +79,7 @@ pub fn inventory(
                             block_bar_focus_input: None,
                             hand: &mut hand,
                             columns: 6,
-                            id: "chest_ui",
+                            id: "crate_ui",
                         });
                     }
                 }

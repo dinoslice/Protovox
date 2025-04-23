@@ -16,7 +16,7 @@ pub enum ItemType {
     Stone,
     Log,
     LeafPile,
-    Chest,
+    Crate,
 }
 
 impl ItemType {
@@ -60,9 +60,9 @@ impl ItemType {
                 desc: "gathered from trees".into(),
                 data: None,
             },
-            IT::Chest => Item {
+            IT::Crate => Item {
                 ty: self,
-                title: "Chest".into(),
+                title: "Crate".into(),
                 desc: "Can store items".into(),
                 data: None,
             }
@@ -84,7 +84,7 @@ impl ItemType {
             IT::Log => LOG,
             IT::LeafPile => DEBUG_GREEN,
             IT::Stone => MISSING,
-            IT::Chest => MISSING,
+            IT::Crate => MISSING,
         }
     }
 }
@@ -217,7 +217,7 @@ impl Item {
             IT::Stone => Ok(Block::Stone),
             IT::Log => Ok(Block::Log { rotation: face.axis() }),
             IT::LeafPile => Ok(Block::Leaf),
-            IT::Chest => Ok(Block::Chest { inventory: Default::default(), })
+            IT::Crate => Ok(Block::Crate { inventory: Default::default(), })
         }
     }
 }

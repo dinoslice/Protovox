@@ -27,7 +27,7 @@ pub fn focus_interactable_block(
         return;
     };
 
-    if matches!(world.get_block_ref(location), Some(Block::Chest { .. })) {
+    if matches!(world.get_block_ref(location), Some(Block::Crate { .. })) {
         interactable.0 = Some(location.clone());
     } else {
         interactable.0 = None;
