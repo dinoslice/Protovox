@@ -146,9 +146,10 @@ pub fn place_break_blocks(
         
         let old = world.modify_block(&pos, block).expect("chunk shouldn't have unloaded so quickly");
 
-        if let Some(stack) = old.on_break() {
-            let _ = inventory.try_insert(stack); // TODO: deal with overflow
-        }
+        let drops = old.on_break();
+
+        // TODO: deal with overflow
+        let _residual = inventory.try_insert_many(drops);
     };
 
     if should_place && should_break {
