@@ -3,6 +3,7 @@ use crate::chunks::chunk_manager::ChunkManager;
 use shipyard::{UniqueView, UniqueViewMut, ViewMut, IntoIter, View, EntitiesViewMut, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
 use game::block::{Block, BlockTy};
+use game::inventory::Inventory;
 use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;
@@ -13,7 +14,7 @@ use crate::events::event_bus::EventBus;
 use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
-use crate::inventory::Inventory;
+use crate::inventory::PlayerInventory;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
@@ -57,17 +58,6 @@ pub fn toggle_gamemode(
     };
 
     *velocity = Velocity::default();
-}
-
-// TODO: move this fn to game_ui
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>, mut v_inventory: View<Inventory>) {
-    let scroll = input.mouse_manager.scroll.floor() as isize;
-    
-    let (_, held, inventory) = (&v_local_player, &mut vm_held_block, &v_inventory).iter()
-        .next()
-        .expect("local player should have held block");
-    
-    held.0 = (held.0 as isize + scroll).rem_euclid(inventory.space() as _) as _;
 }
 
 pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
@@ -116,18 +106,18 @@ pub fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
-    v_held_block: View<HeldBlock>,
+    held: UniqueView<HeldBlock>,
     input: UniqueView<InputManager>,
     mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     (v_entity, v_transform): (View<Entity>, View<Transform>),
     v_hitbox: View<Hitbox>,
-    mut vm_inventory: ViewMut<Inventory>,
+    mut vm_inventory: ViewMut<PlayerInventory>,
 
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let (_, look_at, held, inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
+    let (_, look_at, inventory) = (&v_local_player, &v_looking_at_block, &mut vm_inventory).iter()
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     
@@ -149,16 +139,17 @@ pub fn place_break_blocks(
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
 
-    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut Inventory| {
+    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut PlayerInventory| {
         last_world_interaction.reset_cooldown();
 
         entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
         
         let old = world.modify_block(&pos, block).expect("chunk shouldn't have unloaded so quickly");
 
-        if let Some(stack) = old.on_break() {
-            let _ = inventory.try_insert(stack); // TODO: deal with overflow
-        }
+        let drops = old.on_break();
+
+        // TODO: deal with overflow
+        let _residual = inventory.try_insert_many(drops);
     };
 
     if should_place && should_break {

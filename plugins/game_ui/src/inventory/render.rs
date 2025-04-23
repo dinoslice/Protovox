@@ -4,21 +4,23 @@ use egui::{Align2, Color32, FontId, Frame, Grid, PointerButton, Response, Sense,
 use engine::block_bar_focus::BlockBarFocus;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
-use engine::inventory::Inventory;
+use engine::inventory::PlayerInventory;
+use game::inventory::Inventory;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::InventoryHand;
 use crate::item_stack::ItemStackRender;
 
-pub struct InventoryGui<'a> {
-    pub inventory: &'a mut Inventory,
+pub struct InventoryGui<'a, I: Inventory> {
+    pub inventory: &'a mut I,
     pub texture_atlas_views: &'a EguiTextureAtlasViews,
     pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
     pub hand: &'a mut InventoryHand,
     pub columns: usize,
+    pub id: &'a str,
 }
 
-impl Widget for InventoryGui<'_> {
+impl<I: Inventory> Widget for InventoryGui<'_, I> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             inventory,
@@ -26,6 +28,7 @@ impl Widget for InventoryGui<'_> {
             mut block_bar_focus_input,
             hand,
             columns,
+            id,
         } = self;
         
         Frame::none()
@@ -36,7 +39,7 @@ impl Widget for InventoryGui<'_> {
                     block_bar_focus_input.as_ref().map_or(0, |(bbf, _)| bbf.focus.len())
                 );
 
-                Grid::new("inventory_grid")
+                Grid::new(id)
                     .show(ui, |ui| {
                         for (row_idx, row) in inventory.as_mut_slice().chunks_mut(columns).enumerate() {
                             for (col_idx, slot) in row.iter_mut().enumerate() {
@@ -140,7 +143,7 @@ impl Widget for InventoryGui<'_> {
     }
 }
 
-impl InventoryGui<'_> {
+impl<I: Inventory> InventoryGui<'_, I> {
     fn interact_hand_inventory_slot(hand: &mut Option<ItemStack>, slot: &mut Option<ItemStack>, button: PointerButton) {
         match (&hand, &slot, button) {
             (None, Some(_), PointerButton::Secondary) => {

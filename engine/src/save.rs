@@ -92,7 +92,24 @@ impl WorldSaver {
 
 impl Default for WorldSaver {
     fn default() -> Self {
-        Self::new(Duration::from_secs(45), ChunkSaveToFile::new("target/save/world/").expect("path is a directory"))
+        // TODO: fix saving
+        Self::new(Duration::from_secs(45), FakeSaver)
+    }
+}
+
+pub struct FakeSaver;
+
+impl ChunkSaver for FakeSaver {
+    fn save(&self, _data: ChunkSaveCache) -> bool {
+        true
+    }
+
+    fn retrieve(&self, _loc: &ChunkLocation) -> Option<ChunkSaveCache> {
+        None
+    }
+
+    fn update_saved(&self, _saved: &mut HashSet<ChunkLocation>) {
+        
     }
 }
 

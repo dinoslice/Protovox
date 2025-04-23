@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumDiscriminants};
 use crate::block::face_type::{Axis, FaceType};
 use static_assertions::const_assert;
+use crate::inventory::Inventory;
 use crate::item::{ItemStack, ItemType};
 use crate::location::BlockLocation;
 use crate::texture_ids::TextureId;
@@ -23,6 +24,30 @@ pub enum Block {
     Log { rotation: Axis },
     Leaf,
     Debug,
+    Crate { inventory: BlockInventory<36> },
+}
+
+#[serde_with::serde_as]
+#[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
+pub struct BlockInventory<const N: usize>(
+    #[serde_as(as = "Box<[_; N]>")]
+    Box<[Option<ItemStack>; N]>,
+);
+
+impl<const N: usize> Default for BlockInventory<N> {
+    fn default() -> Self {
+        Self(Box::new([const { None }; N]))
+    }
+}
+
+impl<const N: usize> Inventory for BlockInventory<N> {
+    fn as_slice(&self) -> &[Option<ItemStack>] {
+        self.0.as_slice()
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Option<ItemStack>] {
+        self.0.as_mut_slice()
+    }
 }
 
 impl Default for BlockTy {
@@ -67,45 +92,39 @@ impl Block {
             }
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => MISSING,
+            Block::Crate { .. } => MISSING,
         };
 
         Some(id)
     }
 
-    pub fn on_break(self, /* break_context: BreakContext TODO: break context for fortune*/) -> Option<ItemStack> {
+    // TODO: this should return a vec?
+    pub fn on_break(self, /* break_context: BreakContext TODO: break context for fortune*/) -> Vec<ItemStack> {
         use Block as B;
         use ItemType as I;
 
+        const NONE: Vec<ItemStack> = Vec::new();
+
         match self {
-            B::Air | B::Debug => None,
-            B::Grass | B::Dirt  => Some(I::Dirt.default_one()),
-            B::Cobblestone | B::Stone => Some(I::Cobblestone.default_one()),
-            B::Log { .. } => Some(I::Log.default_one()),
+            B::Air | B::Debug => NONE,
+            B::Grass | B::Dirt  => vec![I::Dirt.default_one()],
+            B::Cobblestone | B::Stone => vec![I::Cobblestone.default_one()],
+            B::Log { .. } => vec![I::Log.default_one()],
             B::Leaf => {
                 let count = thread_rng().gen_range(5..15);
 
-                Some(I::LeafPile.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range")))
+                vec![I::LeafPile.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range"))]
+            }
+            B::Crate { inventory: mut inv } => {
+                inv.try_insert(I::Crate.default_one())
+                    .into_iter()
+                    .chain(inv.0.into_iter().flatten())
+                    .collect()
             }
         }
     }
 
     pub fn ty(&self) -> BlockTy {
         self.into()
-    }
-}
-
-impl BlockTy {
-    // TODO: remove this method
-    pub fn place(self, _loc: BlockLocation, face: FaceType) -> Option<Block> {
-        match self {
-            Self::Air => None,
-            Self::Grass => Some(Block::Grass),
-            Self::Dirt => Some(Block::Dirt),
-            Self::Cobblestone => Some(Block::Cobblestone),
-            Self::Stone => Some(Block::Stone),
-            Self::Log => Some(Block::Log { rotation: face.axis() }),
-            Self::Leaf => Some(Block::Leaf),
-            Self::Debug => Some(Block::Debug),
-        }
     }
 }

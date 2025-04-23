@@ -8,6 +8,7 @@ use crate::chunks::chunk_manager::chunk_manager_update_and_request;
 use crate::environment::{is_hosted, is_multiplayer_client};
 use crate::gamemode::local_player_is_gamemode_spectator;
 use crate::input::reset_mouse_manager_state;
+use crate::interact::focus_interactable_block;
 use crate::networking::{client_acknowledge_connection_success, client_handle_kicked_by_server, client_request_chunks_from_server, client_send_block_updates, client_send_settings, client_update_position, server_broadcast_block_updates, server_broadcast_chunks, server_handle_client_chunk_reqs, server_process_client_connection_req, server_process_render_dist_update, server_request_client_settings, server_update_client_transform};
 use crate::networking::keep_alive::server_send_keep_alive;
 use crate::physics::movement::{adjust_spectator_fly_speed, apply_camera_input, process_movement};
@@ -18,7 +19,7 @@ use crate::rendering::render;
 use crate::rendering::render::{block_outline, submit_rendered_frame, world};
 use crate::workloads::shutdown::{disconnect_connected_players, save_world};
 use crate::workloads::startup::{initialize_gameplay_systems, initialize_local_player, initialize_networking, register_packets, set_window_title};
-use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, raycast, scroll_hotbar, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode, update_world_saver};
+use crate::workloads::update::{client_apply_block_updates, generate_chunks, get_generated_chunks, place_break_blocks, raycast, server_apply_block_updates, spawn_multiplayer_player, toggle_gamemode, update_world_saver};
 
 mod startup;
 mod update;
@@ -57,7 +58,6 @@ impl DinoEnginePlugin for VoxelEngine {
             place_break_blocks.skip_if(local_player_is_gamemode_spectator),
             toggle_gamemode,
             adjust_spectator_fly_speed.run_if(local_player_is_gamemode_spectator),
-            scroll_hotbar.skip_if(local_player_is_gamemode_spectator),
         )
             .into_sequential_workload()
             .run_if(|captured: UniqueView<CaptureState>| captured.is_captured())
@@ -125,6 +125,7 @@ impl DinoEnginePlugin for VoxelEngine {
             client_apply_block_updates.run_if(is_multiplayer_client),
             spawn_multiplayer_player,
             raycast.skip_if(local_player_is_gamemode_spectator),
+            focus_interactable_block,
         ).into_sequential_workload()
             .into()
     }

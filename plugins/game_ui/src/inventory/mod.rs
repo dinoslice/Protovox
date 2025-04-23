@@ -6,10 +6,14 @@ use egui::{Align2, Area};
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
+use engine::chunks::chunk_manager::ChunkManager;
 use engine::components::LocalPlayer;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
-use engine::inventory::Inventory;
+use engine::interact::CurrentlyFocusedBlock;
+use engine::inventory::PlayerInventory;
+use game::block::Block;
+use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::gui_bundle::GuiBundle;
@@ -35,12 +39,14 @@ pub fn initialize(storages: AllStoragesView) {
 pub fn inventory(
     egui_frame: UniqueView<CurrentEguiFrame>,
     local_player: View<LocalPlayer>,
-    mut inventory: ViewMut<Inventory>,
+    mut inventory: ViewMut<PlayerInventory>,
     mut block_bar_focus: UniqueViewMut<BlockBarFocus>,
     texture_atlas_views: UniqueView<EguiTextureAtlasViews>,
     input_manager: UniqueView<InputManager>,
     open: UniqueView<InventoryOpen>,
     mut hand: UniqueViewMut<InventoryHand>,
+    mut world: UniqueViewMut<ChunkManager>,
+    focused_inv: UniqueView<CurrentlyFocusedBlock>,
 ) {
     let (inventory, ..) = (&mut inventory, &local_player).iter()
         .next()
@@ -53,19 +59,37 @@ pub fn inventory(
     Area::new("inventory".into())
         .anchor(Align2::RIGHT_CENTER, [-100.0, 0.0])
         .show(egui_frame.ctx(), |ui| {
-            ui.add(InventoryGui {
-                inventory,
-                texture_atlas_views: &texture_atlas_views,
-                block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
-                hand: &mut hand,
-                columns: 6,
-            })
+            ui.vertical(|ui| {
+                ui.add(InventoryGui {
+                    inventory,
+                    texture_atlas_views: &texture_atlas_views,
+                    block_bar_focus_input: Some((&mut block_bar_focus, &input_manager)),
+                    hand: &mut hand,
+                    columns: 6,
+                    id: "player_inventory",
+                });
+
+                if let Some(location) = &focused_inv.as_ref().0 {
+                    if let Some(Block::Crate { inventory }) = world.get_block_mut(location) {
+                        ui.add_space(10.0);
+
+                        ui.add(InventoryGui {
+                            inventory,
+                            texture_atlas_views: &texture_atlas_views,
+                            block_bar_focus_input: None,
+                            hand: &mut hand,
+                            columns: 6,
+                            id: "crate_ui",
+                        });
+                    }
+                }
+            });
         });
 }
 
 pub fn toggle_inv_block_bar(
     v_local_player: View<LocalPlayer>,
-    vm_inventory: ViewMut<Inventory>,
+    vm_inventory: ViewMut<PlayerInventory>,
     mut hand: UniqueViewMut<InventoryHand>,
     mut open_time: UniqueViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
@@ -123,7 +147,7 @@ pub fn toggle_inv_block_bar(
     }
 }
 
-fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<Inventory>, hand: &mut InventoryHand) {
+fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<PlayerInventory>, hand: &mut InventoryHand) {
     let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
