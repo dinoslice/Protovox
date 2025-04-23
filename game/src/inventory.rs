@@ -46,6 +46,13 @@ pub trait Inventory {
         None
     }
 
+    fn try_insert_many(&mut self, items: impl IntoIterator<Item = ItemStack>) -> Vec<ItemStack> {
+        items.into_iter()
+            .filter_map(|item_stack| self.try_insert(item_stack))
+            .collect()
+    }
+
+
     // TODO: refactor these helper methods
     fn split_item_at(&mut self, slot: usize) -> Option<Item> {
         let slot = self.as_mut_slice().get_mut(slot).expect("TODO: better error, slot out of range");
