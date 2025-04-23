@@ -2,17 +2,19 @@ use glm::Vec3;
 use crate::chunks::chunk_manager::ChunkManager;
 use shipyard::{UniqueView, UniqueViewMut, ViewMut, IntoIter, View, EntitiesViewMut, EntitiesView, IntoWithId, Remove, UniqueOrDefaultViewMut};
 use strum::EnumCount;
-use game::block::Block;
+use game::block::{Block, BlockTy};
+use game::inventory::Inventory;
+use game::item::{ItemStack, ItemType};
 use game::location::BlockLocation;
 use crate::camera::Camera;
-use crate::chunks::raycast::BlockRaycastResult;
+use crate::chunks::raycast::{RaycastHit, RaycastResult};
 use crate::components::{Entity, GravityAffected, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::events::{BlockUpdateEvent, ChunkGenEvent, ChunkGenRequestEvent, ClientInformationRequestEvent};
 use crate::events::event_bus::EventBus;
 use crate::gamemode::Gamemode;
 use crate::input::action_map::Action;
 use crate::input::InputManager;
-use crate::inventory::Inventory;
+use crate::inventory::PlayerInventory;
 use crate::last_world_interaction::LastWorldInteraction;
 use crate::looking_at_block::LookingAtBlock;
 use crate::physics::{collision};
@@ -58,20 +60,6 @@ pub fn toggle_gamemode(
     *velocity = Velocity::default();
 }
 
-pub fn scroll_hotbar(input: UniqueView<InputManager>, v_local_player: View<LocalPlayer>, mut vm_held_block: ViewMut<HeldBlock>) {
-    let scroll = input.mouse_manager.scroll.floor() as i32;
-    
-    let (_, held) = (&v_local_player, &mut vm_held_block).iter()
-        .next()
-        .expect("local player should have held block");
-
-    let curr_block = held.0 as u16 as i32;
-    
-    let new_block = (curr_block + scroll).rem_euclid(Block::COUNT as _);
-    
-    held.0 = Block::from_repr(new_block as _).expect("block id should be in range");
-}
-
 pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
     world_saver.process();
 }
@@ -79,7 +67,7 @@ pub fn update_world_saver(mut world_saver: UniqueViewMut<WorldSaver>) {
 pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<EventBus<BlockUpdateEvent>>, mut vm_block_update_evt: ViewMut<BlockUpdateEvent>) {
     for mut bus in vm_block_update_evt_bus.drain() {
         for BlockUpdateEvent(loc, new_block) in bus.0.drain(..) {
-            if world.modify_block(&loc, new_block).is_none() {
+            if world.modify_block(&loc, new_block).is_err() {
                 tracing::error!("Location from block update wasn't loaded");
             }
         }
@@ -90,7 +78,7 @@ pub fn server_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm
 
 pub fn client_apply_block_updates(mut world: UniqueViewMut<ChunkManager>, mut vm_block_update_evt_bus: ViewMut<BlockUpdateEvent>) {
     for BlockUpdateEvent(loc, new_block) in vm_block_update_evt_bus.drain() {
-        if world.modify_block(&loc, new_block).is_none() {
+        if world.modify_block(&loc, new_block).is_err() {
             tracing::error!("Location from block update wasn't loaded");
         }
     }
@@ -111,29 +99,35 @@ pub fn raycast(chunk_mgr: UniqueView<ChunkManager>, v_local_player: View<LocalPl
         transform.yaw.sin() * transform.pitch.cos(),
     );
 
-    looking_at_block.0 = chunk_mgr.raycast(&raycast_origin, &direction, 4.5, 0.1);
+    looking_at_block.0 = chunk_mgr.raycast(raycast_origin, direction, 4.5);
 }
 
 pub fn place_break_blocks(
     mut chunk_mgr: UniqueViewMut<ChunkManager>,
     v_local_player: View<LocalPlayer>,
     v_looking_at_block: View<LookingAtBlock>,
-    v_held_block: View<HeldBlock>,
+    held: UniqueView<HeldBlock>,
     input: UniqueView<InputManager>,
     mut last_world_interaction: UniqueOrDefaultViewMut<LastWorldInteraction>,
 
     // to ensure we're placing at a valid spot
     (v_entity, v_transform): (View<Entity>, View<Transform>),
     v_hitbox: View<Hitbox>,
-    mut vm_inventory: ViewMut<Inventory>,
+    mut vm_inventory: ViewMut<PlayerInventory>,
 
     (mut entities, mut vm_block_update_evts): (EntitiesViewMut, ViewMut<BlockUpdateEvent>)
 ) {
-    let (_, look_at, held, inventory) = (&v_local_player, &v_looking_at_block, &v_held_block, &mut vm_inventory).iter()
+    let (_, look_at, inventory) = (&v_local_player, &v_looking_at_block, &mut vm_inventory).iter()
         .next()
         .expect("local player didn't have LookingAtBlock & HeldBlock");
     
-    let Some(BlockRaycastResult { prev_air, hit_block, .. }) = &look_at.0 else {
+    let Some(RaycastResult {
+        hit: RaycastHit::Block {
+            location,
+            face,
+        },
+        ..
+    }) = &look_at.0 else {
         return;
     };
 
@@ -144,35 +138,41 @@ pub fn place_break_blocks(
         should_place |= input.pressed().get_action(Action::PlaceBlock);
         should_break |= input.pressed().get_action(Action::BreakBlock);
     }
-    
-    should_place &= held.0.placeable();
 
-    let mut update_block = |pos: BlockLocation, block: Block| {
+    let mut update_block = |world: &mut ChunkManager, pos: BlockLocation, block: Block, inventory: &mut PlayerInventory| {
         last_world_interaction.reset_cooldown();
 
-        entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block));
+        entities.add_entity(&mut vm_block_update_evts, BlockUpdateEvent(pos.clone(), block.clone()));
+        
+        let old = world.modify_block(&pos, block).expect("chunk shouldn't have unloaded so quickly");
 
-        chunk_mgr.modify_block(&pos, block) // TODO: only create event now, modify world later?
+        let drops = old.on_break();
+
+        // TODO: deal with overflow
+        let _residual = inventory.try_insert_many(drops);
     };
 
     if should_place && should_break {
-        if let Some(old) = update_block(hit_block.clone(), held.0) {
-            if let Some(stack) = old.on_break() {
-                let _ = inventory.try_insert(stack); // TODO: deal with overflow
-            }
+        if let Some(ft) = face {
+            let block = inventory.try_get_place_at(held.0, location.clone(), *ft).unwrap_or(Block::Air);
+
+            update_block(&mut chunk_mgr, location.clone(), block, inventory);
         }
     } else if should_break {
-        if let Some(old) = update_block(hit_block.clone(), Block::Air) {
-            if let Some(stack) = old.on_break() {
-                let _ = inventory.try_insert(stack); // TODO: deal with overflow
-            }
-        }
+        update_block(&mut chunk_mgr, location.clone(), Block::Air, inventory);
     } else if should_place {
-        if let Some(prev_air) = prev_air {
-            let (min, max) = prev_air.get_aabb_bounds();
+        if let Some(ft) = face {
+            // TODO: impl Add<IVec3> for BlockLocation
+            let adj = BlockLocation(location.0 + ft.as_vector());
 
-            if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
-                let _ = update_block(prev_air.clone(), held.0);
+            if chunk_mgr.get_block_ref(&adj) == Some(&Block::Air) {
+                let (min, max) = adj.get_aabb_bounds();
+
+                if collision::collides_with_any_entity(min, max, v_entity, v_transform, v_hitbox).is_none() {
+                    if let Some(block) = inventory.try_get_place_at(held.0, adj.clone(), *ft) {
+                        update_block(&mut chunk_mgr, adj, block, inventory);
+                    }
+                }
             }
         }
     }

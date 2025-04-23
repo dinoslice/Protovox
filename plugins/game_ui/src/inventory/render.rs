@@ -4,21 +4,23 @@ use egui::{Align2, Color32, FontId, Frame, Grid, PointerButton, Response, Sense,
 use engine::block_bar_focus::BlockBarFocus;
 use engine::input::action_map::Action;
 use engine::input::InputManager;
-use engine::inventory::Inventory;
+use engine::inventory::PlayerInventory;
+use game::inventory::Inventory;
 use game::item::ItemStack;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::inventory::hand::InventoryHand;
 use crate::item_stack::ItemStackRender;
 
-pub struct InventoryGui<'a> {
-    pub inventory: &'a mut Inventory,
+pub struct InventoryGui<'a, I: Inventory> {
+    pub inventory: &'a mut I,
     pub texture_atlas_views: &'a EguiTextureAtlasViews,
     pub block_bar_focus_input: Option<(&'a mut BlockBarFocus, &'a InputManager)>,
     pub hand: &'a mut InventoryHand,
     pub columns: usize,
+    pub id: &'a str,
 }
 
-impl Widget for InventoryGui<'_> {
+impl<I: Inventory> Widget for InventoryGui<'_, I> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             inventory,
@@ -26,6 +28,7 @@ impl Widget for InventoryGui<'_> {
             mut block_bar_focus_input,
             hand,
             columns,
+            id,
         } = self;
         
         Frame::none()
@@ -36,7 +39,7 @@ impl Widget for InventoryGui<'_> {
                     block_bar_focus_input.as_ref().map_or(0, |(bbf, _)| bbf.focus.len())
                 );
 
-                Grid::new("inventory_grid")
+                Grid::new(id)
                     .show(ui, |ui| {
                         for (row_idx, row) in inventory.as_mut_slice().chunks_mut(columns).enumerate() {
                             for (col_idx, slot) in row.iter_mut().enumerate() {
@@ -140,7 +143,7 @@ impl Widget for InventoryGui<'_> {
     }
 }
 
-impl InventoryGui<'_> {
+impl<I: Inventory> InventoryGui<'_, I> {
     fn interact_hand_inventory_slot(hand: &mut Option<ItemStack>, slot: &mut Option<ItemStack>, button: PointerButton) {
         match (&hand, &slot, button) {
             (None, Some(_), PointerButton::Secondary) => {
@@ -152,11 +155,11 @@ impl InventoryGui<'_> {
                 *slot = slot_it;
             }
             (Some(hand_it), slot_it, PointerButton::Secondary)
-                if slot_it.as_ref().is_none_or(|a| a.eq_data(hand_it)) =>
+                if slot_it.as_ref().is_none_or(|slot_it| slot_it.item == hand_it.item) =>
             {
                 let h = hand.take().expect("should've matched on Some");
                 
-                let (slot_it, mut hand_it) = h.split(NonZeroU8::new(1).expect("not zero"));
+                let (slot_it, mut hand_it) = h.split_at_most(NonZeroU8::new(1).expect("not zero"));
                 
                 match slot {
                     Some(slot) => {
@@ -177,7 +180,7 @@ impl InventoryGui<'_> {
     
                 *hand = hand_it;
             }
-            (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.eq_data(hand_it) => {
+            (Some(hand_it), Some(slot_it), PointerButton::Primary) if slot_it.item == hand_it.item => {
                 let hand_it = hand.take().expect("should've matched on Some");
                 let slot = slot.as_mut().expect("should've matched on Some");
                 

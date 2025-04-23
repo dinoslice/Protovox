@@ -3,12 +3,13 @@ use shipyard::{IntoIter, UniqueView, View};
 use egui_systems::CurrentEguiFrame;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::components::LocalPlayer;
-use engine::inventory::Inventory;
+use engine::inventory::PlayerInventory;
+use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
 use crate::item_stack::ItemStackRender;
 
-pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<Inventory>, inv_display: UniqueView<BlockBarDisplay>, block_bar_focus: UniqueView<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
+pub fn block_bar(egui_frame: UniqueView<CurrentEguiFrame>, local_player: View<LocalPlayer>, inventory: View<PlayerInventory>, inv_display: UniqueView<BlockBarDisplay>, block_bar_focus: UniqueView<BlockBarFocus>, texture_atlas_views: UniqueView<EguiTextureAtlasViews>) {
     let (inventory, ..) = (&inventory, &local_player).iter()
         .next()
         .expect("LocalPlayer should exist");

@@ -1,7 +1,9 @@
 use glm::{U16Vec3, Vec3};
 use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
-use game::block::Block;
+use game::block::BlockTy;
+use game::inventory::Inventory;
+use game::item::ItemType;
 use networking::PacketRegistry;
 use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
@@ -9,7 +11,8 @@ use crate::chunks::chunk_manager::ChunkManager;
 use crate::components::{Entity, GravityAffected, Health, HeldBlock, Hitbox, IsOnGround, LocalPlayer, Mana, Player, PlayerSpeed, SpectatorSpeed, Transform, Velocity};
 use crate::environment::{Environment, is_hosted, is_multiplayer_client};
 use crate::gamemode::Gamemode;
-use crate::inventory::Inventory;
+use crate::interact::CurrentlyFocusedBlock;
+use crate::inventory::PlayerInventory;
 use crate::looking_at_block::LookingAtBlock;
 use crate::networking::server_connection::ServerConnection;
 use crate::networking::server_handler::ServerHandler;
@@ -49,17 +52,21 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     ));
     
     storages.add_component(id, LookingAtBlock(None)); // TODO: fix a better way for >10 components
-    storages.add_component(id, HeldBlock(Block::Cobblestone));
     storages.add_component(id, Gamemode::Survival);
     storages.add_component(id, SpectatorSpeed::default()); // TODO: should this always be on the player or only added when switching gamemodes?
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
     storages.add_component(id, Health { curr: 9.0, max: 10.0 });
     storages.add_component(id, Mana { curr: 6.0, max: 10.0 });
-    storages.add_component(id, Inventory::new(18.try_into().expect("18 is nonzero")));
+
+    let mut inv = PlayerInventory::new(18.try_into().expect("18 is nonzero"));
+
+    inv.try_insert(ItemType::Crate.default_item().with_count(5.try_into().expect("should be nonzero")));
+
+    storages.add_component(id, inv);
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
-    let iter = &mut storages.iter::<(&RenderDistance, &Inventory, &LocalPlayer)>();
+    let iter = &mut storages.iter::<(&RenderDistance, &PlayerInventory, &LocalPlayer)>();
 
     let (render_dist, inventory, ..) = iter.iter()
         .next()
@@ -68,7 +75,9 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
-    storages.add_unique(BlockBarFocus::new(inventory.space()));
+    storages.add_unique(BlockBarFocus::new(inventory.size()));
+    storages.add_unique(CurrentlyFocusedBlock(None));
+    storages.add_unique(HeldBlock(0));
 }
 
 pub fn initialize_networking(env: UniqueView<Environment>, registry: UniqueView<PacketRegistry>, storages: AllStoragesView) {

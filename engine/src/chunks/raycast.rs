@@ -1,41 +1,83 @@
 use glm::Vec3;
 use game::block::Block;
+use game::block::face_type::{Axis, FaceType};
 use game::location::{BlockLocation, WorldLocation};
 use crate::chunks::chunk_manager::ChunkManager;
 
 #[derive(Debug, Clone)]
-pub struct BlockRaycastResult {
-    pub hit_block: BlockLocation,
-    pub prev_air: Option<BlockLocation>,
+pub struct RaycastResult {
     pub distance: f32,
+    pub hit: RaycastHit,
+}
+
+
+#[derive(Debug, Clone)]
+pub enum RaycastHit {
+    Block {
+        location: BlockLocation,
+        face: Option<FaceType>, // TODO: if starts inside a block, find the face that's the closest to intersection
+    },
+    Entity {
+        // TODO
+    }
 }
 
 impl ChunkManager {
-    pub fn raycast(&self, origin: &Vec3, direction: &Vec3, max_dist: f32, step: f32) -> Option<BlockRaycastResult> {
-        let delta = direction.normalize() * step;
+    pub fn raycast(&self, origin: Vec3, direction: Vec3, max_dist: f32) -> Option<RaycastResult> {
+        let direction = direction.normalize();
 
-        let mut curr = *origin;
-        let mut traversed = 0.0;
+        let mut voxel = BlockLocation::from(WorldLocation(origin));
 
-        let mut prev_air = None;
+        let step = direction.map(|n| n.signum() as i32);
 
-        while traversed < max_dist {
-            let block_loc = WorldLocation(curr).into();
+        let voxel_f = voxel.0.cast::<f32>();
 
-            // TODO: should I early return if the chunk doesn't exist? or should you be able to raycast through it?
-            let block = self.get_block(&block_loc)?;
+        let mut t_max = Vec3::from_fn(|i, _| {
+            if direction[i] != 0.0 {
+                let next_boundary = if direction[i] >= 0.0 {
+                    voxel_f[i] + 1.0
+                } else {
+                    voxel_f[i]
+                };
 
-            if block != Block::Air {
-                return Some(BlockRaycastResult {
-                    hit_block: block_loc,
-                    prev_air,
-                    distance: traversed,
-                })
+                (next_boundary - origin[i]) / direction[i]
             } else {
-                traversed += step;
-                prev_air = Some(block_loc);
-                curr += delta;
+                f32::INFINITY
             }
+        });
+
+        let t_delta = direction.map(|n| n.recip().abs());
+
+        let mut t = 0.0;
+
+        let mut face = None;
+
+        while t < max_dist {
+            if *self.get_block_ref(&voxel)? != Block::Air {
+                return Some(RaycastResult {
+                    distance: t,
+                    hit: RaycastHit::Block {
+                        location: voxel,
+                        face,
+                    },
+                })
+            }
+
+            let min_comp = if t_max.x < t_max.y && t_max.x < t_max.z {
+                0
+            } else if t_max.y < t_max.z {
+                1
+            } else {
+                2
+            };
+
+            voxel.0[min_comp] += step[min_comp];
+            t = t_max[min_comp];
+            t_max[min_comp] += t_delta[min_comp];
+            face = Some(FaceType::from_axis_and_sign(
+                Axis::from_repr(min_comp as _).expect("min_comp returns [0,3)"),
+                step[min_comp].is_negative()
+            ));
         }
 
         None

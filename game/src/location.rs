@@ -67,7 +67,7 @@ impl BlockLocation {
     }
 
     pub fn get_aabb_bounds(&self) -> (Vec3, Vec3) {
-        let min = self.0.map(|n| n as _);
+        let min = self.0.cast();
         let max = min.map(|n| n + 1.0);
 
         (min, max)

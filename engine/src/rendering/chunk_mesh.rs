@@ -25,12 +25,12 @@ impl<'a> ChunkMeshContext<'a> {
             let new_loc = ChunkLocation(center_loc.0 + ft.as_vector());
 
             chunk_mgr.get_chunk_ref(&new_loc)
-                .map(|c| &c.data.blocks)
+                .map(|c| c.data.blocks_ref())
         });
 
         Self {
             sides,
-            center: &center_chunk.blocks,
+            center: &center_chunk.blocks_ref(),
         }
     }
 
@@ -40,9 +40,9 @@ impl<'a> ChunkMeshContext<'a> {
         for pos in 0..BLOCKS_PER_CHUNK {
             let pos = ChunkPos(pos as _);
 
-            let block = *self.center.get(pos.0 as usize).expect("should be in range");
+            let block = self.center.get(pos.0 as usize).expect("should be in range");
 
-            if block == Block::Air {
+            if *block == Block::Air {
                 continue;
             }
 

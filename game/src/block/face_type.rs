@@ -1,10 +1,11 @@
 use std::ops::Neg;
 use glm::TVec3;
 use num_traits::{One, Signed, Zero};
+use serde::{Deserialize, Serialize};
 use strum::FromRepr;
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromRepr)]
+#[derive(Copy, Clone, Debug, FromRepr, PartialEq, Eq, Deserialize, Serialize)]
 pub enum FaceType { // TODO: rename to direction
     Bottom, // Y-
     Top, // Y+
@@ -13,6 +14,10 @@ pub enum FaceType { // TODO: rename to direction
     Left, // X-
     Right, // X+
 }
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromRepr, PartialEq, Eq, Deserialize, Serialize)]
+pub enum Axis { X = 0, Y, Z }
 
 impl FaceType {
     pub const ALL: [FaceType; 6] = [FaceType::Top, FaceType::Bottom, FaceType::Left, FaceType::Right, FaceType::Front, FaceType::Back];
@@ -28,6 +33,32 @@ impl FaceType {
             FT::Back => TVec3::new(T::zero(), T::zero(), -T::one()),
             FT::Left => TVec3::new(-T::one(), T::zero(), T::zero()),
             FT::Right => TVec3::new(T::one(), T::zero(), T::zero()),
+        }
+    }
+    
+    pub const fn axis(self) -> Axis {
+        match self {
+            Self::Left | Self::Right => Axis::X,
+            Self::Bottom | Self::Top => Axis::Y,
+            Self::Front | Self::Back => Axis::Z,
+        }
+    }
+    
+    pub const fn sign(self) -> i8 {
+        match self {
+            Self::Bottom | Self::Back | Self::Left => -1,
+            Self::Top | Self::Front | Self::Right => 1,
+        }
+    }
+
+    pub const fn from_axis_and_sign(axis: Axis, pos: bool) -> Self {
+        match (axis, pos) {
+            (Axis::X, true) => Self::Right,
+            (Axis::X, false) => Self::Left,
+            (Axis::Y, true) => Self::Top,
+            (Axis::Y, false) => Self::Bottom,
+            (Axis::Z, true) => Self::Front,
+            (Axis::Z, false) => Self::Back,
         }
     }
 }

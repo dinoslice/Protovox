@@ -1,5 +1,6 @@
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 use game::chunk::location::ChunkLocation;
+use crate::chunks::raycast::RaycastHit;
 use crate::components::LocalPlayer;
 use crate::looking_at_block::LookingAtBlock;
 use crate::rendering::block_outline::BlockOutlineRenderState;
@@ -31,8 +32,12 @@ pub fn render_block_outline(
     else {
         return
     };
+
+    let RaycastHit::Block { location, face } = &raycast.hit else {
+        return;
+    };
     
-    let chunk_loc = ChunkLocation::from(&raycast.hit_block);
+    let chunk_loc = ChunkLocation::from(location);
 
     let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("block_outline_render_pass"),

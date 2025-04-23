@@ -1,7 +1,6 @@
 use glm::Vec3;
 use serde::{Deserialize, Serialize};
-use shipyard::Component;
-use game::block::Block;
+use shipyard::{Component, Unique};
 use game::location::WorldLocation;
 
 #[derive(Copy, Clone, Hash, Component, Debug, Default)]
@@ -110,8 +109,8 @@ impl Hitbox {
 #[derive(Copy, Clone, Hash, Component, Debug, Default, Eq, PartialEq)]
 pub struct IsOnGround(pub bool);
 
-#[derive(Clone, Component, Debug, Default, Eq, PartialEq)]
-pub struct HeldBlock(pub Block);
+#[derive(Clone, Unique, Debug, Default, Eq, PartialEq)]
+pub struct HeldBlock(pub usize); // inventory index, TODO: improve api
 
 #[derive(Copy, Clone, Component, Debug, Default, PartialEq)]
 pub struct Health {
