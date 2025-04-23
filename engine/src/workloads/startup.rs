@@ -3,6 +3,7 @@ use na::Perspective3;
 use shipyard::{AllStoragesView, AllStoragesViewMut, UniqueOrDefaultViewMut, UniqueView};
 use game::block::BlockTy;
 use game::inventory::Inventory;
+use game::item::ItemType;
 use networking::PacketRegistry;
 use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
@@ -56,7 +57,12 @@ pub fn initialize_local_player(mut storages: AllStoragesViewMut) {
     storages.add_component(id, RenderDistance(U16Vec3::new(3,1,3)));
     storages.add_component(id, Health { curr: 9.0, max: 10.0 });
     storages.add_component(id, Mana { curr: 6.0, max: 10.0 });
-    storages.add_component(id, PlayerInventory::new(18.try_into().expect("18 is nonzero")));
+
+    let mut inv = PlayerInventory::new(18.try_into().expect("18 is nonzero"));
+
+    inv.try_insert(ItemType::Chest.default_item().with_count(5.try_into().expect("should be nonzero")));
+
+    storages.add_component(id, inv);
 }
 
 pub fn initialize_gameplay_systems(storages: AllStoragesView) {
