@@ -4,6 +4,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use instance::EngineInstance;
 
 mod instance;
+mod renderer;
 
 fn main() {
     let event_loop = EventLoop::new().expect("Failed to create window event loop.");

@@ -3,15 +3,18 @@ use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
+use crate::renderer::EngineGraphics;
 
 #[derive(Default)]
 pub struct EngineInstance {
     window: Option<Arc<Window>>,
+    graphics: Option<EngineGraphics>,
 }
 
 impl ApplicationHandler for EngineInstance {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.window = event_loop.create_window(WindowAttributes::default()).ok().and_then(|window| Some(Arc::new(window)));
+        self.graphics = Some(EngineGraphics::new(self.window.as_ref().unwrap().clone()))
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
