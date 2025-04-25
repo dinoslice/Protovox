@@ -1,0 +1,63 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# windowing & graphics
+wgpu = "0.20.1"
+winit = "0.29.15" # temporarily using older version, switch to newer version later
+egui = "0.28.1"
+egui-wgpu = { version = "0.28.1",features = ["winit"] }
+egui-winit = { version = "0.28.1", features = ["arboard", "links", "wayland", "x11"], default-features = false }
+image = { version = "0.25.5", features = ["jpeg", "png"] }
+rgb = "0.8.50"
+
+# networking
+laminar = "0.5.0"
+packet = { path  = "../packet" }
+packet_derive = { path  = "../packet_derive" }
+
+# util
+bytemuck = { version = "1.20.0", features = [ "derive" ] }
+rand = "0.8.5"
+pollster = "0.4.0"
+itertools = "0.13.0"
+thiserror = { workspace = true }
+strum = { workspace = true }
+serde = { workspace = true }
+
+# data
+shipyard = { workspace = true }
+bimap = "0.6.3"
+hashbrown = "0.15.2"
+tinybitset = "0.0.2"
+
+# application
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "std", "chrono"] }
+chrono = "0.4.38"
+clap = { version = "4.5.17", features = ["derive"] }
+crossbeam = "0.8.4"
+rayon = "1.10.0"
+
+# plugins
+dino_plugins = { path = "../dino_plugins" }
+strck = "1.0.0"
+
+# loaded plugins
+networking = { path = "../plugins/networking" }
+#gizmos = { path = "../plugins/gizmos" }
+
+# game
+game = { path = "../game" }
+splines = { path = "../splines" }
+noise = "0.9.0"
+
+# math
+nalgebra = { workspace = true }
+nalgebra-glm = { workspace = true }
+postcard = "1.1.1"
+
+[lints]
+workspace = true

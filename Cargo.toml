@@ -15,7 +15,7 @@ members = [
 [workspace.package]
 name = "voxel_game"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
 
 [workspace.dependencies]

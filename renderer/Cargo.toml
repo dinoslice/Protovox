@@ -1,0 +1,15 @@
+[package]
+name = "renderer"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+wgpu = { workspace = true }
+winit = { workspace = true }
+shipyard = { workspace = true }
+tracing = "0.1.40"
+pollster = "0.4.0"
+
+[lints]
+workspace = true
