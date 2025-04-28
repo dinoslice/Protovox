@@ -3,7 +3,7 @@ use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
-use crate::renderer::EngineGraphics;
+use crate::renderer::graphics::EngineGraphics;
 
 #[derive(Default)]
 pub struct EngineInstance {

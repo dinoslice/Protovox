@@ -5,6 +5,7 @@ use instance::EngineInstance;
 
 mod instance;
 mod renderer;
+mod handle;
 
 fn main() {
     let event_loop = EventLoop::new().expect("Failed to create window event loop.");
