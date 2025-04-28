@@ -866,6 +866,16 @@ checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
 name = "engine"
 version = "0.1.0"
 dependencies = [
+ "engine_rendering",
+ "pollster",
+ "wgpu 25.0.0",
+ "winit 0.30.9",
+]
+
+[[package]]
+name = "engine_rendering"
+version = "0.1.0"
+dependencies = [
  "pollster",
  "wgpu 25.0.0",
  "winit 0.30.9",

@@ -10,7 +10,7 @@ members = [
     "client",
 
     "plugins/*"
-]
+, "engine_rendering"]
 
 [workspace.package]
 name = "voxel_game"

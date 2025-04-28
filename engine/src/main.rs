@@ -4,7 +4,6 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use instance::EngineInstance;
 
 mod instance;
-mod renderer;
 mod handle;
 
 fn main() {

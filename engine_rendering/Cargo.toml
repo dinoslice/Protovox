@@ -1,5 +1,5 @@
 [package]
-name = "engine"
+name = "engine_rendering"
 version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
@@ -9,4 +9,5 @@ pollster = "0.4.0"
 wgpu = "25.0.0"
 winit = "0.30.9"
 
-engine_rendering = { path = "../engine_rendering" }
+[lints]
+workspace = true
