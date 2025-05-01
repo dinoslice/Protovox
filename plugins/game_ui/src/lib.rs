@@ -13,7 +13,7 @@ use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
 use crate::debug::debug_ui;
-use crate::inventory::{inventory, toggle_inv_block_bar, InventoryOpen};
+use crate::inventory::{inventory, return_hand, toggle_inv_block_bar, InventoryOpen};
 use crate::inventory::hand::{render_hand, InventoryHand};
 
 extern crate nalgebra_glm as glm;
@@ -55,6 +55,14 @@ impl DinoEnginePlugin for GameUiPlugin {
             .into()
     }
 
+    fn early_update(&self) -> Option<Workload> {
+        (
+            return_hand,
+        )
+            .into_workload()
+            .into()
+    }
+
     fn render(&self) -> Option<Workload> {
         (
             reticle,
@@ -68,6 +76,7 @@ impl DinoEnginePlugin for GameUiPlugin {
             .order_egui()
             .into()
     }
+
     fn plugin_metadata(&self) -> EnginePluginMetadata {
         EnginePluginMetadata {
             name: "game_ui".ck().expect("valid identifier"),

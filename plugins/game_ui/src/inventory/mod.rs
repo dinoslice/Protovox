@@ -29,6 +29,9 @@ pub struct InventoryOpen(pub bool);
 #[derive(Unique)]
 pub struct PrevBlockBarState(pub bool);
 
+#[derive(Unique)]
+pub struct ReturnHandEvent;
+
 pub fn initialize(storages: AllStoragesView) {
     storages.add_unique(InventoryOpen(false));
     storages.add_unique(InventoryHand(None));
@@ -88,14 +91,12 @@ pub fn inventory(
 }
 
 pub fn toggle_inv_block_bar(
-    v_local_player: View<LocalPlayer>,
-    vm_inventory: ViewMut<PlayerInventory>,
-    mut hand: UniqueViewMut<InventoryHand>,
     mut open_time: UniqueViewMut<InventoryOpenTime>,
     mut open: UniqueViewMut<InventoryOpen>,
     mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
     mut prev_block_bar_state: UniqueViewMut<PrevBlockBarState>,
     mut gui_bundle: GuiBundle,
+    storages: AllStoragesView,
 ) {
     let just_rel = gui_bundle.input.just_released().get_action(Action::ToggleBlockBar);
     
@@ -114,7 +115,7 @@ pub fn toggle_inv_block_bar(
         if just_pressed {
             open.0 = false;
 
-            return_hand(v_local_player, vm_inventory, &mut hand);
+            storages.add_unique(ReturnHandEvent);
             
             open_time.0 = None;
 
@@ -147,7 +148,11 @@ pub fn toggle_inv_block_bar(
     }
 }
 
-fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<PlayerInventory>, hand: &mut InventoryHand) {
+pub fn return_hand(v_local_player: View<LocalPlayer>, mut vm_inventory: ViewMut<PlayerInventory>, mut hand: UniqueViewMut<InventoryHand>, storages: AllStoragesView) {
+    let Ok(ReturnHandEvent) = storages.remove_unique() else {
+        return;
+    };
+
     let (inventory, ..) = (&mut vm_inventory, &v_local_player).iter()
         .next()
         .expect("LocalPlayer should exist");
