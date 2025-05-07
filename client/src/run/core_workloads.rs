@@ -30,31 +30,12 @@ pub fn update_core() -> Workload {
         update_delta_time,
         update_input_manager,
         toggle_fullscreen,
-        toggle_gui,
     ).into_workload()
 }
 
 pub fn post_update_core() -> Workload {
     clear_last_frame_events
         .into_workload()
-}
-
-fn toggle_gui(g_ctx: UniqueView<GraphicsContext>, capture_state: UniqueViewMut<CaptureState>, input: UniqueViewMut<InputManager>, last_frame_events: UniqueView<LastFrameEvents>) {
-    if last_frame_events.0.iter()
-        .any(|e| matches!(
-            e,
-            WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    state: ElementState::Pressed,
-                    physical_key: PhysicalKey::Code(KeyCode::Escape),
-                    ..
-                },
-                ..
-            }
-        ))
-    {
-        capture_state::toggle_captured(g_ctx, capture_state, input);
-    }
 }
 
 fn update_input_manager(mut input: UniqueViewMut<InputManager>) {
