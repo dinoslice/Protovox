@@ -15,6 +15,7 @@ use shipyard::SystemModificator;
 use crate::debug::debug_ui;
 use crate::inventory::{inventory, return_hand, toggle_inv_block_bar, InventoryOpen};
 use crate::inventory::hand::{render_hand, InventoryHand};
+use crate::pause::{draw_pause_menu, listen_for_toggle_pause, toggle_pause_menu, PauseState};
 
 extern crate nalgebra_glm as glm;
 
@@ -25,6 +26,7 @@ mod inventory;
 pub mod gui_bundle;
 pub(crate) mod item_stack;
 mod debug;
+mod pause;
 
 pub struct GameUiPlugin;
 
@@ -34,6 +36,9 @@ impl DinoEnginePlugin for GameUiPlugin {
             initialize_texture_atlas_views
                 .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
             inventory::initialize,
+            |storages: AllStoragesView| {
+                storages.add_unique(PauseState(true));
+            }
         )
             .into_workload()
             .into()
@@ -48,8 +53,10 @@ impl DinoEnginePlugin for GameUiPlugin {
 
     fn input(&self) -> Option<Workload> {
         (
+            listen_for_toggle_pause,
             scroll_block_bar.skip_if(local_player_is_gamemode_spectator),
             toggle_inv_block_bar,
+            toggle_pause_menu,
         )
             .into_sequential_workload()
             .into()
@@ -65,14 +72,19 @@ impl DinoEnginePlugin for GameUiPlugin {
 
     fn render(&self) -> Option<Workload> {
         (
-            reticle,
-            bottom_bar,
-            block_bar,
-            inventory,
-            debug_ui,
-            render_hand,
+            (
+                reticle,
+                bottom_bar,
+                block_bar,
+                inventory,
+                debug_ui,
+                render_hand,
+            )
+                .into_sequential_workload()
+                .skip_if(is_paused), // TODO: this doesn't work
+            draw_pause_menu,
         )
-            .into_workload()
+            .into_sequential_workload()
             .order_egui()
             .into()
     }
@@ -87,6 +99,10 @@ impl DinoEnginePlugin for GameUiPlugin {
             ],
         }
     }
+}
+
+fn is_paused(paused: UniqueView<PauseState>) -> bool {
+    paused.0
 }
 
 fn reticle(egui_frame: UniqueView<CurrentEguiFrame>) {
