@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use egui::{Align2, Area};
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
+use engine::application::pause::ToggleGuiPressed;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::chunks::chunk_manager::ChunkManager;
 use engine::components::LocalPlayer;
@@ -12,14 +13,13 @@ use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::interact::CurrentlyFocusedBlock;
 use engine::inventory::PlayerInventory;
+use engine::rendering::gui_bundle::GuiBundle;
 use game::block::Block;
 use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
-use crate::gui_bundle::GuiBundle;
 use crate::inventory::hand::InventoryHand;
 use crate::inventory::render::InventoryGui;
-use crate::pause::ToggleGuiPressed;
 
 #[derive(Unique)]
 pub struct InventoryOpenTime(pub Option<Instant>);

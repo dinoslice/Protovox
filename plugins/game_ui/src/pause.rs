@@ -2,38 +2,16 @@ use egui::{Align2, Area, Color32, Frame, LayerId, Order, RichText, Stroke, Vec2}
 use shipyard::{AllStoragesView, Unique, UniqueView, UniqueViewMut};
 use egui_systems::CurrentEguiFrame;
 use engine::application::exit::ExitRequested;
-use engine::input::action_map::Action;
-use engine::input::InputManager;
-use crate::gui_bundle::GuiBundle;
-
-#[derive(Unique)]
-pub struct ToggleGuiPressed;
-
-#[derive(Default, Unique)]
-pub struct PauseState(pub(crate) bool);
-
-pub fn listen_for_toggle_pause(input: UniqueView<InputManager>, storages: AllStoragesView) {
-    if input.just_pressed().get_action(Action::ToggleGui) {
-        storages.add_unique(ToggleGuiPressed);
-    }
-}
-
-pub fn toggle_pause_menu(storages: AllStoragesView, mut open: UniqueViewMut<PauseState>, mut gui_bundle: GuiBundle) {
-    let Ok(ToggleGuiPressed) = storages.remove_unique() else {
-        return;
-    };
-
-    open.0 = !open.0;
-    gui_bundle.set_capture(!open.0, true);
-}
+use engine::application::pause::{toggle_pause_menu, IsPaused, ToggleGuiPressed};
+use engine::rendering::gui_bundle::GuiBundle;
 
 pub fn draw_pause_menu(
-    mut open: UniqueViewMut<PauseState>,
+    mut open: UniqueViewMut<IsPaused>,
     egui_frame: UniqueView<CurrentEguiFrame>,
     storages: AllStoragesView,
     gui_bundle: GuiBundle,
 ) {
-    if !open.0 {
+    if !open.is_paused() {
         return;
     }
 

@@ -12,10 +12,11 @@ use crate::block_bar::{create_block_bar_display, scroll_block_bar};
 use crate::bottom_bar::bottom_bar;
 use crate::egui_views::initialize_texture_atlas_views;
 use shipyard::SystemModificator;
+use engine::application::pause::{is_paused, listen_for_toggle_pause, toggle_pause_menu};
 use crate::debug::debug_ui;
 use crate::inventory::{inventory, return_hand, toggle_inv_block_bar, InventoryOpen};
 use crate::inventory::hand::{render_hand, InventoryHand};
-use crate::pause::{draw_pause_menu, listen_for_toggle_pause, toggle_pause_menu, PauseState};
+use crate::pause::draw_pause_menu;
 
 extern crate nalgebra_glm as glm;
 
@@ -23,7 +24,6 @@ mod bottom_bar;
 mod egui_views;
 mod block_bar;
 mod inventory;
-pub mod gui_bundle;
 pub(crate) mod item_stack;
 mod debug;
 mod pause;
@@ -36,9 +36,6 @@ impl DinoEnginePlugin for GameUiPlugin {
             initialize_texture_atlas_views
                 .after_all(path!({EguiSystemsPlugin}::{EnginePhase::EarlyStartup}::initialize_renderer)),
             inventory::initialize,
-            |storages: AllStoragesView| {
-                storages.add_unique(PauseState(true));
-            }
         )
             .into_workload()
             .into()
@@ -53,7 +50,7 @@ impl DinoEnginePlugin for GameUiPlugin {
 
     fn input(&self) -> Option<Workload> {
         (
-            listen_for_toggle_pause,
+            listen_for_toggle_pause, // TODO: move this to engine
             scroll_block_bar.skip_if(local_player_is_gamemode_spectator),
             toggle_inv_block_bar,
             toggle_pause_menu,
@@ -99,10 +96,6 @@ impl DinoEnginePlugin for GameUiPlugin {
             ],
         }
     }
-}
-
-fn is_paused(paused: UniqueView<PauseState>) -> bool {
-    paused.0
 }
 
 fn reticle(egui_frame: UniqueView<CurrentEguiFrame>) {

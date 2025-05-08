@@ -5,6 +5,7 @@ use game::block::BlockTy;
 use game::inventory::Inventory;
 use game::item::ItemType;
 use networking::PacketRegistry;
+use crate::application::pause::IsPaused;
 use crate::block_bar_focus::BlockBarFocus;
 use crate::camera::Camera;
 use crate::chunks::chunk_manager::ChunkManager;
@@ -72,6 +73,7 @@ pub fn initialize_gameplay_systems(storages: AllStoragesView) {
         .next()
         .expect("TODO: local player with transform should exist");
 
+    storages.add_unique(IsPaused::new(true));
     storages.add_unique(ChunkManager::new(6, Some(render_dist)));
     storages.add_unique(WorldGenerator::new(50));
     storages.add_unique(WorldSaver::default());
