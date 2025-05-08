@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use egui::{Align2, Area};
 use shipyard::{AllStoragesView, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
 use egui_systems::CurrentEguiFrame;
+use engine::application::pause::ToggleGuiPressed;
 use engine::block_bar_focus::BlockBarFocus;
 use engine::chunks::chunk_manager::ChunkManager;
 use engine::components::LocalPlayer;
@@ -12,11 +13,11 @@ use engine::input::action_map::Action;
 use engine::input::InputManager;
 use engine::interact::CurrentlyFocusedBlock;
 use engine::inventory::PlayerInventory;
+use engine::rendering::gui_bundle::GuiBundle;
 use game::block::Block;
 use game::inventory::Inventory;
 use crate::block_bar::BlockBarDisplay;
 use crate::egui_views::EguiTextureAtlasViews;
-use crate::gui_bundle::GuiBundle;
 use crate::inventory::hand::InventoryHand;
 use crate::inventory::render::InventoryGui;
 
@@ -98,6 +99,33 @@ pub fn toggle_inv_block_bar(
     mut gui_bundle: GuiBundle,
     storages: AllStoragesView,
 ) {
+    fn close(
+        mut open_time: UniqueViewMut<InventoryOpenTime>,
+        mut open: UniqueViewMut<InventoryOpen>,
+        mut block_bar_display: UniqueViewMut<BlockBarDisplay>,
+        mut prev_block_bar_state: UniqueViewMut<PrevBlockBarState>,
+        mut gui_bundle: GuiBundle,
+        storages: AllStoragesView,
+    ) {
+        open.0 = false;
+
+        storages.add_unique(ReturnHandEvent);
+
+        open_time.0 = None;
+
+        // TODO: this has some weird behavior
+        if prev_block_bar_state.0 { // one ! for toggle, another ! since it tries to toggle block bar
+            block_bar_display.toggle();
+        }
+
+        gui_bundle.set_capture(true, false);
+    }
+
+    if open.0 && storages.remove_unique::<ToggleGuiPressed>().is_ok() {
+        close(open_time, open, block_bar_display, prev_block_bar_state, gui_bundle, storages);
+        return;
+    }
+
     let just_rel = gui_bundle.input.just_released().get_action(Action::ToggleBlockBar);
     
     if !gui_bundle.input.pressed().get_action(Action::ToggleBlockBar) {
@@ -113,18 +141,7 @@ pub fn toggle_inv_block_bar(
     if open.0 {
         // closing the inventory
         if just_pressed {
-            open.0 = false;
-
-            storages.add_unique(ReturnHandEvent);
-            
-            open_time.0 = None;
-
-            // TODO: this has some weird behavior
-            if prev_block_bar_state.0 { // one ! for toggle, another ! since it tries to toggle block bar
-                block_bar_display.toggle();
-            }
-
-            gui_bundle.set_capture(true, false);
+            close(open_time, open, block_bar_display, prev_block_bar_state, gui_bundle, storages);
         }
     } else if gui_bundle.capture_state.is_captured() {
         if just_pressed {

@@ -1,7 +1,7 @@
 use shipyard::{Borrow, BorrowInfo, UniqueViewMut};
-use engine::application::CaptureState;
-use engine::input::InputManager;
-use engine::rendering::graphics_context::GraphicsContext;
+use crate::application::CaptureState;
+use crate::input::InputManager;
+use crate::rendering::graphics_context::GraphicsContext;
 
 #[derive(Borrow, BorrowInfo)]
 pub struct GuiBundle<'v> {
