@@ -1,10 +1,9 @@
-use std::sync::Arc;
 use game::block::Block;
 use game::chunk::pos::ChunkPos;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Structure {
-    data: Arc<[Block]>,
+    data: Box<[Block]>, // TODO: maybe switch to Arc
     size: ChunkPos,
     origin: ChunkPos,
 }
