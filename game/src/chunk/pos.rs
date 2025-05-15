@@ -61,6 +61,10 @@ impl ChunkPos {
     pub fn center() -> Self {
         Self::try_from(CHUNK_SIZE / 2).expect("must be valid position")
     }
+
+    pub fn as_vec(&self) -> TVec3<u8> {
+        self.into()
+    }
 }
 
 impl TryFrom<&TVec3<u8>> for ChunkPos {
