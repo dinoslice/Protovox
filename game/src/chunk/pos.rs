@@ -1,5 +1,6 @@
 use std::fmt;
 use glm::TVec3;
+use serde::{Deserialize, Serialize};
 use crate::chunk::CHUNK_SIZE;
 use crate::location::{BlockLocation, WorldLocation};
 
@@ -28,7 +29,7 @@ macro_rules! impl_getters_setters {
 #[error("The chunk coordinate was out of range. x: [0,31], y: [0,63], z: [0, 31]")]
 pub struct ChunkCoordOutOfRange;
 
-#[derive(Eq, PartialEq, Default, Copy, Clone)]
+#[derive(Eq, PartialEq, Default, Copy, Clone, Serialize, Deserialize)]
 pub struct ChunkPos(pub u16);
 
 impl fmt::Debug for ChunkPos {
