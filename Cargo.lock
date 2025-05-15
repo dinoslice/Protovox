@@ -541,6 +541,7 @@ dependencies = [
  "nalgebra-glm",
  "shipyard",
  "strck",
+ "structure_saver",
  "tracing",
  "tracing-subscriber",
  "visual_debug",
@@ -3151,8 +3152,12 @@ dependencies = [
  "egui_systems",
  "engine",
  "game",
+ "gizmos",
+ "nalgebra-glm",
+ "postcard",
  "shipyard",
  "strck",
+ "tracing",
 ]
 
 [[package]]
