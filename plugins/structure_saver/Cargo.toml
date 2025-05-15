@@ -11,7 +11,11 @@ engine = { path = "../../engine" }
 game = { path = "../../game" }
 shipyard = { workspace = true }
 egui_systems = { path = "../egui_systems" }
+gizmos = { path = "../gizmos" }
 egui = "0.28.1"
+nalgebra-glm = "0.19.0"
+tracing = "0.1.40"
+postcard = "1.1.1"
 
 [lints]
 workspace = true
