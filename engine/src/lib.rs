@@ -24,6 +24,6 @@ pub mod save;
 pub mod inventory;
 pub mod block_bar_focus;
 pub mod interact;
-mod structures;
+pub mod structures;
 
 pub use workloads::VoxelEngine;

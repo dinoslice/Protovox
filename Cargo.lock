@@ -541,6 +541,7 @@ dependencies = [
  "nalgebra-glm",
  "shipyard",
  "strck",
+ "structure_saver",
  "tracing",
  "tracing-subscriber",
  "visual_debug",
@@ -3141,6 +3142,23 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "structure_saver"
+version = "0.1.0"
+dependencies = [
+ "dino_plugins",
+ "egui",
+ "egui_systems",
+ "engine",
+ "game",
+ "gizmos",
+ "nalgebra-glm",
+ "postcard",
+ "shipyard",
+ "strck",
+ "tracing",
+]
 
 [[package]]
 name = "strum"
