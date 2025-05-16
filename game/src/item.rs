@@ -17,6 +17,10 @@ pub enum ItemType {
     Log,
     LeafPile,
     Crate,
+    Planks,
+    StoneBricks,
+    HematiteNuggets,
+    CarbonSteel,
 }
 
 impl ItemType {
@@ -65,6 +69,30 @@ impl ItemType {
                 title: "Crate".into(),
                 desc: "Can store items".into(),
                 data: None,
+            },
+            IT::Planks => Item {
+                ty: self,
+                title: "Planks".into(),
+                desc: "The essential building material.".to_string(),
+                data: None,
+            },
+            IT::StoneBricks => Item {
+                ty: self,
+                title: "Stone Bricks".to_string(),
+                desc: "Stone processed for building.".to_string(),
+                data: None,
+            },
+            IT::HematiteNuggets => Item {
+                ty: self,
+                title: "Hematite Nuggets".to_string(),
+                desc: "Harvested from a hematite deposit. Can be made into carbon steel.".to_string(),
+                data: None,
+            },
+            IT::CarbonSteel => Item {
+                ty: self,
+                title: "Carbon Steel".to_string(),
+                desc: "A strong material suitable for weapons and tools.".to_string(),
+                data: None,
             }
         }
     }
@@ -85,6 +113,10 @@ impl ItemType {
             IT::LeafPile => DEBUG_GREEN,
             IT::Stone => MISSING,
             IT::Crate => MISSING,
+            IT::Planks => MISSING,
+            IT::StoneBricks => MISSING,
+            IT::HematiteNuggets => MISSING,
+            IT::CarbonSteel => MISSING,
         }
     }
 }
@@ -217,7 +249,10 @@ impl Item {
             IT::Stone => Ok(Block::Stone),
             IT::Log => Ok(Block::Log { rotation: face.axis() }),
             IT::LeafPile => Ok(Block::Leaf),
-            IT::Crate => Ok(Block::Crate { inventory: Default::default(), })
+            IT::Planks => Ok(Block::Planks),
+            IT::StoneBricks => Ok(Block::StoneBrick),
+            IT::Crate => Ok(Block::Crate { inventory: Default::default(), }),
+            IT::CarbonSteel | ItemType::HematiteNuggets => Err(self),
         }
     }
 }
