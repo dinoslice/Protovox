@@ -6,7 +6,6 @@ use crate::block::face_type::{Axis, FaceType};
 use static_assertions::const_assert;
 use crate::inventory::Inventory;
 use crate::item::{ItemStack, ItemType};
-use crate::location::BlockLocation;
 use crate::texture_ids::TextureId;
 
 pub mod face_type;
@@ -25,6 +24,10 @@ pub enum Block {
     Leaf,
     Debug,
     Crate { inventory: BlockInventory<36> },
+    StoneBrick,
+    Planks,
+    Water,
+    HematiteDeposit,
 }
 
 #[serde_with::serde_as]
@@ -93,6 +96,7 @@ impl Block {
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => MISSING,
             Block::Crate { .. } => MISSING,
+            Block::Planks | Block::StoneBrick | Block::Water | Block::HematiteDeposit => MISSING,
         };
 
         Some(id)
@@ -106,7 +110,7 @@ impl Block {
         const NONE: Vec<ItemStack> = Vec::new();
 
         match self {
-            B::Air | B::Debug => NONE,
+            B::Air | B::Debug | B::Water => NONE,
             B::Grass | B::Dirt  => vec![I::Dirt.default_one()],
             B::Cobblestone | B::Stone => vec![I::Cobblestone.default_one()],
             B::Log { .. } => vec![I::Log.default_one()],
@@ -120,6 +124,13 @@ impl Block {
                     .into_iter()
                     .chain(inv.0.into_iter().flatten())
                     .collect()
+            },
+            B::Planks => vec![I::Planks.default_one()],
+            B::StoneBrick => vec![I::StoneBricks.default_one()],
+            B::HematiteDeposit => {
+                let count = thread_rng().gen_range(8..30);
+
+                vec![I::HematiteNuggets.default_item().with_count(NonZeroU8::new(count).expect("0 is not in range"))]
             }
         }
     }
