@@ -128,13 +128,20 @@ impl WorldGenerator {
 
                     let block_y = chunk_start.0.y + y as i32; // could use BlockLocation::from_chunk_parts, but this is faster
 
+                    let stone_scale = 0.15;
+                    let cobble_threshold = -0.5;
+
                     match height as i32 - block_y {
                         0 => match block_y.cmp(&water_level) {
                             Ordering::Greater | Ordering::Equal => *out.block_mut(pos) = Block::Grass,
                             Ordering::Less => *out.block_mut(pos) = Block::Dirt,
                         }
                         1..4 => *out.block_mut(pos) = Block::Dirt,
-                        4.. => *out.block_mut(pos) = Block::Cobblestone,
+                        y @ 4.. => *out.block_mut(pos) = if perlin.get([xf, y as f64, zf].map(|n| n * stone_scale)) < cobble_threshold {
+                            Block::Cobblestone
+                        } else {
+                            Block::Stone
+                        },
                         _ if block_y <= water_level => *out.block_mut(pos) = Block::Debug, // TODO: make water block
                         _ => {}, // AIR
                     }
