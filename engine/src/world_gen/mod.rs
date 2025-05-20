@@ -2,18 +2,28 @@ pub mod params;
 
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use crossbeam::channel::{Receiver, Sender};
 use game::{block::Block, chunk::{data::ChunkData, location::ChunkLocation, pos::ChunkPos, CHUNK_SIZE}};
 use noise::{NoiseFn, Perlin};
+use rand::{thread_rng, Rng};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use shipyard::Unique;
+use tracing::{debug, info};
+use game::block::Block::{Air, Grass};
 use game::location::BlockLocation;
 use splines::easings::InOutSine;
 use splines::Spline;
 use crate::events::ChunkGenEvent;
+use crate::structures::Structure;
 use crate::world_gen::params::WorldGenParams;
+
+pub struct TreeStructure {
+    data: Structure
+}
+
+const TREE: LazyLock<Structure> = LazyLock::new(|| postcard::from_bytes(include_bytes!("../../assets/structures/test_tree.structure")).expect("failed to load structures"));
 
 pub type SineSpline = Spline<InOutSine>;
 
@@ -137,6 +147,45 @@ impl WorldGenerator {
                         4.. => *out.block_mut(pos) = Block::Cobblestone,
                         _ if block_y <= water_level => *out.block_mut(pos) = Block::Debug, // TODO: make water block
                         _ => {}, // AIR
+                    }
+                }
+            }
+        }
+
+        for _ in 0..thread_rng().gen_range(20..30) {
+            let size = TREE.size();
+            let mut start_y = None;
+            
+            let start_x = TREE.origin().x() + thread_rng().gen_range(0..(CHUNK_SIZE.x - size.x()));
+            let start_z = TREE.origin().z() + thread_rng().gen_range(0..(CHUNK_SIZE.z - size.z()));
+
+            'outer: for y in 0..(CHUNK_SIZE.y - size.y()) {
+                let under = if y == 0 { ChunkPos::default() } else { ChunkPos::new_unchecked(start_x, y - 1, start_z) };
+                if out.block_ref(ChunkPos::new_unchecked(start_x, y, start_z)) == &Air && out.block_ref(under) == &Grass {
+                    for x in 0..size.x() {
+                        for sy in 0..size.y() {
+                            for z in 0..size.x() {
+                                if out.block_ref(ChunkPos::new_unchecked(x + start_x, y + sy, z + start_z)) != &Air {
+                                    continue 'outer;
+                                }
+                            }
+                        }
+                    }
+
+                    start_y = Some(y);
+                }
+            }
+
+            if start_y.is_none() {
+                return ChunkGenEvent(out);
+            }
+
+            let start_y = start_y.unwrap();
+
+            for x in 0..size.x() {
+                for y in 0..size.y() {
+                    for z in 0..size.z() {
+                        *out.block_mut(ChunkPos::new_unchecked(x + start_x, start_y + y, z + start_z)) = TREE.get(ChunkPos::new_unchecked(x, y, z)).unwrap_or(&Air).clone();
                     }
                 }
             }
