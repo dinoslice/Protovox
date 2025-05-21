@@ -5,6 +5,7 @@ use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
+use glm::TVec3;
 use game::{block::Block, chunk::{data::ChunkData, location::ChunkLocation, pos::ChunkPos, CHUNK_SIZE}};
 use noise::{NoiseFn, Perlin};
 use rayon::{ThreadPool, ThreadPoolBuilder};
@@ -23,6 +24,7 @@ pub struct WorldGenerator {
     perlin_noise: Arc<Perlin>,
     pub params: Arc<WorldGenParams>,
     pub splines: Arc<WorldGenSplines>,
+    pub vein_spawners: Arc<[VeinSpawner]>,
     chunk_output: (Sender<ChunkGenEvent>, Receiver<ChunkGenEvent>),
 }
 
@@ -31,6 +33,42 @@ pub struct WorldGenSplines {
     pub continentalness: SineSpline,
     pub erosion: SineSpline,
     pub peaks_valleys: SineSpline,
+}
+
+pub struct VeinSpawner {
+    offset: TVec3<f64>,
+    scale: f64,
+    threshold: VeinThreshold,
+    block: Block,
+}
+
+impl VeinSpawner {
+    pub fn new(scale: f64, offset: f64, threshold: VeinThreshold, block: Block) -> Self {
+        Self {
+            offset: TVec3::from_element(offset * scale),
+            scale,
+            threshold,
+            block,
+        }
+    }
+
+    pub fn sample(&self, perlin: &Perlin, wl: TVec3<f64>) -> bool {
+        perlin.get(*((self.offset + wl) * self.scale).as_ref()) < self.threshold.get(wl.y)
+    }
+}
+
+pub enum VeinThreshold {
+    Single(f64),
+    Spline(SineSpline),
+}
+
+impl VeinThreshold {
+    pub fn get(&self, y: f64) -> f64 {
+        match self {
+            VeinThreshold::Single(t) => *t,
+            VeinThreshold::Spline(spline) => spline.sample(y as _) as _, // TODO: remove need for cast
+        }
+    }
 }
 
 impl WorldGenerator {
@@ -61,11 +99,16 @@ impl WorldGenerator {
             peaks_valleys: Spline::new([[-1.0, -1.0], [-0.9223045, -0.8987539], [-0.5608352, -0.8535681], [-0.3662839, -0.24826753], [0.23613429, -0.102552295], [0.767043, 0.8733756], [1.0, 1.0]]),
         };
 
+        let spawners = vec![
+            VeinSpawner::new(0.15, 0.0, VeinThreshold::Single(-0.5), Block::Cobblestone)
+        ];
+
         Self {
             thread_pool,
             perlin_noise,
             params: Arc::new(params),
             splines: Arc::new(splines),
+            vein_spawners: spawners.into(),
             chunk_output,
         }
     }
@@ -82,9 +125,10 @@ impl WorldGenerator {
     pub fn spawn_generate_task(&self, chunk: ChunkLocation, splines: Arc<WorldGenSplines>, params: Arc<WorldGenParams>) {
         let sender = self.chunk_output.0.clone();
         let perlin = self.perlin_noise.clone();
+        let vein_spawner = self.vein_spawners.clone();
 
         self.thread_pool.spawn(move ||
-            sender.send(Self::generate_chunk(perlin, splines, chunk, params))
+            sender.send(Self::generate_chunk(perlin, splines, chunk, params, vein_spawner))
                 .expect("channel should not have disconnected")
         );
     }
@@ -98,7 +142,7 @@ impl WorldGenerator {
         );
     }
 
-    fn generate_chunk(perlin: Arc<Perlin>, splines: Arc<WorldGenSplines>, chunk: ChunkLocation, params: Arc<WorldGenParams>) -> ChunkGenEvent {
+    fn generate_chunk(perlin: Arc<Perlin>, splines: Arc<WorldGenSplines>, chunk: ChunkLocation, params: Arc<WorldGenParams>, veins: Arc<[VeinSpawner]>) -> ChunkGenEvent {
         let mut out = ChunkData::empty(chunk.clone());
 
         let chunk_start = BlockLocation::from(&chunk);
@@ -134,7 +178,10 @@ impl WorldGenerator {
                             Ordering::Less => *out.block_mut(pos) = Block::Dirt,
                         }
                         1..4 => *out.block_mut(pos) = Block::Dirt,
-                        4.. => *out.block_mut(pos) = Block::Cobblestone,
+                        y @ 4.. => *out.block_mut(pos) = veins
+                            .iter()
+                            .find(|vs| vs.sample(&perlin, TVec3::new(xf, y as _, zf)))
+                            .map_or(Block::Stone, |vs| vs.block.clone()),
                         _ if block_y <= water_level => *out.block_mut(pos) = Block::Debug, // TODO: make water block
                         _ => {}, // AIR
                     }
