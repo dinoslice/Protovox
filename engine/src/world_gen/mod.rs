@@ -37,7 +37,7 @@ pub struct WorldGenSplines {
 
 pub struct VeinSpawner {
     offset: TVec3<f64>,
-    scale: f64,
+    scale: f64, // the smaller this is, the bigger the vein is
     threshold: VeinThreshold,
     block: Block,
 }
@@ -100,7 +100,9 @@ impl WorldGenerator {
         };
 
         let spawners = vec![
-            VeinSpawner::new(0.15, 0.0, VeinThreshold::Single(-0.5), Block::Cobblestone)
+            VeinSpawner::new(0.10, 0.0, VeinThreshold::Single(-0.45), Block::Cobblestone),
+            // VeinSpawner::new(0.20, 50.0, VeinThreshold::Single(-0.35), Block::HematiteDeposit),
+            VeinSpawner::new(0.20, 50.0, VeinThreshold::Single(-0.715), Block::HematiteDeposit),
         ];
 
         Self {

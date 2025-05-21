@@ -96,7 +96,8 @@ impl Block {
             Block::Leaf => DEBUG_GREEN,
             Block::Stone => MISSING,
             Block::Crate { .. } => MISSING,
-            Block::Planks | Block::StoneBrick | Block::Water | Block::HematiteDeposit => MISSING,
+            Block::Planks | Block::StoneBrick | Block::Water => MISSING,
+            Block::HematiteDeposit => DEBUG_RED,
         };
 
         Some(id)
