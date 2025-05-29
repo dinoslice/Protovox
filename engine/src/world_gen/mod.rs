@@ -182,7 +182,7 @@ impl WorldGenerator {
                             .iter()
                             .find(|vs| vs.sample(&perlin, TVec3::new(xf, y as _, zf)))
                             .map_or(Block::Stone, |vs| vs.block.clone()),
-                        _ if block_y <= water_level => *out.block_mut(pos) = Block::Debug, // TODO: make water block
+                        _ if block_y <= water_level => *out.block_mut(pos) = Block::Water,
                         _ => {}, // AIR
                     }
                 }

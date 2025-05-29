@@ -1,6 +1,8 @@
 use std::fs;
 use std::num::NonZeroU32;
 use shipyard::{AllStoragesView, Unique, UniqueView};
+use strum::VariantArray;
+use game::texture_ids::TextureId;
 use crate::rendering::texture::Texture;
 use crate::rendering::graphics_context::GraphicsContext;
 
@@ -15,27 +17,45 @@ pub struct TextureAtlas {
 pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: AllStoragesView) {
     // 4. load textures into bind group
 
-    let textures = [
-        "cobblestone",
-        "dirt",
-        "grass",
-        "grass_side",
-        "selection",
-        "debug_red",
-        "debug_green",
-        "debug_blue",
-        "log",
-        "missing",
-    ];
-
-    let loaded_textures = textures.map(|key| {
-        // TODO: pack textures into binary or better loading?
-        let path = format!("engine/assets/blocks/{key}.png");
-
-        let bytes = fs::read(path).expect("TODO: better error; file to exist");
-
-        image::load_from_memory(&bytes).expect("TODO: better error; valid image")
-    });
+    // let textures = [
+    //     "grass",
+    //     "grass_side",
+    //     "dirt",
+    //     
+    //     "stone",
+    //     "cobblestone",
+    //     
+    //     "log_side",
+    //     "log_top",
+    //     "planks",
+    //     
+    //     "crate_side",
+    //     "crate_top",
+    //     "crate_bottom",
+    //     
+    //     "leaves",
+    //     "water",
+    //     
+    //     "debug_red",
+    //     "debug_green",
+    //     "debug_blue",
+    //     
+    //     "selection",
+    //     "missing",
+    // ];
+    
+    let loaded_textures = TextureId::VARIANTS
+        .iter()
+        .map(|key| {
+            // TODO: pack textures into binary or better loading?
+            let path = format!("engine/assets/blocks/{key}.png");
+    
+            let bytes = fs::read(path).expect("TODO: better error; file to exist");
+    
+            image::load_from_memory(&bytes).expect("TODO: better error; valid image")
+        })
+        .collect::<Vec<_>>();
+    
 
     let texture_atlas = Texture::from_images_2d(&g_ctx.device, &g_ctx.queue, &loaded_textures, Some("texture_atlas"))
         .expect("TODO: better errors; valid textures");
