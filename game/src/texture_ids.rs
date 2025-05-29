@@ -1,5 +1,6 @@
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, strum::Display, strum::VariantArray)]
+#[strum(serialize_all = "snake_case")]
 pub enum TextureId {
     Grass = 0,
     GrassSide,
