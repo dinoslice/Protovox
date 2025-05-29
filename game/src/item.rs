@@ -103,20 +103,20 @@ impl ItemType {
     
     pub const fn texture_id(self) -> TextureId {
         use ItemType as IT;
-        use crate::texture_ids::*;
+        use TextureId as Id;
 
         match self {
-            IT::Grass => GRASS_SIDE,
-            IT::Dirt => DIRT,
-            IT::Cobblestone => COBBLE,
-            IT::Log => LOG,
-            IT::LeafPile => DEBUG_GREEN,
-            IT::Stone => MISSING,
-            IT::Crate => MISSING,
-            IT::Planks => MISSING,
-            IT::StoneBricks => MISSING,
-            IT::HematiteNuggets => MISSING,
-            IT::CarbonSteel => MISSING,
+            IT::Grass => Id::GrassSide,
+            IT::Dirt => Id::Dirt,
+            IT::Cobblestone => Id::Cobblestone,
+            IT::Log => Id::LogSide,
+            IT::LeafPile => Id::Leaves,
+            IT::Stone => Id::Stone,
+            IT::Crate => Id::CrateSide,
+            IT::Planks => Id::Planks,
+            IT::StoneBricks => Id::Missing,
+            IT::HematiteNuggets => Id::Missing,
+            IT::CarbonSteel => Id::Missing,
         }
     }
 }

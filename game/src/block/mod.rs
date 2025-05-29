@@ -72,31 +72,37 @@ pub enum TextureType {
 
 impl Block {
     pub fn texture_id(&self, face_type: FaceType) -> Option<TextureId> {
-        use crate::texture_ids::*;
+        use TextureId as Id;
 
         let id = match self {
             Block::Air => return None,
             Block::Grass => match face_type {
-                FaceType::Top => GRASS_TOP,
-                FaceType::Bottom => DIRT,
-                _ => GRASS_SIDE,
+                FaceType::Top => Id::Grass,
+                FaceType::Bottom => Id::Dirt,
+                _ => Id::GrassSide,
             }
-            Block::Dirt => DIRT,
-            Block::Cobblestone => COBBLE,
+            Block::Dirt => Id::Dirt,
+            Block::Cobblestone => Id::Cobblestone,
             Block::Debug => match face_type.axis() {
-                Axis::X => DEBUG_RED,
-                Axis::Y => DEBUG_BLUE,
-                Axis::Z => DEBUG_GREEN,
+                Axis::X => Id::DebugRed,
+                Axis::Y => Id::DebugBlue,
+                Axis::Z => Id::DebugGreen,
             }
             Block::Log { rotation } => if face_type.axis() == *rotation {
-                MISSING
+                Id::LogTop
             } else {
-                LOG // TODO: rotate texture
+                Id::LogSide // TODO: rotate texture
             }
-            Block::Leaf => DEBUG_GREEN,
-            Block::Stone => MISSING,
-            Block::Crate { .. } => MISSING,
-            Block::Planks | Block::StoneBrick | Block::Water | Block::HematiteDeposit => MISSING,
+            Block::Leaf => Id::DebugGreen,
+            Block::Stone => Id::Stone,
+            Block::Crate { .. } => match face_type {
+                FaceType::Top => Id::CrateTop,
+                FaceType::Bottom => Id::CrateBottom,
+                _ => Id::CrateSide,
+            },
+            Block::Water => Id::Water,
+            Block::Planks => Id::Planks,
+            Block::StoneBrick | Block::HematiteDeposit => Id::Missing,
         };
 
         Some(id)

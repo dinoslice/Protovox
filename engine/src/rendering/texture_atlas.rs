@@ -16,15 +16,29 @@ pub fn initialize_texture_atlas(g_ctx: UniqueView<GraphicsContext>, storages: Al
     // 4. load textures into bind group
 
     let textures = [
-        "cobblestone",
-        "dirt",
         "grass",
         "grass_side",
-        "selection",
+        "dirt",
+        
+        "stone",
+        "cobblestone",
+        
+        "log_side",
+        "log_top",
+        "planks",
+        
+        "crate_side",
+        "crate_top",
+        "crate_bottom",
+        
+        "leaves",
+        "water",
+        
         "debug_red",
         "debug_green",
         "debug_blue",
-        "log",
+        
+        "selection",
         "missing",
     ];
 
