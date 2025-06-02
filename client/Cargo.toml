@@ -5,6 +5,7 @@ description = "Client to run protovox engine"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 tracing = { workspace = true }

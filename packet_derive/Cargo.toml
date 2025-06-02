@@ -5,6 +5,7 @@ description = "Derive macro for protovox engine's packet system"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 syn = "2.0"

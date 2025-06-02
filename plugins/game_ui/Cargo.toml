@@ -5,6 +5,7 @@ description = "Ingame UI for protovox game"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 dino_plugins = { path = "../../dino_plugins" }

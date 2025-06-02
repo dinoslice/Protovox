@@ -5,6 +5,7 @@ description = "Custom packet system for protovox engine"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 flate2 = "1.0.33"

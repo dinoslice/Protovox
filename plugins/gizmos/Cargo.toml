@@ -5,6 +5,7 @@ description = "Debug gizmo primitives and systems for protovox engine"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 dino_plugins = { path = "../../dino_plugins" }

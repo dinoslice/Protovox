@@ -5,6 +5,7 @@ description = "Types and primitives for protovox game"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 nalgebra = { workspace = true }

@@ -5,6 +5,7 @@ description = "Networking implementation for protovox engine's packet system"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 hashbrown = "0.15.2"

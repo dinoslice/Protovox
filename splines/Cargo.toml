@@ -5,6 +5,7 @@ description = "Custom spline system for protovox engine"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 nalgebra-glm = { workspace = true }
