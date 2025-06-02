@@ -1,5 +1,5 @@
-# Hematite Engine
-An optimized, ECS based, multiplayer game engine written in Rust. Intended to recreate the RPG experience of heavily modded Minecraft.
+# Protovox Engine
+An optimized, ECS based, multiplayer game engine prototype written in Rust. Intended to recreate the RPG experience of heavily modded Minecraft.
 
 ![Showcase image](./showcase/house.png)
 
