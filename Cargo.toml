@@ -13,10 +13,20 @@ members = [
 ]
 
 [workspace.package]
-name = "voxel_game"
+name = "protovox"
 version = "0.1.0"
-edition = "2021"
-authors = ["BlackNinja745 Studios <blackninja745studiosmanagement@gmail.com>"]
+description = "An optimized, ECS based, multiplayer game engine prototype written in Rust. Intended to recreate the RPG experience of heavily modded Minecraft."
+readme = true
+license = "GPL-3.0"
+edition = "2024"
+keywords = ["game-engine", "voxel"]
+categories = ["game-engines"]
+repository = "https://github.com/dinoslice/Protovox/"
+authors = [
+    "dinoslice Development Team <dev@dinoslice.com>",
+    "abscosmos <joshua@dinoslice.com>",
+    "MSKatKing <mark@dinoslice.com>",
+]
 
 [workspace.dependencies]
 nalgebra = { version = "0.33.2", features = ["serde-serialize", "bytemuck"] }

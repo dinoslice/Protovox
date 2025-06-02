@@ -1,6 +1,8 @@
 [package]
 name = "game_ui"
 version = "0.1.0"
+description = "Ingame UI for protovox game"
+license.workspace = true
 edition.workspace = true
 authors.workspace = true
 

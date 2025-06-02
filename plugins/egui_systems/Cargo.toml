@@ -1,6 +1,8 @@
 [package]
 name = "egui_systems"
 version = "0.1.0"
+description = "Integration between egui and protovox's dino plugin system"
+license.workspace = true
 edition.workspace = true
 authors.workspace = true
 

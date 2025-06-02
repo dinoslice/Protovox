@@ -1,7 +1,10 @@
 [package]
 name = "packet"
 version = "0.1.0"
-edition = "2021"
+description = "Custom packet system for protovox engine"
+license.workspace = true
+edition.workspace = true
+authors.workspace = true
 
 [dependencies]
 flate2 = "1.0.33"

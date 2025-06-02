@@ -1,6 +1,8 @@
 [package]
 name = "gizmos"
 version = "0.1.0"
+description = "Debug gizmo primitives and systems for protovox engine"
+license.workspace = true
 edition.workspace = true
 authors.workspace = true
 
